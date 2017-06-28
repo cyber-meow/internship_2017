@@ -124,34 +124,23 @@ def run(dataset_dir, checkpoints_dir, log_dir):
     print('Finished training. Last batch loss %f' % final_loss)
 
 
-def classify_image(dataset_dir, checkpoints_dir):
+def classify_image(image_path, checkpoints_dir):
 
     image_size = inception_v4.inception_v4.default_image_size
 
     with tf.Graph().as_default():
-        """
         image_string = tf.gfile.FastGFile(image_path, 'r').read()
         image = tf.image.decode_png(image_string, channels=3)
-        """
-        dataset = read_TFRecord.get_split('train', dataset_dir)
-        images, _, labels = load_batch(
-            dataset, height=image_size, width=image_size,
-            batch_size=1, is_training=False)
-        """
+
         processed_image = inception_preprocessing.preprocess_image(
             image, image_size, image_size, is_training=False)
         processed_images = tf.expand_dims(processed_image, 0)
-        """
-        with tf.Session() as sess:
-            print(sess.run(tf.shape(images)))
-            # np_image = sess.run(images)
 
         # Create the model, use the default arg scope to
         # configure the batch norm parameters.
-        """
         with slim.arg_scope(inception_v4.inception_v4_arg_scope()):
             logits, _ = inception_v4.inception_v4(
-                images, num_classes=1001, is_training=False)
+                processed_images, num_classes=1001, is_training=False)
         probabilities = tf.nn.softmax(logits)
 
         init_fn = slim.assign_from_checkpoint_fn(
@@ -160,24 +149,18 @@ def classify_image(dataset_dir, checkpoints_dir):
 
         with tf.Session() as sess:
             init_fn(sess)
-            np_image, probabilities = sess.run([images[0], probabilities])
+            np_image, probabilities = sess.run([image, probabilities])
             probabilities = probabilities[0, 0:]
             sorted_inds = [i[0] for i in sorted(
                 enumerate(-probabilities), key=lambda x:x[1])]
-        """
 
-        return images
-        """
         plt.figure()
         plt.imshow(np_image.astype(np.uint8))
         plt.axis('off')
         plt.show()
-        """
 
-        """
         names = imagenet.create_readable_names_for_imagenet_labels()
         for i in range(5):
             index = sorted_inds[i]
             print('Probability %0.2f%% => [%s]' % (
                   probabilities[index] * 100, names[index]))
-        """
