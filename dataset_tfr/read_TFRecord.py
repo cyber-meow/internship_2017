@@ -17,12 +17,12 @@ slim = tf.contrib.slim
 _FILE_PATTERN = 'data_%s_*.tfrecord'
 
 
-_NUM_CLASSES = 5
+_NUM_CLASSES = 11
 
 
 _ITEMS_TO_DESCRIPTIONS = {
     'image': 'A color image of varying size.',
-    'label': 'A single integer between 0 and 4',
+    'label': 'A single integer between 0 and 10',
 }
 
 
@@ -50,7 +50,6 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
     if not file_pattern:
         file_pattern = _FILE_PATTERN
 
-    """
     num_samples = 0
     tfrecords_to_count = [
         os.path.join(dataset_dir, file)
@@ -59,7 +58,6 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
     for tfrecord_file in tfrecords_to_count:
         for record in tf.python_io.tf_record_iterator(tfrecord_file):
             num_samples += 1
-    """
 
     file_pattern = os.path.join(dataset_dir, file_pattern % split_name)
 
@@ -90,7 +88,7 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
         data_sources=file_pattern,
         reader=reader,
         decoder=decoder,
-        num_samples=3320,
+        num_samples=num_samples,
         items_to_descriptions=_ITEMS_TO_DESCRIPTIONS,
         num_classes=_NUM_CLASSES,
         labels_to_names=labels_to_names)
