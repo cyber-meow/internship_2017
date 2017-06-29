@@ -7,6 +7,7 @@ from six.moves import xrange
 import os
 import time
 
+import numpy as np
 import tensorflow as tf
 from datasets import dataset_utils
 from nets import inception_v4
@@ -61,16 +62,17 @@ def load_batch(dataset, batch_size=32, height=299, width=299,
     return images, images_raw, labels
 
 
-def get_init_fn(checkpoints_dir):
+def get_init_fn(checkpoints_dir, exclude=None):
     """Returns a function run by the chief worker to
        warm-start the training."""
-    checkpoint_exclude_scopes = [
-        'InceptionV4/Logits', 'InceptionV4/AuxLogits']
+    if exclude is None:
+        checkpoint_exclude_scopes = [
+            'InceptionV4/Logits', 'InceptionV4/AuxLogits']
 
     exclusions = [scope.strip() for scope in checkpoint_exclude_scopes]
 
     variables_to_restore = []
-    for var in slim.get_model_variables():
+    for var in tf.model_variables():
         excluded = False
         for exclusion in exclusions:
             if var.op.name.startswith(exclusion):
@@ -79,9 +81,13 @@ def get_init_fn(checkpoints_dir):
         if not excluded:
             variables_to_restore.append(var)
 
+    if tf.train.checkpoint_exists(checkpoints_dir):
+        checkpoint_path = tf.train.latest_checkpoint(checkpoints_dir)
+    else:
+        checkpoint_path = os.path.join(checkpoints_dir, 'inception_v4.ckpt')
+
     return slim.assign_from_checkpoint_fn(
-        os.path.join(checkpoints_dir, 'inception_v4.ckpt'),
-        variables_to_restore)
+        checkpoint_path, variables_to_restore)
 
 
 def get_variables_to_train(scopes):
@@ -136,7 +142,7 @@ def run(dataset_dir, checkpoints_dir, log_dir, number_of_steps):
         scopes = ['InceptionV4/Mixed_7d', 'InceptionV4/Logits',
                   'InceptionV4/AuxLogits']
         variables_to_train = get_variables_to_train(scopes)
-        print(variables_to_train)
+        # print(variables_to_train)
         train_op = slim.learning.create_train_op(
             total_loss, optimizer,
             variables_to_train=variables_to_train)
@@ -144,8 +150,7 @@ def run(dataset_dir, checkpoints_dir, log_dir, number_of_steps):
         # The metrics to predict
         mean_logits = tf.reduce_mean(logits)
         predictions = tf.argmax(end_points['Predictions'], 1)
-        accuracy, accuracy_update = \
-            slim.metrics.streaming_accuracy(predictions, labels)
+        accuracy, accuracy_update = tf.metrics.accuracy(predictions, labels)
         metrics_op = tf.group(accuracy_update)
 
         # Create some summaries to visualize the training process:
@@ -176,16 +181,14 @@ def run(dataset_dir, checkpoints_dir, log_dir, number_of_steps):
         with sv.managed_session() as sess:
             for step in xrange(number_of_steps):
                 loss, _ = train_step(sess, train_op, sv.global_step)
-                lbs, pds = sess.run([labels, predictions])
-                print('labels:', lbs)
-                print('predictions:', pds)
                 if step % 2 == 0:
-                    accuracy_rate, mlg = sess.run([accuracy, mean_logits])
+                    summaries, accuracy_rate, mlg = sess.run(
+                        [my_summary_op, accuracy, mean_logits])
                     tf.logging.info('Current Streaming Accuracy:%s',
                                     accuracy_rate)
                     tf.logging.info('Mean Logits Activation:%s', mlg)
-                    summaries = sess.run(my_summary_op)
                     sv.summary_computed(sess, summaries)
+                print(len(sv.saver._var_list))
 
             tf.logging.info('Finished training. Final Loss: %s', loss)
             tf.logging.info('Final Accuracy: %s', sess.run(accuracy))
@@ -198,40 +201,59 @@ def classify_image(image_path, train_dir, dataset_dir):
     image_size = inception_v4.inception_v4.default_image_size
 
     with tf.Graph().as_default():
+        
+        dataset = read_TFRecord.get_split('train', dataset_dir)
+
+        # We don't use the given preprocessed funciton that crops images
+        processed_images, _, labels = load_batch(
+            dataset, height=image_size, width=image_size,
+            batch_size=8, is_training=False)
+        """
         image_string = tf.gfile.FastGFile(image_path, 'r').read()
         image = tf.image.decode_png(image_string, channels=3)
 
         processed_image = inception_preprocessing.preprocess_image(
             image, image_size, image_size, is_training=False)
         processed_images = tf.expand_dims(processed_image, 0)
+        """
 
         # Create the model, use the default arg scope to
         # configure the batch norm parameters.
         with slim.arg_scope(inception_v4.inception_v4_arg_scope()):
-            _, endpoints = inception_v4.inception_v4(
-                processed_images, num_classes=11, is_training=False)
+            logits, endpoints = inception_v4.inception_v4(
+                processed_images, num_classes=11, is_training=True)
         probabilities = endpoints['Predictions']
 
         checkpoint_path = tf.train.latest_checkpoint(train_dir)
 
+        saver = tf.train.Saver(tf.model_variables())
+        """
         init_fn = slim.assign_from_checkpoint_fn(
             checkpoint_path,
-            slim.get_model_variables('InceptionV4'))
+            slim.get_variables_to_restore())
+        """
 
         with tf.Session() as sess:
-            init_fn(sess)
-            probabilities = sess.run(probabilities)
-            print(probabilities)
-            probabilities = probabilities[0, 0:]
-            sorted_inds = [i[0] for i in sorted(
-                enumerate(-probabilities), key=lambda x:x[1])]
+            saver.restore(sess, checkpoint_path)
+            
+            with slim.queues.QueueRunners(sess):
+                imgs = tf.summary.image('processed_image', processed_images)
+                imgs, lbs, probabilities = sess.run([imgs, labels, probabilities])
+                # imgs, probabilities = sess.run([imgs, probabilities])
+            # print(lgs, probabilities)
+            # probabilities = probabilities[0, 0:]
+            # sorted_inds = [i[0] for i in sorted(
+            #     enumerate(-probabilities), key=lambda x:x[1])]
+            
+            print(lbs)
+            print(np.argmax(probabilities, axis=1))
+            # print(images[0])
 
-            img = tf.summary.image('image', tf.expand_dims(image, 0))
             fw = tf.summary.FileWriter('log')
-            fw.add_summary(sess.run(img))
+            fw.add_summary(imgs)
 
-        labels_to_names = dataset_utils.read_label_file(dataset_dir)
-        for i in range(5):
-            index = sorted_inds[i]
-            print('Probability %0.2f%% => [%s]' % (
-                  probabilities[index] * 100, labels_to_names[index]))
+        # labels_to_names = dataset_utils.read_label_file(dataset_dir)
+        # for i in range(5):
+        #     index = sorted_inds[i]
+        #     print('Probability %0.2f%% => [%s]' % (
+        #           probabilities[index] * 100, labels_to_names[index]))
