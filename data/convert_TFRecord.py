@@ -8,6 +8,7 @@ from __future__ import print_function
 import os
 import sys
 import math
+import random
 
 import tensorflow as tf
 
@@ -160,7 +161,7 @@ def convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
     sys.stdout.flush()
 
 
-def run(dataset_dir, tfrecord_dir, subjects=True):
+def run(dataset_dir, tfrecord_dir, subjects=True, mixed=False):
     """Runs the conversion operation.
 
     Args:
@@ -174,6 +175,17 @@ def run(dataset_dir, tfrecord_dir, subjects=True):
     training_filenames, validation_filenames, class_names = \
         get_filenames_and_classes(dataset_dir, subjects=subjects)
     class_names_to_ids = dict(zip(class_names, range(len(class_names))))
+
+    if mixed:
+        num_train_ex = len(training_filenames)
+        all_filenames = training_filenames + validation_filenames
+        random.shuffle(all_filenames)
+        training_filenames = all_filenames[:num_train_ex]
+        validation_filenames = all_filenames[num_train_ex:]
+
+    else:
+        random.shuffle(training_filenames)
+        random.shuffle(validation_filenames)
 
     # convert datasets
     convert_dataset('train', training_filenames,
