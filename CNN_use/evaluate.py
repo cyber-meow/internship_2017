@@ -6,6 +6,7 @@ from six.moves import xrange
 
 import time
 
+import numpy as np
 import tensorflow as tf
 from nets import inception_v4
 
@@ -59,7 +60,7 @@ def evaluate(dataset_dir,
             batch_size=batch_size, is_training=False)
 
         if number_of_steps is None:
-            number_of_steps = dataset.number_samples / batch_size
+            number_of_steps = int(np.ceil(dataset.num_samples / batch_size))
 
         with slim.arg_scope(inception_v4.inception_v4_arg_scope()):
             logits, endpoints = inception_v4.inception_v4(

@@ -15,15 +15,11 @@ import tensorflow as tf
 from datasets import dataset_utils
 
 
-# The number of shards per dataset split
-_NUM_SHARDS = 5
-
-
 class ImageReader(object):
 
     def __init__(self):
         self._decode_data = tf.placeholder(dtype=tf.string)
-        self._decode = tf.image.decode_png(self._decode_data, channels=3)
+        self._decode = tf.image.decode_image(self._decode_data, channels=3)
 
     def read_image_dims(self, sess, image_data):
         image = self.decode(sess, image_data)
@@ -37,7 +33,7 @@ class ImageReader(object):
         return image
 
 
-def filenames_and_classes(dataset_dir, subjects=True):
+def get_filenames_and_classes(dataset_dir, keywords=None, subjects=True):
     """Returns a list of filenames and inferred class names.
 
     Args:
@@ -47,11 +43,11 @@ def filenames_and_classes(dataset_dir, subjects=True):
         If subjects is True, the directories for classes are first
         contained in some arbitrary directories (e.g. one directory for
         each subject in the dataset)
+      keywords: filenames must containg all of these keywords
       subjects: This argument determines the structure of `dataset_dir`
 
     Returns:
-      A list of image file paths, relative to `dataset_dir` and the
-      list of class names
+      A list of image file paths and the list of class names
     """
     directories = []
     class_names = set()
@@ -61,7 +57,8 @@ def filenames_and_classes(dataset_dir, subjects=True):
         path = os.path.join(dataset_dir, filename)
         if os.path.isdir(path):
             if subjects:
-                photos, clss = filenames_and_classes(path, subjects=False)
+                photos, clss = get_filenames_and_classes(
+                    path, keywords, subjects=False)
                 photo_filenames.extend(photos)
                 class_names.update(clss)
             else:
@@ -73,13 +70,22 @@ def filenames_and_classes(dataset_dir, subjects=True):
             for filename in os.listdir(directory):
                 path = os.path.join(directory, filename)
                 name, extension = os.path.splitext(path)
-                if extension in ['.jpg', '.png']:
-                    photo_filenames.append(path)
+                if extension in ['.jpg', '.png', '.jpeg']:
+                    if keywords is None:
+                        photo_filenames.append(path)
+                    else:
+                        to_add = True
+                        for keyword in keywords:
+                            if keyword not in filename:
+                                to_add = False
+                                break
+                        if to_add:
+                            photo_filenames.append(path)
 
     return photo_filenames, sorted(list(class_names))
 
 
-def get_filenames_and_classes(dataset_dir, subjects=True):
+def train_validate_filenames_classes(dataset_dir, keywords, subjects=True):
     """Returns lists of filenames for test/validation set and
     inferred class names.
 
@@ -87,29 +93,30 @@ def get_filenames_and_classes(dataset_dir, subjects=True):
       dataset_dir: A directory contating two subdirectories 'train'
         and 'validation', for the structure of these subdirectories
         please see the function filenames_and_classes
+      keywords: filenames must containg all of these keywords
       subjects: This argument determines the structure of `dataset_dir`
 
     returns
-      A list of image file paths, relative to `dataset_dir` and the
-      list of class names
+      A list of image file paths and the list of class names
     """
     train_dir = os.path.join(dataset_dir, 'train')
     validation_dir = os.path.join(dataset_dir, 'validation')
-    train_files, train_clss = filenames_and_classes(
-        train_dir, subjects=subjects)
-    validation_files, validation_clss = filenames_and_classes(
-        validation_dir, subjects=subjects)
+    train_files, train_clss = get_filenames_and_classes(
+        train_dir, keywords, subjects=subjects)
+    validation_files, validation_clss = get_filenames_and_classes(
+        validation_dir, keywords, subjects=subjects)
     assert train_clss == validation_clss
     return train_files, validation_files, train_clss
 
 
-def _get_dataset_filename(dataset_dir, split_name, shard_id):
+def get_tfrecord_filename(split_name, tfrecord_dir, shard_id, num_shards):
     output_filename = 'data_%s_%d-of-%d.tfrecord' % (
-        split_name, shard_id, _NUM_SHARDS)
-    return os.path.join(dataset_dir, output_filename)
+        split_name, shard_id, num_shards)
+    return os.path.join(tfrecord_dir, output_filename)
 
 
-def convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
+def convert_dataset(split_name, filenames, class_names_to_ids,
+                    tfrecord_dir, num_shards=5):
     """Converts the given filenames to a TFRecord dataset.
 
     Args:
@@ -117,20 +124,21 @@ def convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
       filenames: A list of absolute paths to png or jpg images.
       class_names_to_ids: A dictionary from class names (strings) to ids
         (integers).
-      dataset_dir: The directory where the converted datasets are stored.
+      tfrecord_dir: The directory where the converted datasets are stored.
+      num_shards: The number of shards per dataset split
     """
     assert split_name in ['train', 'validation']
 
-    num_per_shard = int(math.ceil(len(filenames) / float(_NUM_SHARDS)))
+    num_per_shard = int(math.ceil(len(filenames) / float(num_shards)))
 
     with tf.Graph().as_default():
         image_reader = ImageReader()
 
-        with tf.Session('') as sess:
+        with tf.Session() as sess:
 
-            for shard_id in range(_NUM_SHARDS):
-                output_filename = _get_dataset_filename(
-                    dataset_dir, split_name, shard_id)
+            for shard_id in range(num_shards):
+                output_filename = get_tfrecord_filename(
+                    split_name, tfrecord_dir, shard_id, num_shards)
 
                 with tf.python_io.TFRecordWriter(output_filename)\
                         as tfrecord_writer:
@@ -161,19 +169,30 @@ def convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
     sys.stdout.flush()
 
 
-def run(dataset_dir, tfrecord_dir, subjects=True, mixed=False):
+def convert(dataset_dir,
+            tfrecord_dir,
+            keywords=None,
+            subjects=True,
+            mixed=False,
+            num_shards=5):
     """Runs the conversion operation.
 
     Args:
-        dataset_dir: where the data (i.e. images) is stored
-        tfrecord_dir: where to store the generated data (i.e. TFRecords)
+        dataset_dir: Where the data (i.e. images) is stored
+        tfrecord_dir: Where to store the generated data (i.e. TFRecords)
+        keywords: Filenames must contain these keywords
+        subjects: Determine directory structure, please refer to
+          get_filenames_and_classes
+        mixed: If we mix the data of the two directories train and validation
+        num_shards: The number of shards per dataset split
     """
     if not tf.gfile.Exists(tfrecord_dir):
         tf.gfile.MakeDirs(tfrecord_dir)
 
     # get filenames and classnames
     training_filenames, validation_filenames, class_names = \
-        get_filenames_and_classes(dataset_dir, subjects=subjects)
+        train_validate_filenames_classes(
+            dataset_dir, keywords, subjects=subjects)
     class_names_to_ids = dict(zip(class_names, range(len(class_names))))
 
     if mixed:
@@ -189,9 +208,9 @@ def run(dataset_dir, tfrecord_dir, subjects=True, mixed=False):
 
     # convert datasets
     convert_dataset('train', training_filenames,
-                    class_names_to_ids, tfrecord_dir)
+                    class_names_to_ids, tfrecord_dir, num_shards=num_shards)
     convert_dataset('validation', validation_filenames,
-                    class_names_to_ids, tfrecord_dir)
+                    class_names_to_ids, tfrecord_dir, num_shards=num_shards)
 
     # write the label file
     labels_to_class_names = dict(zip(range(len(class_names)), class_names))
