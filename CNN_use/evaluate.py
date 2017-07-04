@@ -10,9 +10,8 @@ import numpy as np
 import tensorflow as tf
 from nets import inception_v4
 
-import data.read_TFRecord as read_TFRecord
-from data.load_batch import load_batch
-
+import data.images.read_TFRecord as read_TFRecord
+from data.images.load_batch import load_batch
 
 slim = tf.contrib.slim
 
@@ -54,10 +53,11 @@ def evaluate(dataset_dir,
 
         tf.logging.set_verbosity(tf.logging.INFO)
 
-        dataset = read_TFRecord.get_split('validation', dataset_dir)
-        images, _, labels = load_batch(
-            dataset, height=image_size, width=image_size,
-            batch_size=batch_size, is_training=False)
+        with tf.name_scope('data_provider'):
+            dataset = read_TFRecord.get_split('validation', dataset_dir)
+            images, _, labels = load_batch(
+                dataset, height=image_size, width=image_size,
+                batch_size=batch_size, is_training=False)
 
         if number_of_steps is None:
             number_of_steps = int(np.ceil(dataset.num_samples / batch_size))

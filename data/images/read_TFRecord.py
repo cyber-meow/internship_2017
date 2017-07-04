@@ -16,10 +16,6 @@ slim = tf.contrib.slim
 
 _FILE_PATTERN = 'data_%s_*.tfrecord'
 
-
-_NUM_CLASSES = 11
-
-
 _ITEMS_TO_DESCRIPTIONS = {
     'image': 'A color image of varying size.',
     'label': 'A single integer between 0 and 10',
@@ -69,7 +65,7 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
         'image/encoded': tf.FixedLenFeature((), tf.string),
         'image/format': tf.FixedLenFeature((), tf.string),
         'image/class/label': tf.FixedLenFeature(
-          [], tf.int64, default_value=tf.zeros([], dtype=tf.int64)),
+          (), tf.int64, default_value=tf.zeros((), dtype=tf.int64)),
     }
 
     items_to_handlers = {
@@ -90,5 +86,5 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
         decoder=decoder,
         num_samples=num_samples,
         items_to_descriptions=_ITEMS_TO_DESCRIPTIONS,
-        num_classes=_NUM_CLASSES,
+        num_classes=len(labels_to_names),
         labels_to_names=labels_to_names)

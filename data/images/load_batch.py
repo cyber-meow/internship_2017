@@ -5,7 +5,6 @@ from __future__ import print_function
 import tensorflow as tf
 from preprocessing import inception_preprocessing
 
-
 slim = tf.contrib.slim
 
 

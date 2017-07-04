@@ -9,7 +9,6 @@ from datasets import dataset_utils
 from nets import inception_v4
 from preprocessing import inception_preprocessing
 
-
 slim = tf.contrib.slim
 
 

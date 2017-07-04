@@ -11,8 +11,8 @@ import numpy as np
 import tensorflow as tf
 from nets import inception_v4
 
-import data.read_TFRecord as read_TFRecord
-from data.load_batch import load_batch
+import data.images.read_TFRecord as read_TFRecord
+from data.images.load_batch import load_batch
 
 
 slim = tf.contrib.slim
@@ -83,7 +83,10 @@ def fine_tune(dataset_dir,
               batch_size=24,
               save_summaries_steps=5,
               do_test=False,
-              trainable_scopes=None):
+              trainable_scopes=None,
+              initial_learning_rate=0.005,
+              lr_decay_steps=100,
+              lr_decay_rate=0.8):
     """Fine tune a pre-trained model using customized dataset.
 
     Args:
@@ -152,10 +155,10 @@ def fine_tune(dataset_dir,
 
         # Exponentially decaying learning rate
         learning_rate = tf.train.exponential_decay(
-            learning_rate=0.005,
+            learning_rate=initial_learning_rate,
             global_step=global_step,
-            decay_steps=400,
-            decay_rate=0.8, staircase=True)
+            decay_steps=lr_decay_steps,
+            decay_rate=lr_decay_rate, staircase=True)
 
         # Specify the optimizer and create the train op:
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -192,7 +195,7 @@ def fine_tune(dataset_dir,
                              last_moving_mean)
         tf.summary.histogram('batch_norm/last_layer/moving_variance',
                              last_moving_variance)
-        tf.summary.scalar('losses/total_loss_train', total_loss)
+        tf.summary.scalar('losses/train/total_loss', total_loss)
         tf.summary.scalar('accuracy/train/streaming', accuracy)
         tf.summary.image('train', images, max_outputs=6)
         summary_op = tf.summary.merge_all()
@@ -200,7 +203,7 @@ def fine_tune(dataset_dir,
         # Summaries for the test part
         ac_test_summary = tf.summary.scalar('accuracy/test', accuracy_test)
         ls_test_summary = tf.summary.scalar(
-            'losses/total_loss_test', total_loss)
+            'losses/test/total_loss', total_loss)
         imgs_test_summary = tf.summary.image(
             'test', images, max_outputs=6)
         test_summary_op = tf.summary.merge(
