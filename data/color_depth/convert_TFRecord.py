@@ -81,7 +81,7 @@ def get_fpairs_and_classes(dataset_dir, subjects=True):
                         else:
                             depth_filenames.add(filename)
 
-    return photo_paths, sorted(list(class_names))
+    return photo_paths, class_names
 
 
 def train_validate_filename_pairs_classes(dataset_dir, subjects=True):
@@ -103,8 +103,10 @@ def train_validate_filename_pairs_classes(dataset_dir, subjects=True):
         train_dir, subjects=subjects)
     validation_files, validation_clss = get_fpairs_and_classes(
         validation_dir, subjects=subjects)
-    assert train_clss == validation_clss
-    return train_files, validation_files, train_clss
+    if train_clss != validation_clss:
+        print('Warning: different class names for training and validation')
+    return (train_files, validation_files,
+            sorted(list(train_clss | validation_clss)))
 
 
 def get_tfrecord_filename(split_name, tfrecord_dir, shard_id, num_shards):
@@ -170,7 +172,8 @@ def convert_dataset(split_name, filename_pairs, class_names_to_ids,
 def convert_color_depth(dataset_dir,
                         tfrecord_dir,
                         subjects=True,
-                        mixed=False,
+                        sep='user',
+                        num_val_clss=2,
                         num_shards=5):
     """Runs the conversion operation.
 
@@ -180,7 +183,10 @@ def convert_color_depth(dataset_dir,
         keywords: Filenames must contain these keywords
         subjects: Determine directory structure, please refer to
           get_filenames_and_classes
-        mixed: If we mix the data of the two directories train and validation
+        sep: The way to separate train and validation data,
+          'user, 'mixed' or 'class'
+        num_val_clss: Used only when sep=='class', the number of classes
+          in validation set
         num_shards: The number of shards per dataset split
     """
     if not tf.gfile.Exists(tfrecord_dir):
@@ -191,16 +197,31 @@ def convert_color_depth(dataset_dir,
         train_validate_filename_pairs_classes(dataset_dir, subjects=subjects)
     class_names_to_ids = dict(zip(class_names, range(len(class_names))))
 
-    if mixed:
+    assert sep in ['user', 'mixed', 'class']
+
+    if sep == 'user':
+        random.shuffle(training_filename_pairs)
+        random.shuffle(validation_filename_pairs)
+
+    elif sep == 'mixed':
         num_train_ex = len(training_filename_pairs)
         all_pairs = training_filename_pairs + validation_filename_pairs
         random.shuffle(all_pairs)
         training_filename_pairs = all_pairs[:num_train_ex]
         validation_filename_pairs = all_pairs[num_train_ex:]
 
-    else:
-        random.shuffle(training_filename_pairs)
-        random.shuffle(validation_filename_pairs)
+    elif sep == 'class':
+        all_pairs = training_filename_pairs + validation_filename_pairs
+        random.shuffle(all_pairs)
+        training_filename_pairs = []
+        validation_filename_pairs = []
+        for fpair in all_pairs:
+            cls = os.path.basename(os.path.dirname(fpair[0]))
+            if cls in class_names[:-num_val_clss]:
+                training_filename_pairs.append(fpair)
+            else:
+                assert cls in class_names[-num_val_clss:]
+                validation_filename_pairs.append(fpair)
 
     # convert datasets
     convert_dataset('train', training_filename_pairs,

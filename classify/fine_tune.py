@@ -13,6 +13,7 @@ from nets import inception_v4
 
 import data.images.read_TFRecord as read_TFRecord
 from data.images.load_batch import load_batch
+from nets_base import nets_arg_scope
 
 
 slim = tf.contrib.slim
@@ -117,16 +118,16 @@ def fine_tune(dataset_dir,
             dataset = read_TFRecord.get_split('train', dataset_dir)
 
             # Don't crop images
-            images, _, labels = load_batch(
+            images, labels = load_batch(
                 dataset, height=image_size, width=image_size,
-                batch_size=batch_size, is_training=False)
+                batch_size=batch_size)
 
             # Test propose
             dataset_test = read_TFRecord.get_split('validation', dataset_dir)
 
-            images_test, _, labels_test = load_batch(
+            images_test, labels_test = load_batch(
                 dataset_test, height=image_size, width=image_size,
-                batch_size=batch_size, is_training=False)
+                batch_size=batch_size)
 
         if number_of_steps is None:
             number_of_steps = int(np.ceil(
@@ -139,8 +140,7 @@ def fine_tune(dataset_dir,
 
         # Create the model, use the default arg scope to configure the
         # batch norm parameters
-        with slim.arg_scope(
-                inception_v4.inception_v4_arg_scope(batch_norm_decay=0.9)):
+        with slim.arg_scope(nets_arg_scope()):
             logits, end_points = inception_v4.inception_v4(
                 images, num_classes=dataset.num_classes,
                 is_training=training)

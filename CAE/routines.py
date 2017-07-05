@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 from six.moves import xrange
+import os
 import time
 
 import numpy as np
@@ -12,6 +13,7 @@ import tensorflow as tf
 
 import data.images.read_TFRecord as read_TFRecord
 from data.images.load_batch import load_batch
+from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
 
 slim = tf.contrib.slim
@@ -42,6 +44,7 @@ def train_CAE(dataset_dir,
               number_of_steps=None,
               number_of_epochs=5,
               batch_size=24,
+              init_fn=None,
               save_summaries_step=5,
               dropout_position='fc',
               dropout_keep_prob=0.5):
@@ -58,9 +61,9 @@ def train_CAE(dataset_dir,
             dataset = read_TFRecord.get_split('train', dataset_dir)
 
             # Don't crop images
-            images_original, _, _ = load_batch(
+            images_original, _ = load_batch(
                 dataset, height=image_size, width=image_size,
-                batch_size=batch_size, is_training=False)
+                batch_size=batch_size)
 
             images_corrupted = slim.dropout(
                 images_original, keep_prob=dropout_keep_prob, scope='Dropout')
@@ -104,7 +107,8 @@ def train_CAE(dataset_dir,
         tf.summary.image('reconstruction', reconstruction)
         summary_op = tf.summary.merge_all()
 
-        sv = tf.train.Supervisor(logdir=log_dir, summary_op=None)
+        sv = tf.train.Supervisor(logdir=log_dir, summary_op=None,
+                                 init_fn=init_fn)
 
         with sv.managed_session() as sess:
             for step in xrange(number_of_steps):
@@ -153,8 +157,8 @@ def evaluate_CAE(dataset_dir,
         if number_of_steps is None:
             number_of_steps = int(np.ceil(dataset.num_samples / batch_size))
 
-        with slim.arg_scope(nets_arg_scope()):
-            reconstruction, _ = CAE_structure(images, is_training=False)
+        with slim.arg_scope(nets_arg_scope(is_training=True)):
+            reconstruction, _ = CAE_structure(images)
 
         tf.losses.mean_squared_error(reconstruction, images_original)
         total_loss = tf.losses.get_total_loss()
@@ -192,3 +196,45 @@ def evaluate_CAE(dataset_dir,
                     fw.add_summary(summaries, global_step=global_step_count)
 
                 tf.logging.info('Finished evaluation.')
+
+
+def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
+
+    image_size = 299
+
+    with tf.Graph().as_default():
+
+        image_string = tf.gfile.FastGFile(image_path, 'r').read()
+        _, image_ext = os.path.splitext(image_path)
+
+        if image_ext in ['.jpg', '.jpeg']:
+            image = tf.image.decode_jpg(image_string, channels=3)
+        if image_ext == '.png':
+            image = tf.image.decode_png(image_string, channels=3)
+        else:
+            raise ValueError('image format not supported, must be jpg or png')
+
+        processed_image = inception_preprocessing.preprocess_image(
+            image, image_size, image_size, is_training=False)
+        processed_images = tf.expand_dims(processed_image, 0)
+
+        with slim.arg_scope(nets_arg_scope(is_training=False)):
+            reconstructions, _ = CAE_structure(processed_images)
+        reconstruction = tf.squeeze(reconstructions)
+
+        tf.summary.image('input', processed_images)
+        tf.summary.image('reconstruction', reconstructions)
+        summary_op = tf.summary.merge_all()
+
+        if log_dir is not None:
+            fw = tf.summary.FileWriter(log_dir)
+
+        checkpoint_path = tf.train.latest_checkpoint(train_dir)
+        saver = tf.train.Saver(tf.model_variables())
+
+        with tf.Session() as sess:
+            saver.restore(sess, checkpoint_path)
+            reconstruction, summaries = sess.run([reconstruction, summary_op])
+            if log_dir is not None:
+                fw.add_summary(summaries)
+            return reconstruction

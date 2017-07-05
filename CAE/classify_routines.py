@@ -13,6 +13,7 @@ import tensorflow as tf
 import data.images.read_TFRecord as read_TFRecord
 from data.images.load_batch import load_batch
 from nets_base.arg_scope import nets_arg_scope
+from classify.evaluate import classify_evaluate_CNN
 
 slim = tf.contrib.slim
 
@@ -61,14 +62,14 @@ def train_classify(dataset_dir,
 
         with tf.name_scope('data_provider'):
             dataset = read_TFRecord.get_split('train', dataset_dir)
-            images_train, _, labels_train = load_batch(
+            images_train, labels_train = load_batch(
                 dataset, height=image_size, width=image_size,
-                batch_size=batch_size, is_training=False)
+                batch_size=batch_size)
 
             dataset_test = read_TFRecord.get_split('validation', dataset_dir)
-            images_test, _, labels_test = load_batch(
+            images_test, labels_test = load_batch(
                 dataset_test, height=image_size, width=image_size,
-                batch_size=batch_size, is_training=False)
+                batch_size=batch_size)
 
         training = tf.placeholder(tf.bool, shape=(), name='training')
         images = tf.cond(training, lambda: images_train, lambda: images_test)
@@ -78,21 +79,20 @@ def train_classify(dataset_dir,
             number_of_steps = int(np.ceil(
                 dataset.num_samples * number_of_epochs / batch_size))
 
-        if CAE_structure is not None:
-            with slim.arg_scope(nets_arg_scope()):
+        with slim.arg_scope(nets_arg_scope(is_training=training)):
+            if CAE_structure is not None:
                 net, _ = CAE_structure(
-                    images, dropout_keep_prob=1,
-                    is_training=training, final_endpoint=endpoint)
-        else:
-            net = images
+                    images, dropout_keep_prob=1, final_endpoint=endpoint)
+            else:
+                net = images
 
-        representation_shape = tf.shape(net)
+            representation_shape = tf.shape(net)
 
-        net = slim.dropout(net, dropout_keep_prob,
-                           scope='Dropout_PreLogits', is_training=training)
-        net = slim.flatten(net, scope='PreLogitsFlatten')
-        logits = slim.fully_connected(
-            net, dataset.num_classes, activation_fn=None, scope='Logits')
+            net = slim.dropout(net, dropout_keep_prob,
+                               scope='PreLogitsDropout')
+            net = slim.flatten(net, scope='PreLogitsFlatten')
+            logits = slim.fully_connected(
+                net, dataset.num_classes, activation_fn=None, scope='Logits')
 
         one_hot_labels = tf.one_hot(labels, dataset.num_classes)
         tf.losses.softmax_cross_entropy(one_hot_labels, logits)
@@ -192,3 +192,36 @@ def train_classify(dataset_dir,
             tf.logging.info('Final Accuracy: %s', sess.run(accuracy))
             tf.logging.info('Saving model to disk now.')
             sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
+
+
+class classify_evaluate_CAE(classify_evaluate_CNN):
+
+    def __init__(self, CAE_structure, endpoint, image_size=299):
+        self._image_size = image_size
+        self.CAE_structure = CAE_structure
+        self.endpoint = endpoint
+
+    def compute_logits(self, inputs, num_classes):
+        if self.CAE_structure is not None:
+            net, _ = self.CAE_structure(
+                inputs, final_endpoint=self.endpoint)
+        else:
+            net = inputs
+        net = slim.flatten(net, scope='PreLogitsFlatten')
+        logits = slim.fully_connected(
+            net, num_classes, activation_fn=None, scope='Logits')
+        return logits
+
+
+def classify_evaluate_CAE_fn(CAE_structure,
+                             tfrecord_dir,
+                             checkpoint_dirs,
+                             log_dir,
+                             endpoint='Middle',
+                             **kwargs):
+    classify_evaluate = classify_evaluate_CAE(CAE_structure, endpoint)
+    if 'image_size' in kwargs:
+        classify_evaluate._image_size = kwargs['image_size']
+        del kwargs['image_size']
+    classify_evaluate.evaluate(
+        tfrecord_dir, checkpoint_dirs, log_dir, **kwargs)

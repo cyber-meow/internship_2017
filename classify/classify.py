@@ -7,7 +7,7 @@ import os
 import tensorflow as tf
 from datasets import dataset_utils
 from nets import inception_v4
-from preprocessing import inception_preprocessing
+from nets_base import inception_preprocessing
 
 slim = tf.contrib.slim
 
@@ -21,7 +21,7 @@ def classify_image(image_path, train_dir, label_dir):
         image_string = tf.gfile.FastGFile(image_path, 'r').read()
         _, image_ext = os.path.splitext(image_path)
 
-        if image_ext == '.jpg':
+        if image_ext in ['.jpg', '.jpeg']:
             image = tf.image.decode_jpg(image_string, channels=3)
         if image_ext == '.png':
             image = tf.image.decode_png(image_string, channels=3)
@@ -48,9 +48,7 @@ def classify_image(image_path, train_dir, label_dir):
         with tf.Session() as sess:
             saver.restore(sess, checkpoint_path)
 
-            with slim.queues.QueueRunners(sess):
-                probabilities = sess.run(probabilities)
-
+            probabilities = sess.run(probabilities)
             probabilities = probabilities[0, 0:]
             sorted_inds = [i[0] for i in sorted(
                 enumerate(-probabilities), key=lambda x:x[1])]

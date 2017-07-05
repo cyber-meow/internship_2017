@@ -172,7 +172,8 @@ def convert(dataset_dir,
             tfrecord_dir,
             keywords=None,
             subjects=True,
-            mixed=False,
+            sep='user',
+            num_val_clss=2,
             num_shards=5):
     """Runs the conversion operation.
 
@@ -182,7 +183,10 @@ def convert(dataset_dir,
         keywords: Filenames must contain these keywords
         subjects: Determine directory structure, please refer to
           get_filenames_and_classes
-        mixed: If we mix the data of the two directories train and validation
+        sep: The way to separate train and validation data,
+          'user, 'mixed' or 'class'
+        num_val_clss: Used only when sep=='class', the number of classes
+          in validation set
         num_shards: The number of shards per dataset split
     """
     if not tf.gfile.Exists(tfrecord_dir):
@@ -194,16 +198,31 @@ def convert(dataset_dir,
             dataset_dir, keywords, subjects=subjects)
     class_names_to_ids = dict(zip(class_names, range(len(class_names))))
 
-    if mixed:
+    assert sep in ['user', 'mixed', 'class']
+
+    if sep == 'user':
+        random.shuffle(training_filenames)
+        random.shuffle(validation_filenames)
+
+    elif sep == 'mixed':
         num_train_ex = len(training_filenames)
         all_filenames = training_filenames + validation_filenames
         random.shuffle(all_filenames)
         training_filenames = all_filenames[:num_train_ex]
         validation_filenames = all_filenames[num_train_ex:]
 
-    else:
-        random.shuffle(training_filenames)
-        random.shuffle(validation_filenames)
+    elif sep == 'class':
+        all_filenames = training_filenames + validation_filenames
+        random.shuffle(all_filenames)
+        training_filenames = []
+        validation_filenames = []
+        for filename in all_filenames:
+            cls = os.path.basename(os.path.dirname(filename))
+            if cls in class_names[:-num_val_clss]:
+                training_filenames.append(filename)
+            else:
+                assert cls in class_names[-num_val_clss:]
+                validation_filenames.append(filename)
 
     # convert datasets
     convert_dataset('train', training_filenames,
