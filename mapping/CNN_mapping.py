@@ -29,9 +29,9 @@ def get_init_fn(checkpoints_dir_color, checkpoints_dir_depth):
     variables_depth = {}
 
     for var in tf.model_variables():
-        if var.op.name.startswith('color'):
+        if var.op.name.startswith('Color'):
             variables_color[var.op.name[6:]] = var
-        if var.op.name.startswith('depth'):
+        if var.op.name.startswith('Depth'):
             variables_depth[var.op.name[6:]] = var
 
     saver_color = tf.train.Saver(variables_color)
@@ -41,7 +41,6 @@ def get_init_fn(checkpoints_dir_color, checkpoints_dir_depth):
         checkpoint_path_color = tf.train.latest_checkpoint(
             checkpoints_dir_color)
     else:
-        raise IndexError
         checkpoint_path_color = os.path.join(
             checkpoints_dir_color, 'inception_v4.ckpt')
 

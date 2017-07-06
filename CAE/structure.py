@@ -4,7 +4,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import tensorflow as tf
 
 from nets import inception_v4
@@ -123,17 +122,3 @@ def CAE_inception(inputs,
                 return net, end_points
 
             raise ValueError('Unknown final endpoint %s' % final_endpoint)
-
-
-def get_init_fn_inception(checkpoint_dirs):
-    assert len(checkpoint_dirs) == 1
-    checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
-    if checkpoint_path is None:
-        checkpoint_path = os.path.join(checkpoint_dirs[0], 'inception_v4.ckpt')
-    variables_to_restore = tf.get_collection(
-        tf.GraphKeys.MODEL_VARIABLES, scope='InceptionV4')
-    saver = tf.train.Saver(variables_to_restore)
-
-    def restore(sess):
-        saver.restore(sess, checkpoint_path)
-    return restore

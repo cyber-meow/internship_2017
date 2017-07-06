@@ -24,7 +24,7 @@ class TrainClassifyCAE(TrainClassify):
         return ['Logits']
 
     def compute_logits(self, inputs, dropout_keep_prob=0.8):
-        num_classes = self.datasets['train'].num_classes
+        num_classes = self.dataset_train.num_classes
         if self.CAE_structure is not None:
             net, _ = self.CAE_structure(
                 inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
@@ -91,11 +91,11 @@ def train_classify_CAE(CAE_structure,
                        number_of_steps=None,
                        endpoint='Middle',
                        **kwargs):
-    classify_train = TrainClassifyCAE(CAE_structure, endpoint)
+    train_classify = TrainClassifyCAE(CAE_structure, endpoint)
     for key in kwargs:
-        if hasattr(classify_train, key):
-            setattr(classify_train, key, kwargs[key])
-            del classify_train[key]
-    classify_train.train(
+        if hasattr(train_classify, key):
+            setattr(train_classify, key, kwargs[key])
+            del kwargs[key]
+    train_classify.train(
         tfrecord_dir, checkpoint_dirs, log_dir,
         number_of_steps=number_of_steps, **kwargs)

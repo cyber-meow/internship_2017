@@ -15,126 +15,102 @@ import data.images.read_TFRecord as read_TFRecord
 from data.images.load_batch import load_batch
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
+from routines.train import Train
 
 slim = tf.contrib.slim
 
 
-def train_step(sess, train_op, global_step, *args):
+class TrainCAE(Train):
 
-    tensors_to_run = [train_op, global_step]
-    tensors_to_run.extend(args)
+    def __init__(self, CAE_structure, image_size=299,
+                 initial_learning_rate=0.01, **kwargs):
+        super(TrainCAE, self).__init__(**kwargs)
+        self.initial_learning_rate = initial_learning_rate
+        self.image_size = image_size
+        self.CAE_structure = CAE_structure
 
-    start_time = time.time()
-    tensor_values = sess.run(tensors_to_run)
-    time_elapsed = time.time() - start_time
+    def get_data(self, tfrecord_dir, batch_size):
+        dataset = read_TFRecord.get_split('train', tfrecord_dir)
+        self.images_original, _ = load_batch(
+            dataset, height=self.image_size, width=self.image_size,
+            batch_size=batch_size)
+        return dataset
 
-    total_loss = tensor_values[0]
-    global_step_count = tensor_values[1]
+    def compute(self, **kwargs):
+        self.compute_reconstruction(self.images_original, **kwargs)
 
-    tf.logging.info(
-        'global step %s: loss: %.4f (%.2f sec/step)',
-        global_step_count, total_loss, time_elapsed)
+    def compute_reconstruction(self, inputs, dropout_position='fc',
+                               dropout_keep_prob=0.5):
+        images_corrupted = slim.dropout(
+            inputs, keep_prob=dropout_keep_prob, scope='Input/Dropout')
 
-    return tensor_values
+        assert dropout_position in ['fc', 'input']
+        dropout_input = dropout_position == 'input'
+        self.images = images_corrupted if dropout_input else inputs
+
+        if dropout_input:
+            dropout_keep_prob = 1
+
+        self.reconstructions, _ = self.CAE_structure(
+            self.images, dropout_keep_prob=dropout_keep_prob)
+
+    def get_total_loss(self):
+        self.reconstruction_loss = tf.losses.mean_squared_error(
+            self.reconstructions, self.images_original)
+        self.total_loss = tf.losses.get_total_loss()
+        return self.total_loss
+
+    def get_metric_op(self):
+        self.metric_op = None
+        return self.metric_op
+
+    def get_summary_op(self):
+        tf.summary.scalar(
+            'losses/reconstruction', self.reconstruction_loss)
+        tf.summary.scalar('losses/total', self.total_loss)
+        tf.summary.image('input', self.images)
+        tf.summary.image('reconstruction', self.reconstructions)
+        self.summary_op = tf.summary.merge_all()
+
+    def get_init_fn(self, checkpoint_dirs):
+        return None
+
+    def normal_log_info(self, sess):
+        self.loss, _, summaries = self.train_step(
+            sess, self.train_op, self.sv.global_step, self.summary_op)
+        return summaries
+
+    def final_log_info(self, sess):
+        tf.logging.info('Finished training. Final Loss: %s', self.loss)
+        tf.logging.info('Saving model to disk now.')
 
 
-def train_CAE(tfrecord_dir,
-              log_dir,
-              CAE_structure,
-              number_of_steps=None,
-              number_of_epochs=5,
-              batch_size=24,
-              checkpoint_dirs=None,
-              get_init_fn=None,
-              save_summaries_step=5,
-              dropout_position='fc',
-              dropout_keep_prob=0.5):
+class TrainInceptionCAE(TrainCAE):
 
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
+    def get_init_fn(self, checkpoint_dirs):
+        assert len(checkpoint_dirs) == 1
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+        if checkpoint_path is None:
+            checkpoint_path = os.path.join(
+                checkpoint_dirs[0], 'inception_v4.ckpt')
+        variables_to_restore = tf.get_collection(
+            tf.GraphKeys.MODEL_VARIABLES, scope='InceptionV4')
+        saver = tf.train.Saver(variables_to_restore)
 
-    if (checkpoint_dirs is not None and
-            not isinstance(checkpoint_dirs, (list, tuple))):
-        checkpoint_dirs = [checkpoint_dirs]
+        def restore(sess):
+            saver.restore(sess, checkpoint_path)
+        return restore
 
-    image_size = 299
 
-    with tf.Graph().as_default():
-        tf.logging.set_verbosity(tf.logging.INFO)
-
-        with tf.name_scope('Data_provider'):
-            dataset = read_TFRecord.get_split('train', tfrecord_dir)
-
-            # Don't crop images
-            images_original, _ = load_batch(
-                dataset, height=image_size, width=image_size,
-                batch_size=batch_size)
-
-            images_corrupted = slim.dropout(
-                images_original, keep_prob=dropout_keep_prob, scope='Dropout')
-
-            assert dropout_position in ['fc', 'input']
-            dropout_input = dropout_position == 'input'
-            images = images_corrupted if dropout_input else images_original
-
-            if dropout_input:
-                dropout_keep_prob = 1
-
-        if number_of_steps is None:
-            number_of_steps = int(np.ceil(
-                dataset.num_samples * number_of_epochs / batch_size))
-
-        # Create the model, use the default arg scope to configure the
-        # batch norm parameters
-        with slim.arg_scope(nets_arg_scope()):
-            reconstruction, _ = CAE_structure(
-                images, dropout_keep_prob=dropout_keep_prob)
-
-        reconstruction_loss = tf.losses.mean_squared_error(
-            reconstruction, images_original)
-        total_loss = tf.losses.get_total_loss()
-
-        # Create the global step for monitoring training
-        global_step = tf.train.get_or_create_global_step()
-
-        # Exponentially decaying learning rate
-        learning_rate = tf.train.exponential_decay(
-            learning_rate=0.01,
-            global_step=global_step,
-            decay_steps=100,
-            decay_rate=0.8, staircase=True)
-
-        # Optimizer and train op
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-        train_op = slim.learning.create_train_op(total_loss, optimizer)
-
-        tf.summary.scalar('losses/reconstruction_loss', reconstruction_loss)
-        tf.summary.scalar('losses/total_loss', total_loss)
-        tf.summary.image('input', images)
-        tf.summary.image('reconstruction', reconstruction)
-        summary_op = tf.summary.merge_all()
-
-        if get_init_fn is not None:
-            assert checkpoint_dirs is not None
-            init_fn = get_init_fn(checkpoint_dirs)
-        else:
-            init_fn = None
-
-        sv = tf.train.Supervisor(logdir=log_dir, summary_op=None,
-                                 init_fn=init_fn)
-
-        with sv.managed_session() as sess:
-            for step in xrange(number_of_steps):
-                if (step+1) % save_summaries_step == 0:
-                    loss, _, summaries = train_step(
-                        sess, train_op, sv.global_step, summary_op)
-                    sv.summary_computed(sess, summaries)
-                else:
-                    loss = train_step(sess, train_op, sv.global_step)[0]
-
-            tf.logging.info('Finished training. Final Loss: %s', loss)
-            tf.logging.info('Saving model to disk now.')
-            sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
+def train_CAE(CAE_structure, tfrecord_dir, log_dir,
+              number_of_steps=None, **kwargs):
+    train_CAE = TrainCAE(CAE_structure)
+    for key in kwargs:
+        if hasattr(train_CAE, key):
+            setattr(train_CAE, key, kwargs[key])
+            del kwargs[key]
+    train_CAE.train(tfrecord_dir, None, log_dir,
+                    number_of_steps=number_of_steps, **kwargs)
 
 
 def evaluate_CAE(tfrecord_dir,
