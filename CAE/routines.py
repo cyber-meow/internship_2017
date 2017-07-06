@@ -38,13 +38,14 @@ def train_step(sess, train_op, global_step, *args):
     return tensor_values
 
 
-def train_CAE(dataset_dir,
+def train_CAE(tfrecord_dir,
               log_dir,
               CAE_structure,
               number_of_steps=None,
               number_of_epochs=5,
               batch_size=24,
-              init_fn=None,
+              checkpoint_dirs=None,
+              get_init_fn=None,
               save_summaries_step=5,
               dropout_position='fc',
               dropout_keep_prob=0.5):
@@ -52,13 +53,17 @@ def train_CAE(dataset_dir,
     if not tf.gfile.Exists(log_dir):
         tf.gfile.MakeDirs(log_dir)
 
+    if (checkpoint_dirs is not None and
+            not isinstance(checkpoint_dirs, (list, tuple))):
+        checkpoint_dirs = [checkpoint_dirs]
+
     image_size = 299
 
     with tf.Graph().as_default():
         tf.logging.set_verbosity(tf.logging.INFO)
 
-        with tf.name_scope('data_provider'):
-            dataset = read_TFRecord.get_split('train', dataset_dir)
+        with tf.name_scope('Data_provider'):
+            dataset = read_TFRecord.get_split('train', tfrecord_dir)
 
             # Don't crop images
             images_original, _ = load_batch(
@@ -85,7 +90,8 @@ def train_CAE(dataset_dir,
             reconstruction, _ = CAE_structure(
                 images, dropout_keep_prob=dropout_keep_prob)
 
-        tf.losses.mean_squared_error(reconstruction, images_original)
+        reconstruction_loss = tf.losses.mean_squared_error(
+            reconstruction, images_original)
         total_loss = tf.losses.get_total_loss()
 
         # Create the global step for monitoring training
@@ -95,17 +101,24 @@ def train_CAE(dataset_dir,
         learning_rate = tf.train.exponential_decay(
             learning_rate=0.01,
             global_step=global_step,
-            decay_steps=200,
+            decay_steps=100,
             decay_rate=0.8, staircase=True)
 
         # Optimizer and train op
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         train_op = slim.learning.create_train_op(total_loss, optimizer)
 
+        tf.summary.scalar('losses/reconstruction_loss', reconstruction_loss)
         tf.summary.scalar('losses/total_loss', total_loss)
         tf.summary.image('input', images)
         tf.summary.image('reconstruction', reconstruction)
         summary_op = tf.summary.merge_all()
+
+        if get_init_fn is not None:
+            assert checkpoint_dirs is not None
+            init_fn = get_init_fn(checkpoint_dirs)
+        else:
+            init_fn = None
 
         sv = tf.train.Supervisor(logdir=log_dir, summary_op=None,
                                  init_fn=init_fn)
@@ -124,7 +137,7 @@ def train_CAE(dataset_dir,
             sv.saver.save(sess, sv.save_path, global_step=sv.global_step)
 
 
-def evaluate_CAE(dataset_dir,
+def evaluate_CAE(tfrecord_dir,
                  train_dir,
                  log_dir,
                  CAE_structure,
@@ -143,7 +156,7 @@ def evaluate_CAE(dataset_dir,
         tf.logging.set_verbosity(tf.logging.INFO)
 
         with tf.name_scope('data_provider'):
-            dataset = read_TFRecord.get_split('validation', dataset_dir)
+            dataset = read_TFRecord.get_split('validation', tfrecord_dir)
 
             images_original, _, labels = load_batch(
                 dataset, height=image_size, width=image_size,

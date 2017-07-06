@@ -110,7 +110,7 @@ def train_mapping(tfrecord_dir,
     with tf.Graph().as_default():
         tf.logging.set_verbosity(tf.logging.INFO)
 
-        with tf.name_scope('data_provider'):
+        with tf.name_scope('Data_provider'):
             dataset = get_split_color_depth('train', tfrecord_dir)
             images_color_train, images_depth_train, _ = \
                 load_batch_color_depth(
@@ -134,11 +134,11 @@ def train_mapping(tfrecord_dir,
                 dataset.num_samples * number_of_epochs / batch_size))
 
         with slim.arg_scope(nets_arg_scope(is_training=training)):
-            with tf.variable_scope('color', values=[images_color]):
+            with tf.variable_scope('Color', values=[images_color]):
                 net_color, _ = inception_v4.inception_v4_base(images_color)
                 net_color = inception_feature(net_color)
 
-            with tf.variable_scope('depth', values=[images_depth]):
+            with tf.variable_scope('Depth', values=[images_depth]):
                 net_depth, _ = inception_v4.inception_v4_base(images_depth)
                 net_depth = inception_feature(net_depth)
 

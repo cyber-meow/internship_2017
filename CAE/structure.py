@@ -4,6 +4,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import tensorflow as tf
 
 from nets import inception_v4
@@ -79,7 +80,7 @@ def convolutional_autoencoder_6layer(inputs,
 
 
 def CAE_inception(inputs,
-                  final_endpoint='Fianl',
+                  final_endpoint='Final',
                   dropout_keep_prob=0.5,
                   scope=None):
 
@@ -87,7 +88,7 @@ def CAE_inception(inputs,
         inputs, final_endpoint='Mixed_5a')
 
     end_points['Middle'] = net
-    if final_endpoint == 'Final':
+    if final_endpoint == 'Middle':
         return net, end_points
 
     with tf.variable_scope(scope, 'CAE', [inputs]):
@@ -122,3 +123,17 @@ def CAE_inception(inputs,
                 return net, end_points
 
             raise ValueError('Unknown final endpoint %s' % final_endpoint)
+
+
+def get_init_fn_inception(checkpoint_dirs):
+    assert len(checkpoint_dirs) == 1
+    checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+    if checkpoint_path is None:
+        checkpoint_path = os.path.join(checkpoint_dirs[0], 'inception_v4.ckpt')
+    variables_to_restore = tf.get_collection(
+        tf.GraphKeys.MODEL_VARIABLES, scope='InceptionV4')
+    saver = tf.train.Saver(variables_to_restore)
+
+    def restore(sess):
+        saver.restore(sess, checkpoint_path)
+    return restore

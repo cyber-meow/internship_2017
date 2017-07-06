@@ -30,11 +30,11 @@ class classify_evaluate(object):
         return self._image_size
 
     @abc.abstractmethod
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, tfrecord_dir, split_name, batch_size):
         pass
 
     @abc.abstractmethod
-    def compute_logits(self, inputs):
+    def compute_logits(self, inputs, num_classes):
         pass
 
     @abc.abstractmethod
@@ -144,7 +144,7 @@ class classify_evaluate(object):
                     tf.logging.info('Finished evaluation.')
 
 
-class classify_evaluate_CNN(classify_evaluate):
+class classify_evaluate_inception(classify_evaluate):
 
     def get_data(self, tfrecord_dir, split_name, batch_size):
         dataset = read_TFRecord.get_split(split_name, tfrecord_dir)
@@ -165,4 +165,4 @@ class classify_evaluate_CNN(classify_evaluate):
         saver.restore(sess, checkpoint_path)
 
 
-classify_evaluate_CNN_fn = classify_evaluate_CNN().evaluate
+classify_evaluate_inception_fn = classify_evaluate_inception().evaluate

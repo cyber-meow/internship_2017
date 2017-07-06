@@ -7,12 +7,12 @@ from __future__ import print_function
 import tensorflow as tf
 from nets import inception_v4
 
-from classify.evaluate import classify_evaluate_CNN
+from classify.evaluate import classify_evaluate_inception
 
 slim = tf.contrib.slim
 
 
-class classify_evaluate_mapping_CNN(classify_evaluate_CNN):
+class classify_evaluate_mapping_inception(classify_evaluate_inception):
 
     @staticmethod
     def inception_feature(net):
@@ -66,4 +66,5 @@ class classify_evaluate_mapping_CNN(classify_evaluate_CNN):
         saver_classify.restore(sess, checkpoint_path_classify)
 
 
-classify_evaluate_mapping_CNN_fn = classify_evaluate_CNN().evaluate
+classify_evaluate_mapping_inception_fn = \
+    classify_evaluate_mapping_inception().evaluate
