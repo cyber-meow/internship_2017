@@ -105,7 +105,7 @@ class TrainInceptionCAE(TrainCAE):
 def train_CAE(CAE_structure, tfrecord_dir, log_dir,
               number_of_steps=None, **kwargs):
     train_CAE = TrainCAE(CAE_structure)
-    for key in kwargs:
+    for key in kwargs.copy():
         if hasattr(train_CAE, key):
             setattr(train_CAE, key, kwargs[key])
             del kwargs[key]
@@ -134,9 +134,9 @@ def evaluate_CAE(tfrecord_dir,
         with tf.name_scope('data_provider'):
             dataset = read_TFRecord.get_split('validation', tfrecord_dir)
 
-            images_original, _, labels = load_batch(
+            images_original, labels = load_batch(
                 dataset, height=image_size, width=image_size,
-                batch_size=batch_size, is_training=False)
+                batch_size=batch_size)
 
             images_corrupted = slim.dropout(
                 images_original, keep_prob=dropout_keep_prob, scope='Dropout')
@@ -146,7 +146,7 @@ def evaluate_CAE(tfrecord_dir,
         if number_of_steps is None:
             number_of_steps = int(np.ceil(dataset.num_samples / batch_size))
 
-        with slim.arg_scope(nets_arg_scope(is_training=True)):
+        with slim.arg_scope(nets_arg_scope(is_training=False)):
             reconstruction, _ = CAE_structure(images)
 
         tf.losses.mean_squared_error(reconstruction, images_original)
