@@ -78,7 +78,7 @@ class EvaluateClassify(Evaluate):
         tf.logging.info('Prediciotn: [%s]', predicted_names)
 
         if hasattr(self, 'fw'):
-            with tf.name_scope('Last_images'):
+            with tf.name_scope('last_images'):
                 for i in range(batch_size):
                     image_pl = tf.placeholder(
                         dtype=tf.float32,

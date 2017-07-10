@@ -23,8 +23,7 @@ class TrainClassifyCAE(TrainClassify):
     def default_trainable_scopes(self):
         return ['Logits']
 
-    def compute_logits(self, inputs, dropout_keep_prob=0.8):
-        num_classes = self.dataset_train.num_classes
+    def compute_logits(self, inputs, num_classes, dropout_keep_prob=0.8):
         if self.CAE_structure is not None:
             net, _ = self.CAE_structure(
                 inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
@@ -33,8 +32,9 @@ class TrainClassifyCAE(TrainClassify):
         self.representation_shape = tf.shape(net)
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         net = slim.flatten(net, scope='PreLogitsFlatten')
-        self.logits = slim.fully_connected(
+        logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')
+        return logits
 
     def get_init_fn(self, checkpoint_dirs):
         if self.CAE_structure is None:
@@ -42,13 +42,29 @@ class TrainClassifyCAE(TrainClassify):
         assert len(checkpoint_dirs) == 1
         checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
         assert checkpoint_path is not None
-        variables_to_restore = tf.get_collection(
-            tf.GraphKeys.MODEL_VARIABLES, scope='CAE')
+        variables_to_restore = self.get_variables_to_restore(['CAE'])
         return slim.assign_from_checkpoint_fn(
             checkpoint_path, variables_to_restore)
 
     def extra_log_info(self):
         tf.logging.info('representation shape: %s', self.representation_shape)
+
+
+def train_classify_CAE(CAE_structure,
+                       tfrecord_dir,
+                       checkpoint_dirs,
+                       log_dir,
+                       number_of_steps=None,
+                       endpoint='Middle',
+                       **kwargs):
+    train_classify = TrainClassifyCAE(CAE_structure, endpoint)
+    for key in kwargs.copy():
+        if hasattr(train_classify, key):
+            setattr(train_classify, key, kwargs[key])
+            del kwargs[key]
+    train_classify.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)
 
 
 class EvaluateClassifyCAE(EvaluateClassify):
@@ -84,20 +100,3 @@ def evaluate_classify_CAE(CAE_structure,
             del kwargs[key]
     evaluate_classify.evaluate(
         tfrecord_dir, checkpoint_dirs, log_dir, number_of_steps, **kwargs)
-
-
-def train_classify_CAE(CAE_structure,
-                       tfrecord_dir,
-                       checkpoint_dirs,
-                       log_dir,
-                       number_of_steps=None,
-                       endpoint='Middle',
-                       **kwargs):
-    train_classify = TrainClassifyCAE(CAE_structure, endpoint)
-    for key in kwargs.copy():
-        if hasattr(train_classify, key):
-            setattr(train_classify, key, kwargs[key])
-            del kwargs[key]
-    train_classify.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)

@@ -112,4 +112,4 @@ class Evaluate(EvaluateAbstract):
         return global_step_count, time_elapsed, tensor_values[1:]
 
     def last_step_log_info(self, sess, batch_size):
-        return self.step_log_info()
+        return self.step_log_info(sess)

@@ -39,10 +39,10 @@ def CAE_shadow(inputs,
             raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 
-def CAE_6layer(inputs,
-               final_endpoint='Final',
-               dropout_keep_prob=0.5,
-               scope=None):
+def CAE_6layers(inputs,
+                final_endpoint='Final',
+                dropout_keep_prob=0.5,
+                scope=None):
     endpoints = {}
 
     with tf.variable_scope(scope, 'CAE', [inputs]):

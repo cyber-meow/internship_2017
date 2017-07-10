@@ -231,6 +231,33 @@ class Train(TrainAbstract):
             variables_to_train.extend(variables)
         return variables_to_train
 
+    @staticmethod
+    def get_variables_to_restore(scopes=None, exclude=None):
+
+        if scopes is not None:
+            variables_to_restore = []
+            for scope in scopes:
+                variables = tf.get_collection(
+                    tf.GraphKeys.MODEL_VARIABLES, scope)
+                variables_to_restore.extend(variables)
+        else:
+            variables_to_restore = tf.model_variables()
+
+        if exclude is not None:
+            variables_to_restore_final = []
+            for var in variables_to_restore:
+                excluded = False
+                for exclusion in exclude:
+                    if var.op.name.startswith(exclusion):
+                        excluded = True
+                        break
+                if not excluded:
+                    variables_to_restore_final.append(var)
+        else:
+            variables_to_restore_final = variables_to_restore
+
+        return variables_to_restore_final
+
     def get_learning_rate(self):
         # Exponentially decaying learning rate
         self.learning_rate = tf.train.exponential_decay(
@@ -257,4 +284,4 @@ class Train(TrainAbstract):
             tf.summary.histogram('batch_norm/last_layer/moving_variance',
                                  last_moving_variance)
         except IndexError:
-            tf.info.logging('No moiving mean or variance')
+            tf.logging.info('No moiving mean or variance')

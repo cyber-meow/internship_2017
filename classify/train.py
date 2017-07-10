@@ -27,13 +27,13 @@ class TrainClassify(Train):
     def image_size(self):
         return self._image_size
 
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, tfrecord_dir, batch_size):
         self.dataset_train = read_TFRecord.get_split('train', tfrecord_dir)
-        images_train, labels_train = load_batch(
+        self.images_train, self.labels_train = load_batch(
             self.dataset_train, height=self.image_size,
             width=self.image_size, batch_size=batch_size)
         self.dataset_test = read_TFRecord.get_split('validation', tfrecord_dir)
-        images_test, labels_test = load_batch(
+        self.images_test, self.labels_test = load_batch(
             self.dataset_test, height=self.image_size,
             width=self.image_size, batch_size=batch_size)
         return self.dataset_train
@@ -45,7 +45,8 @@ class TrainClassify(Train):
             self.training, lambda: self.labels_train, lambda: self.labels_test)
 
     def compute(self, **kwargs):
-        self.compute_logits(self.images, **kwargs)
+        self.logits = self.compute_logits(
+            self.images, self.dataset_train.num_classes, **kwargs)
 
     @abc.abstractmethod
     def compute_logits(self, inputs):
@@ -88,7 +89,7 @@ class TrainClassify(Train):
         ac_test_summary = tf.summary.scalar(
             'accuracy/test', self.accuracy_test)
         ls_test_summary = tf.summary.scalar(
-            'losses/test/total_loss', self.total_loss)
+            'losses/test/total', self.total_loss)
         imgs_test_summary = tf.summary.image(
             'test', self.images, max_outputs=4)
         self.test_summary_op = tf.summary.merge(
@@ -124,26 +125,19 @@ class TrainClassifyInception(TrainClassify):
         return ['InceptionV4/Mixed_7d', 'InceptionV4/Logits',
                 'InceptionV4/AuxLogits']
 
-    def compute_logits(self, inputs, **kwargs):
-        self.logits, _ = inception_v4.inception_v4(
-            inputs, num_classes=self.dataset_train.num_classes,
+    def compute_logits(self, inputs, num_classes, **kwargs):
+        logits, _ = inception_v4.inception_v4(
+            inputs, num_classes=num_classes,
             is_training=self.training, **kwargs)
+        return logits
 
     def get_init_fn(self, checkpoint_dirs):
         """Returns a function run by the chief worker to
            warm-start the training."""
         checkpoint_exclude_scopes = [
             'InceptionV4/Logits', 'InceptionV4/AuxLogits']
-
-        variables_to_restore = []
-        for var in tf.model_variables():
-            excluded = False
-            for exclusion in checkpoint_exclude_scopes:
-                if var.op.name.startswith(exclusion):
-                    excluded = True
-                    break
-            if not excluded:
-                variables_to_restore.append(var)
+        variables_to_restore = self.get_variables_to_restore(
+            scopes=None, exclude=checkpoint_exclude_scopes)
 
         assert len(checkpoint_dirs) == 1
         checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])

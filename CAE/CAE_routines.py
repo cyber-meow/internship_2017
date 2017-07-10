@@ -4,11 +4,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from six.moves import xrange
 import os
-import time
 
-import numpy as np
 import tensorflow as tf
 
 import data.images.read_TFRecord as read_TFRecord
@@ -16,6 +13,7 @@ from data.images.load_batch import load_batch
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
 from routines.train import Train
+from routines.evaluate import Evaluate
 
 slim = tf.contrib.slim
 
@@ -37,7 +35,8 @@ class TrainCAE(Train):
         return dataset
 
     def compute(self, **kwargs):
-        self.compute_reconstruction(self.images_original, **kwargs)
+        self.reconstructions = \
+            self.compute_reconstruction(self.images_original, **kwargs)
 
     def compute_reconstruction(self, inputs, dropout_position='fc',
                                dropout_keep_prob=0.5):
@@ -51,8 +50,9 @@ class TrainCAE(Train):
         if dropout_input:
             dropout_keep_prob = 1
 
-        self.reconstructions, _ = self.CAE_structure(
+        reconstructions, _ = self.CAE_structure(
             self.images, dropout_keep_prob=dropout_keep_prob)
+        return reconstructions
 
     def get_total_loss(self):
         self.reconstruction_loss = tf.losses.mean_squared_error(
@@ -113,78 +113,71 @@ def train_CAE(CAE_structure, tfrecord_dir, log_dir,
                     number_of_steps=number_of_steps, **kwargs)
 
 
-def evaluate_CAE(tfrecord_dir,
-                 train_dir,
-                 log_dir,
-                 CAE_structure,
-                 number_of_steps=None,
-                 batch_size=12,
-                 dropout_input=False,
-                 dropout_keep_prob=0.5):
+class EvaluateCAE(Evaluate):
 
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
+    def __init__(self, CAE_structure, image_size=299):
+        self.image_size = image_size
+        self.CAE_structure = CAE_structure
 
-    image_size = 299
+    def get_data(self, split_name, tfrecord_dir, batch_size):
+        self.dataset = read_TFRecord.get_split(split_name, tfrecord_dir)
+        self.images, _ = load_batch(
+            self.dataset, height=self.image_size,
+            width=self.image_size, batch_size=batch_size)
+        return self.dataset
 
-    with tf.Graph().as_default():
+    def compute(self, **kwargs):
+        self.reconstructions = \
+            self.compute_reconstruction(self.images, **kwargs)
 
-        tf.logging.set_verbosity(tf.logging.INFO)
+    def compute_reconstruction(self, inputs, dropout_input=False,
+                               dropout_keep_prob=0.5):
+        images_corrupted = slim.dropout(
+            inputs, keep_prob=dropout_keep_prob, scope='Input/Dropout')
 
-        with tf.name_scope('data_provider'):
-            dataset = read_TFRecord.get_split('validation', tfrecord_dir)
+        self.images = images_corrupted if dropout_input else inputs
+        reconstructions, _ = self.CAE_structure(
+            self.images, dropout_keep_prob=1)
+        return reconstructions
 
-            images_original, labels = load_batch(
-                dataset, height=image_size, width=image_size,
-                batch_size=batch_size)
+    def compute_log_data(self):
+        self.reconstruction_loss = \
+            tf.losses.mean_squared_error(self.reconstructions, self.images)
+        self.total_loss = tf.losses.get_total_loss()
+        tf.summary.scalar('losses/total', self.total_loss)
+        tf.summary.scalar('losses/reconstruction', self.reconstruction_loss)
+        tf.summary.image('input', self.images)
+        tf.summary.image('reconstruction', self.reconstructions)
+        self.summary_op = tf.summary.merge_all()
 
-            images_corrupted = slim.dropout(
-                images_original, keep_prob=dropout_keep_prob, scope='Dropout')
-
-            images = images_corrupted if dropout_input else images_original
-
-        if number_of_steps is None:
-            number_of_steps = int(np.ceil(dataset.num_samples / batch_size))
-
-        with slim.arg_scope(nets_arg_scope(is_training=False)):
-            reconstruction, _ = CAE_structure(images)
-
-        tf.losses.mean_squared_error(reconstruction, images_original)
-        total_loss = tf.losses.get_total_loss()
-
-        # Define global step to be show in tensorboard
-        global_step = tf.train.get_or_create_global_step()
-        global_step_op = tf.assign(global_step, global_step+1)
-
-        # Definie summaries
-        tf.summary.scalar('losses/total_loss', total_loss)
-        tf.summary.image('input', images_original)
-        tf.summary.image('reconstruction', reconstruction)
-        summary_op = tf.summary.merge_all()
-
-        # File writer for the tensorboard
-        fw = tf.summary.FileWriter(log_dir)
-
-        checkpoint_path = tf.train.latest_checkpoint(train_dir)
+    def init_model(self, sess, checkpoint_dirs):
+        assert len(checkpoint_dirs) == 1
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
         saver = tf.train.Saver(tf.model_variables())
+        saver.restore(sess, checkpoint_path)
 
-        with tf.Session() as sess:
-            with slim.queues.QueueRunners(sess):
-                sess.run(tf.variables_initializer([global_step]))
-                saver.restore(sess, checkpoint_path)
+    def step_log_info(self, sess):
+        self.global_step_count, time_elapsed, tensor_values = \
+            self.eval_step(
+                sess, self.global_step_op,
+                self.total_loss, self.summary_op)
+        self.loss = tensor_values[0]
+        tf.logging.info(
+            'global step %s: loss: %.4f (%.2f sec/step)',
+            self.global_step_count, self.loss, time_elapsed)
+        return self.global_step_count, tensor_values[1]
 
-                for step in xrange(number_of_steps-1):
-                    start_time = time.time()
-                    loss, global_step_count, summaries = sess.run(
-                        [total_loss, global_step_op, summary_op])
-                    time_elapsed = time.time() - start_time
 
-                    tf.logging.info(
-                        'global step %s: loss: %.4f (%.2f sec/step',
-                        global_step_count, loss, time_elapsed)
-                    fw.add_summary(summaries, global_step=global_step_count)
-
-                tf.logging.info('Finished evaluation.')
+def evaluate_CAE(CAE_structure, tfrecord_dir,
+                 checkpoint_dirs, log_dir,
+                 number_of_steps=None, **kwargs):
+    evaluate_CAE = EvaluateCAE(CAE_structure)
+    for key in kwargs.copy():
+        if hasattr(evaluate_CAE, key):
+            setattr(evaluate_CAE, key, kwargs[key])
+            del kwargs[key]
+    evaluate_CAE.evaluate(tfrecord_dir, checkpoint_dirs, log_dir,
+                          number_of_steps=number_of_steps, **kwargs)
 
 
 def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
@@ -197,8 +190,8 @@ def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
         _, image_ext = os.path.splitext(image_path)
 
         if image_ext in ['.jpg', '.jpeg']:
-            image = tf.image.decode_jpg(image_string, channels=3)
-        if image_ext == '.png':
+            image = tf.image.decode_jpeg(image_string, channels=3)
+        elif image_ext == '.png':
             image = tf.image.decode_png(image_string, channels=3)
         else:
             raise ValueError('image format not supported, must be jpg or png')

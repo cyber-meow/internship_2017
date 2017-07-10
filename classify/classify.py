@@ -22,8 +22,8 @@ def classify_image(image_path, train_dir, label_dir):
         _, image_ext = os.path.splitext(image_path)
 
         if image_ext in ['.jpg', '.jpeg']:
-            image = tf.image.decode_jpg(image_string, channels=3)
-        if image_ext == '.png':
+            image = tf.image.decode_jpeg(image_string, channels=3)
+        elif image_ext == '.png':
             image = tf.image.decode_png(image_string, channels=3)
         else:
             raise ValueError('image format not supported, must be jpg or png')

@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from CAE.structure import CAE_6layer
+from CAE.structure import CAE_6layers
 
 slim = tf.contrib.slim
 
@@ -27,9 +27,9 @@ def deconvolve_3layer(inputs, scope=None):
             return net
 
 
-def fusion_AE_6layer(color_inputs, depth_inputs,
-                     final_endpoint='Final',
-                     color_keep_prob=None, depth_keep_prob=None):
+def fusion_AE_6layers(color_inputs, depth_inputs,
+                      final_endpoint='Final',
+                      color_keep_prob=None, depth_keep_prob=None):
     if color_keep_prob is None:
         if depth_keep_prob is None:
             color_keep_prob = tf.random_uniform([])
@@ -41,9 +41,9 @@ def fusion_AE_6layer(color_inputs, depth_inputs,
 
     with tf.variable_scope('Fusion'):
         # 299 x 299 x 3, 299 x 299 x 3
-        color_net, _ = CAE_6layer(
+        color_net, _ = CAE_6layers(
             color_inputs, final_endpoint='Conv2d_b_3x3', scope='Color')
-        depth_net, _ = CAE_6layer(
+        depth_net, _ = CAE_6layers(
             depth_inputs, final_endpoint='Conv2d_b_3x3', scope='Depth')
 
         # 49 x 49 x 48, 49 x 49 x 48
