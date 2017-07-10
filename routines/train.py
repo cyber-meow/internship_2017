@@ -31,7 +31,7 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
-    def get_data(self, tfrecord_dir, split_name, batch_size):
+    def get_data(self, tfrecord_dir, batch_size):
         pass
 
     @abc.abstractmethod
@@ -39,7 +39,7 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
-    def compute(self):
+    def compute(self, *args):
         pass
 
     @abc.abstractmethod

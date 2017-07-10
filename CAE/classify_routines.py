@@ -6,7 +6,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from classify.evaluate import classify_evaluate_inception
+from classify.evaluate import EvaluateClassify
 from classify.train import TrainClassify
 
 slim = tf.contrib.slim
@@ -51,37 +51,39 @@ class TrainClassifyCAE(TrainClassify):
         tf.logging.info('representation shape: %s', self.representation_shape)
 
 
-class classify_evaluate_CAE(classify_evaluate_inception):
+class EvaluateClassifyCAE(EvaluateClassify):
 
     def __init__(self, CAE_structure, endpoint, image_size=299):
-        self._image_size = image_size
+        self.image_size = image_size
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
 
-    def compute_logits(self, inputs, num_classes):
+    def compute_logits(self, inputs):
         if self.CAE_structure is not None:
             net, _ = self.CAE_structure(
                 inputs, final_endpoint=self.endpoint)
         else:
             net = inputs
         net = slim.flatten(net, scope='PreLogitsFlatten')
-        logits = slim.fully_connected(
-            net, num_classes, activation_fn=None, scope='Logits')
-        return logits
+        self.logits = slim.fully_connected(
+            net, self.dataset.num_classes, activation_fn=None, scope='Logits')
+        return self.logits
 
 
-def classify_evaluate_CAE_fn(CAE_structure,
-                             tfrecord_dir,
-                             checkpoint_dirs,
-                             log_dir,
-                             endpoint='Middle',
-                             **kwargs):
-    classify_evaluate = classify_evaluate_CAE(CAE_structure, endpoint)
-    if 'image_size' in kwargs:
-        classify_evaluate._image_size = kwargs['image_size']
-        del kwargs['image_size']
-    classify_evaluate.evaluate(
-        tfrecord_dir, checkpoint_dirs, log_dir, **kwargs)
+def evaluate_classify_CAE(CAE_structure,
+                          tfrecord_dir,
+                          checkpoint_dirs,
+                          log_dir=None,
+                          number_of_steps=None,
+                          endpoint='Middle',
+                          **kwargs):
+    evaluate_classify = EvaluateClassifyCAE(CAE_structure, endpoint)
+    for key in kwargs.copy():
+        if hasattr(evaluate_classify, key):
+            setattr(evaluate_classify, key, kwargs[key])
+            del kwargs[key]
+    evaluate_classify.evaluate(
+        tfrecord_dir, checkpoint_dirs, log_dir, number_of_steps, **kwargs)
 
 
 def train_classify_CAE(CAE_structure,
@@ -92,7 +94,7 @@ def train_classify_CAE(CAE_structure,
                        endpoint='Middle',
                        **kwargs):
     train_classify = TrainClassifyCAE(CAE_structure, endpoint)
-    for key in kwargs:
+    for key in kwargs.copy():
         if hasattr(train_classify, key):
             setattr(train_classify, key, kwargs[key])
             del kwargs[key]
