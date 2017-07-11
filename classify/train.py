@@ -21,11 +21,7 @@ class TrainClassify(Train):
 
     def __init__(self, image_size=299, **kwargs):
         super(TrainClassify, self).__init__(**kwargs)
-        self._image_size = image_size
-
-    @property
-    def image_size(self):
-        return self._image_size
+        self.image_size = image_size
 
     def get_data(self, tfrecord_dir, batch_size):
         self.dataset_train = read_TFRecord.get_split('train', tfrecord_dir)
@@ -65,12 +61,9 @@ class TrainClassify(Train):
         self.accuracy, self.accuracy_update = \
             tf.metrics.accuracy(self.predictions, self.labels)
         self.metric_op = tf.group(self.accuracy_update)
-        return self.metric_op
-
-    def get_test_metrics(self):
-        self.accuracy_test = tf.reduce_mean(tf.cast(
+        self.accuracy_no_streaming = tf.reduce_mean(tf.cast(
             tf.equal(self.predictions, self.labels), tf.float32))
-        return self.accuracy_test
+        return self.metric_op
 
     def get_summary_op(self):
         self.get_batch_norm_summary()
@@ -79,6 +72,7 @@ class TrainClassify(Train):
         tf.summary.scalar('losses/train/cross_entropy',
                           self.cross_entropy_loss)
         tf.summary.scalar('losses/train/total', self.total_loss)
+        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
         tf.summary.scalar('accuracy/train/streaming', self.accuracy)
         tf.summary.image('train', self.images, max_outputs=4)
         self.summary_op = tf.summary.merge_all()
@@ -87,7 +81,7 @@ class TrainClassify(Train):
     def get_test_summary_op(self):
         # Summaries for the test part
         ac_test_summary = tf.summary.scalar(
-            'accuracy/test', self.accuracy_test)
+            'accuracy/test', self.accuracy_no_streaming)
         ls_test_summary = tf.summary.scalar(
             'losses/test/total', self.total_loss)
         imgs_test_summary = tf.summary.image(
@@ -106,7 +100,8 @@ class TrainClassify(Train):
 
     def test_log_info(self, sess):
         ls, acu, summaries_test = sess.run(
-            [self.total_loss, self.accuracy_test, self.test_summary_op],
+            [self.total_loss, self.accuracy_no_streaming,
+             self.test_summary_op],
             feed_dict={self.training: False})
         tf.logging.info('Current Test Loss: %s', ls)
         tf.logging.info('Current Test Accuracy: %s', acu)
@@ -149,4 +144,51 @@ class TrainClassifyInception(TrainClassify):
             checkpoint_path, variables_to_restore)
 
 
-fine_tune_inception = TrainClassifyInception().train
+def fine_tune_inception(tfrecord_dir,
+                        checkpoint_dirs,
+                        log_dir,
+                        number_of_steps=None,
+                        image_size=299,
+                        **kwargs):
+    fine_tune = TrainClassifyInception(image_size)
+    for key in kwargs.copy():
+        if hasattr(fine_tune, key):
+            setattr(fine_tune, key, kwargs[key])
+            del kwargs[key]
+    fine_tune.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)
+
+
+class TrainClassifyCNN(TrainClassify):
+
+    def __init__(self, CNN_structure, **kwargs):
+        super(TrainClassifyCNN, self).__init__(**kwargs)
+        self.CNN_structure = CNN_structure
+
+    def compute_logits(self, inputs, num_classes, dropout_keep_prob=0.8):
+        if self.CNN_structure is not None:
+            net = self.CNN_structure(inputs)
+        else:
+            net = inputs
+        net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
+        net = slim.flatten(net, scope='PreLogitsFlatten')
+        logits = slim.fully_connected(
+            net, num_classes, activation_fn=None, scope='Logits')
+        return logits
+
+
+def train_classify_CNN(CNN_structure,
+                       tfrecord_dir,
+                       checkpoint_dirs,
+                       log_dir,
+                       number_of_steps=None,
+                       **kwargs):
+    train_classify = TrainClassifyCNN(CNN_structure)
+    for key in kwargs.copy():
+        if hasattr(train_classify, key):
+            setattr(train_classify, key, kwargs[key])
+            del kwargs[key]
+    train_classify.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)

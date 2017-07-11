@@ -39,7 +39,7 @@ class TrainCAE(Train):
             self.compute_reconstruction(self.images_original, **kwargs)
 
     def compute_reconstruction(self, inputs, dropout_position='fc',
-                               dropout_keep_prob=0.5):
+                               dropout_keep_prob=0.7):
         images_corrupted = slim.dropout(
             inputs, keep_prob=dropout_keep_prob, scope='Input/Dropout')
 
@@ -68,12 +68,10 @@ class TrainCAE(Train):
         tf.summary.scalar(
             'losses/reconstruction', self.reconstruction_loss)
         tf.summary.scalar('losses/total', self.total_loss)
+        tf.summary.scalar('learning_rate', self.learning_rate)
         tf.summary.image('input', self.images)
         tf.summary.image('reconstruction', self.reconstructions)
         self.summary_op = tf.summary.merge_all()
-
-    def get_init_fn(self, checkpoint_dirs):
-        return None
 
     def normal_log_info(self, sess):
         self.loss, _, summaries = self.train_step(
@@ -146,6 +144,7 @@ class EvaluateCAE(Evaluate):
         self.total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('losses/total', self.total_loss)
         tf.summary.scalar('losses/reconstruction', self.reconstruction_loss)
+        tf.summary.scalar('learning_rate', self.learning_rate)
         tf.summary.image('input', self.images)
         tf.summary.image('reconstruction', self.reconstructions)
         self.summary_op = tf.summary.merge_all()

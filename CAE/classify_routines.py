@@ -29,7 +29,7 @@ class TrainClassifyCAE(TrainClassify):
                 inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
         else:
             net = inputs
-        self.representation_shape = tf.shape(net)
+        self.representation_shape = net.get_shape()
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         net = slim.flatten(net, scope='PreLogitsFlatten')
         logits = slim.fully_connected(

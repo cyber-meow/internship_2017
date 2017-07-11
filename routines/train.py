@@ -68,6 +68,9 @@ class TrainAbstract(object):
     def get_test_summary_op(self):
         pass
 
+    def get_init_fn(self, checkpoint_dirs):
+        return None
+
     def extra_log_info(self):
         pass
 

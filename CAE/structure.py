@@ -49,34 +49,34 @@ def CAE_6layers(inputs,
         with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                             stride=2, padding='VALID'):
 
-            # 299 x 299 x 3
+            # 299 x 299 x 3 / 83 * 83 * 3
             net = slim.conv2d(
                 inputs, 32, [5, 5], stride=3, scope='Conv2d_a_5x5')
 
-            # 99 x 99 x 32
+            # 99 x 99 x 32 / 27 * 27 * 32
             endpoint = 'Conv2d_b_3x3'
             net = slim.conv2d(net, 48, [3, 3], scope='Conv2d_b_3x3')
             endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net, endpoints
 
-            # 49 x 49 x 48
+            # 49 x 49 x 48 / 13 * 13 * 48
             endpoint = 'Middle'
             net = slim.conv2d(net, 64, [3, 3], scope='Conv2d_c_3x3')
             endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net, endpoints
 
-            # 24 x 24 x 64
+            # 24 x 24 x 64 / 6 * 6 * 64
             net = slim.dropout(net, keep_prob=dropout_keep_prob,
                                scope='Dropout')
             net = slim.conv2d_transpose(
                 net, 48, [3, 3], scope='ConvTrans2d_a_3x3')
-            # 49 x 49 x 48
+            # 49 x 49 x 48 / 13 * 13 * 48
             net = slim.conv2d_transpose(
                 net, 32, [3, 3], scope='ConvTrans2d_b_3x3')
 
-            # 99 x 99 x 32
+            # 99 x 99 x 32 / 27 * 27 * 32
             endpoint = 'Final'
             net = slim.conv2d_transpose(
                 net, 3, [5, 5], stride=3, scope='ConvTrans2d_c_5x5')
