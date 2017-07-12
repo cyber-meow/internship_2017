@@ -19,6 +19,10 @@ class EvaluateAbstract(object):
     __meta_class__ = abc.ABCMeta
 
     @abc.abstractmethod
+    def used_arg_scope(self, use_batch_norm):
+        pass
+
+    @abc.abstractmethod
     def evaluate(self, *args):
         pass
 
@@ -55,6 +59,7 @@ class Evaluate(EvaluateAbstract):
                  number_of_steps=None,
                  batch_size=12,
                  split_name='validation',
+                 use_batch_norm=True,
                  **kwargs):
 
         if log_dir is not None and not tf.gfile.Exists(log_dir):
@@ -72,7 +77,7 @@ class Evaluate(EvaluateAbstract):
             if number_of_steps is None:
                 number_of_steps = int(np.ceil(dataset.num_samples/batch_size))
 
-            with slim.arg_scope(nets_arg_scope(is_training=False)):
+            with slim.arg_scope(self.used_arg_scope(use_batch_norm)):
                 self.compute(**kwargs)
 
             self.compute_log_data()
@@ -101,6 +106,10 @@ class Evaluate(EvaluateAbstract):
                         self.fw.add_summary(
                             summaries_last, global_step=global_step_count)
                     tf.logging.info('Finished evaluation')
+
+    def used_arg_scope(self, use_batch_norm):
+        return nets_arg_scope(
+            is_traing=False, use_batch_norm=use_batch_norm)
 
     def eval_step(self, sess, global_step, *args):
         tensors_to_run = [global_step]

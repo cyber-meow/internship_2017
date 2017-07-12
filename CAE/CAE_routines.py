@@ -65,6 +65,7 @@ class TrainCAE(Train):
         return self.metric_op
 
     def get_summary_op(self):
+        self.get_batch_norm_summary()
         tf.summary.scalar(
             'losses/reconstruction', self.reconstruction_loss)
         tf.summary.scalar('losses/total', self.total_loss)

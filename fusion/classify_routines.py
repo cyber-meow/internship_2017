@@ -26,12 +26,12 @@ class TrainClassifyFusion(TrainClassify):
         assert modality in ['color', 'depth']
         if modality == 'color':
             net, _ = self.structure(
-                inputs, tf.zeros(inputs.get_shape()),
+                inputs, inputs,
                 final_endpoint='Middle',
                 color_keep_prob=tf.constant(1-1e-5, tf.float32))
         elif modality == 'depth':
             net, _ = self.structure(
-                tf.zeros(inputs.get_shape()), inputs,
+                inputs, inputs,
                 final_endpoint='Middle',
                 color_keep_prob=tf.constant(1e-5, tf.float32))
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')

@@ -23,6 +23,10 @@ class TrainAbstract(object):
         return None
 
     @abc.abstractmethod
+    def used_arg_scope(self, use_batch_norm):
+        pass
+
+    @abc.abstractmethod
     def train(self, *args):
         pass
 
@@ -106,6 +110,7 @@ class Train(TrainAbstract):
               save_summaries_steps=5,
               do_test=True,
               trainable_scopes=None,
+              use_batch_norm=True,
               **kwargs):
         """Fine tune a pre-trained model using customized dataset.
 
@@ -149,7 +154,7 @@ class Train(TrainAbstract):
 
             # Create the model, use the default arg scope to configure the
             # batch norm parameters
-            with slim.arg_scope(nets_arg_scope(is_training=self.training)):
+            with slim.arg_scope(self.used_arg_scope(use_batch_norm)):
                 self.compute(**kwargs)
 
             # Specify the loss function
@@ -207,6 +212,10 @@ class Train(TrainAbstract):
                 self.final_log_info(sess)
                 self.sv.saver.save(sess, self.sv.save_path,
                                    global_step=self.sv.global_step)
+
+    def used_arg_scope(self, use_batch_norm):
+        return nets_arg_scope(
+            is_training=self.training, use_batch_norm=use_batch_norm)
 
     def train_step(self, sess, train_op, global_step, *args):
         tensors_to_run = [train_op, global_step]

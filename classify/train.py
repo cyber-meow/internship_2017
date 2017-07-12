@@ -45,7 +45,7 @@ class TrainClassify(Train):
             self.images, self.dataset_train.num_classes, **kwargs)
 
     @abc.abstractmethod
-    def compute_logits(self, inputs):
+    def compute_logits(self, inputs, num_classes):
         pass
 
     def get_total_loss(self):

@@ -7,6 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from CAE.structure import CAE_6layers
+from classify.CNN_structure import CNN_9layers
 
 slim = tf.contrib.slim
 
@@ -74,3 +75,30 @@ def fusion_AE_6layers(color_inputs, depth_inputs,
             return (color_net, depth_net), endpoints
 
         raise ValueError('Unknown final endpoint %s' % final_endpoint)
+
+
+def fusion_CNN(color_inputs, depth_inputs):
+    with tf.variable_scope('FusionCNN'):
+        # 299 x 299 x 3
+        color_net = CNN_9layers(
+            color_inputs, final_endpoint='Conv2d_f_3x3', scope='Color')
+        depth_net = CNN_9layers(
+            depth_inputs, final_endpoint='Conv2d_f_3x3', scope='Depth')
+
+        # 8 x 8 x 288
+        net = color_net + depth_net
+
+        with tf.variable_scope('AfterFusion'):
+            with slim.arg_scope([slim.conv2d, slim.max_pool2d],
+                                stride=1, padding='VALID'):
+                net = slim.conv2d(net, 288, [2, 2], scope='Conv2d_a_2x2')
+
+                # 7 x 7 x 288
+                net = slim.conv2d(net, 512, [3, 3], stride=2,
+                                  scope='Conv2d_b_3x3')
+
+                # 3 x 3 x 512
+                net = slim.conv2d(net, 1024, [3, 3], scope='Conv2d_c_3x3')
+
+                # 1 x 1 x 1024
+                return net
