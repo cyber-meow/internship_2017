@@ -23,7 +23,7 @@ class TrainAbstract(object):
         return None
 
     @abc.abstractmethod
-    def used_arg_scope(self, use_batch_norm):
+    def used_arg_scope(self, use_batch_norm, renorm):
         pass
 
     @abc.abstractmethod
@@ -82,7 +82,7 @@ class TrainAbstract(object):
     def normal_log_info(self, sess):
         pass
 
-    def test_log_info(self, sess):
+    def test_log_info(self, sess, is_training):
         pass
 
     @abc.abstractmethod
@@ -111,6 +111,8 @@ class Train(TrainAbstract):
               do_test=True,
               trainable_scopes=None,
               use_batch_norm=True,
+              renorm=False,
+              test_use_batch=False,
               **kwargs):
         """Fine tune a pre-trained model using customized dataset.
 
@@ -151,10 +153,12 @@ class Train(TrainAbstract):
             # Decide if we're training or not
             self.training = tf.placeholder(tf.bool, shape=(), name='training')
             self.decide_used_data()
+            self.batch_stat = tf.placeholder(
+                tf.bool, shape=(), name='batch_stat')
 
             # Create the model, use the default arg scope to configure the
             # batch norm parameters
-            with slim.arg_scope(self.used_arg_scope(use_batch_norm)):
+            with slim.arg_scope(self.used_arg_scope(use_batch_norm, renorm)):
                 self.compute(**kwargs)
 
             # Specify the loss function
@@ -174,6 +178,7 @@ class Train(TrainAbstract):
             else:
                 variables_to_train = \
                     self.get_variables_to_train(trainable_scopes)
+            print(variables_to_train)
 
             self.train_op = slim.learning.create_train_op(
                 total_loss, optimizer,
@@ -199,7 +204,8 @@ class Train(TrainAbstract):
                         summaries = self.normal_log_info(sess)
                         self.sv.summary_computed(sess, summaries)
                         if do_test:
-                            summaries_test = self.test_log_info(sess)
+                            summaries_test = self.test_log_info(
+                                sess, test_use_batch)
                             if summaries_test is not None:
                                 self.sv.summary_computed(sess, summaries_test)
                     elif self.metric_op is not None:
@@ -213,17 +219,20 @@ class Train(TrainAbstract):
                 self.sv.saver.save(sess, self.sv.save_path,
                                    global_step=self.sv.global_step)
 
-    def used_arg_scope(self, use_batch_norm):
+    def used_arg_scope(self, use_batch_norm, renorm):
         return nets_arg_scope(
-            is_training=self.training, use_batch_norm=use_batch_norm)
+            is_training=self.batch_stat,
+            use_batch_norm=use_batch_norm,
+            renorm=renorm)
 
     def train_step(self, sess, train_op, global_step, *args):
         tensors_to_run = [train_op, global_step]
         tensors_to_run.extend(args)
 
         start_time = time.time()
-        tensor_values = sess.run(tensors_to_run,
-                                 feed_dict={self.training: True})
+        tensor_values = sess.run(
+            tensors_to_run,
+            feed_dict={self.training: True, self.batch_stat: True})
         time_elapsed = time.time() - start_time
 
         total_loss = tensor_values[0]

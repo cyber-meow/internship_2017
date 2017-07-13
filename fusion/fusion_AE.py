@@ -51,11 +51,30 @@ class TrainFusion(Train):
             lambda: self.images_depth_test)
 
 
+class TrainFusionGray(TrainFusion):
+
+    def get_data(self, tfrecord_dir, batch_size):
+        self.dataset_train = get_split_color_depth(
+            'train', tfrecord_dir,
+            color_channels=1, depth_channels=1)
+        self.images_color_train, self.images_depth_train, _ = \
+            load_batch_color_depth(
+                self.dataset_train, height=self.image_size,
+                width=self.image_size, batch_size=batch_size)
+        self.dataset_test = get_split_color_depth(
+            'validation', tfrecord_dir,
+            color_channels=1, depth_channels=1)
+        self.images_color_test, self.images_depth_test, _ = \
+            load_batch_color_depth(
+                self.dataset_test, height=self.image_size,
+                width=self.image_size, batch_size=batch_size)
+        return self.dataset_train
+
+
 class TrainFusionAE(TrainFusion):
 
-    @property
-    def default_trainable_scopes(self):
-        return ['Fusion', 'Seperation']
+    # default_trainable_scopes = ['Fusion', 'Seperation']
+    default_trainable_scopes = None
 
     def decide_used_data(self):
         self.images_color_original = tf.cond(
@@ -64,6 +83,8 @@ class TrainFusionAE(TrainFusion):
         self.images_depth_original = tf.cond(
             self.training, lambda: self.images_depth_train,
             lambda: self.images_depth_test)
+        print(self.images_color_train.get_shape())
+        print(self.images_color_original.get_shape())
 
     def compute(self, **kwargs):
         self.compute_reconstruction(
@@ -78,18 +99,27 @@ class TrainFusionAE(TrainFusion):
             color_keep_prob = tf.constant(color_keep_prob, tf.float32)
         color_keep_prob = tf.cond(
             color_keep_prob < tf.constant(threshold, tf.float32),
-            lambda: tf.constant(1e-5, tf.float32), lambda: color_keep_prob)
+            lambda: tf.constant(0, tf.float32), lambda: color_keep_prob)
         color_keep_prob = tf.cond(
             color_keep_prob > tf.constant(1-threshold, tf.float32),
-            lambda: tf.constant(1-1e-5, tf.float32), lambda: color_keep_prob)
+            lambda: tf.constant(1, tf.float32), lambda: color_keep_prob)
         depth_keep_prob = tf.constant(1, dtype=tf.float32) - color_keep_prob
 
         images_color_corrupted = tf.nn.dropout(
             color_inputs, keep_prob=color_keep_prob,
             name='Color/Input/Dropout')
+        images_color_corrupted = tf.cond(
+            tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
+            lambda: tf.zeros_like(color_inputs),
+            lambda: images_color_corrupted)
+
         images_depth_corrupted = tf.nn.dropout(
             depth_inputs, keep_prob=depth_keep_prob,
             name='Depth/Input/Dropout')
+        images_depth_corrupted = tf.cond(
+            tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
+            lambda: tf.zeros_like(depth_inputs),
+            lambda: images_depth_corrupted)
 
         assert dropout_position in ['fc', 'input']
         dropout_input = dropout_position == 'input'
@@ -172,10 +202,33 @@ class TrainFusionAE(TrainFusion):
         tf.logging.info('Finished training. Final Loss: %s', self.loss)
         tf.logging.info('Saving model to disk now.')
 
+    def used_arg_scope(self, use_batch_norm, renorm):
+        return nets_arg_scope(is_training=self.training,
+                              use_batch_norm=use_batch_norm,
+                              renorm=renorm,
+                              batch_norm_decay=0.99,
+                              renorm_decay=0.99)
+
 
 def train_fusion_AE(structure, tfrecord_dir, checkpoint_dirs, log_dir,
                     number_of_steps=None, **kwargs):
     train_fusion_AE = TrainFusionAE(structure)
+    for key in kwargs.copy():
+        if hasattr(train_fusion_AE, key):
+            setattr(train_fusion_AE, key, kwargs[key])
+            del kwargs[key]
+    train_fusion_AE.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)
+
+
+class TrainFusionGrayAE(TrainFusionGray, TrainFusionAE):
+    pass
+
+
+def train_fusion_gray_AE(structure, tfrecord_dir, checkpoint_dirs, log_dir,
+                         number_of_steps=None, **kwargs):
+    train_fusion_AE = TrainFusionGrayAE(structure)
     for key in kwargs.copy():
         if hasattr(train_fusion_AE, key):
             setattr(train_fusion_AE, key, kwargs[key])
@@ -225,10 +278,18 @@ class EvaluateFusionAE(Evaluate):
         images_color_corrupted = tf.nn.dropout(
             color_inputs, keep_prob=color_keep_prob,
             name='Color/Input/Dropout')
+        images_color_corrupted = tf.cond(
+            tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
+            lambda: tf.zeros_like(color_inputs),
+            lambda: images_color_corrupted)
+
         images_depth_corrupted = tf.nn.dropout(
             depth_inputs, keep_prob=depth_keep_prob,
             name='Depth/Input/Dropout')
-
+        images_depth_corrupted = tf.cond(
+            tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
+            lambda: tf.zeros_like(depth_inputs),
+            lambda: images_depth_corrupted)
         assert dropout_position in ['fc', 'input']
         dropout_input = dropout_position == 'input'
 
@@ -320,12 +381,12 @@ def evaluate_fusion_AE_single(structure,
         with slim.arg_scope(nets_arg_scope(is_training=True)):
             if modality == 'color':
                 (reconstructions_color, reconstructions_depth), _ = \
-                    structure(images, images,
-                              color_keep_prob=tf.constant(1-1e-5, tf.float32))
+                    structure(images, tf.zeros_like(images),
+                              color_keep_prob=tf.constant(1, tf.float32))
             elif modality == 'depth':
                 (reconstructions_color, reconstructions_depth), _ = \
-                    structure(images, images,
-                              depth_keep_prob=tf.constant(1-1e-5, tf.float32))
+                    structure(tf.zeros_like(images), images,
+                              depth_keep_prob=tf.constant(1, tf.float32))
 
         # Define global step to be show in tensorboard
         global_step = tf.train.get_or_create_global_step()

@@ -12,7 +12,7 @@ from classify.CNN_structure import CNN_9layers
 slim = tf.contrib.slim
 
 
-def deconvolve_3layer(inputs, scope=None):
+def deconvolve_3layer(inputs, channels, scope=None):
     with tf.variable_scope(scope, 'Deconvolution', [inputs]):
         with slim.arg_scope(
                 [slim.conv2d_transpose], stride=2, padding='VALID'):
@@ -24,7 +24,7 @@ def deconvolve_3layer(inputs, scope=None):
                 net, 32, [3, 3], scope='ConvTrans2d_b_3x3')
             # 99 x 99 x 32
             net = slim.conv2d_transpose(
-                net, 3, [5, 5], stride=3, scope='ConvTrans2d_c_5x5')
+                net, channels, [5, 5], stride=3, scope='ConvTrans2d_c_5x5')
             return net
 
 
@@ -48,10 +48,16 @@ def fusion_AE_6layers(color_inputs, depth_inputs,
             depth_inputs, final_endpoint='Conv2d_b_3x3', scope='Depth')
 
         # 49 x 49 x 48, 49 x 49 x 48
-        color_net = tf.nn.dropout(
-            color_net, keep_prob=color_keep_prob, name='Color/Dropout')
-        depth_net = tf.nn.dropout(
-            depth_net, keep_prob=depth_keep_prob, name='Depth/Dropout')
+        color_net = tf.cond(
+            tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
+            lambda: tf.zeros_like(color_net, name='Color/Dropout'),
+            lambda: tf.nn.dropout(
+                color_net, keep_prob=color_keep_prob, name='Color/Dropout'))
+        depth_net = tf.cond(
+            tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
+            lambda: tf.zeros_like(depth_net, name='Depth/Dropout'),
+            lambda: tf.nn.dropout(
+                depth_net, keep_prob=depth_keep_prob, name='Depth/Dropout'))
 
         with slim.arg_scope([slim.conv2d], stride=2, padding='VALID'):
             # 24 x 24 x 64, 24 x 24 x 64
@@ -68,8 +74,10 @@ def fusion_AE_6layers(color_inputs, depth_inputs,
             return net, endpoints
 
         endpoint = 'Final'
-        color_net = deconvolve_3layer(net, scope='Separation/Color')
-        depth_net = deconvolve_3layer(net, scope='Separation/Depth')
+        color_net = deconvolve_3layer(
+            net, color_inputs.get_shape()[3], scope='Separation/Color')
+        depth_net = deconvolve_3layer(
+            net, depth_inputs.get_shape()[3], scope='Separation/Depth')
         endpoints[endpoint] = (color_net, depth_net)
         if final_endpoint == endpoint:
             return (color_net, depth_net), endpoints

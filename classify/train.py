@@ -98,11 +98,12 @@ class TrainClassify(Train):
         tf.logging.info('Current Streaming Accuracy:%s', accuracy_rate)
         return summaries
 
-    def test_log_info(self, sess):
+    def test_log_info(self, sess, test_use_batch):
         ls, acu, summaries_test = sess.run(
             [self.total_loss, self.accuracy_no_streaming,
              self.test_summary_op],
-            feed_dict={self.training: False})
+            feed_dict={self.training: False,
+                       self.batch_stat: test_use_batch})
         tf.logging.info('Current Test Loss: %s', ls)
         tf.logging.info('Current Test Accuracy: %s', acu)
         return summaries_test
@@ -111,6 +112,22 @@ class TrainClassify(Train):
         tf.logging.info('Finished training. Final Loss: %s', self.loss)
         tf.logging.info('Final Accuracy: %s', sess.run(self.accuracy))
         tf.logging.info('Saving model to disk now.')
+
+
+class TrainClassifyGray(TrainClassify):
+
+    def get_data(self, tfrecord_dir, batch_size):
+        self.dataset_train = read_TFRecord.get_split(
+            'train', tfrecord_dir, channels=1)
+        self.images_train, self.labels_train = load_batch(
+            self.dataset_train, height=self.image_size,
+            width=self.image_size, batch_size=batch_size)
+        self.dataset_test = read_TFRecord.get_split(
+            'validation', tfrecord_dir, channels=1)
+        self.images_test, self.labels_test = load_batch(
+            self.dataset_test, height=self.image_size,
+            width=self.image_size, batch_size=batch_size)
+        return self.dataset_train
 
 
 class TrainClassifyInception(TrainClassify):
@@ -185,6 +202,26 @@ def train_classify_CNN(CNN_structure,
                        number_of_steps=None,
                        **kwargs):
     train_classify = TrainClassifyCNN(CNN_structure)
+    for key in kwargs.copy():
+        if hasattr(train_classify, key):
+            setattr(train_classify, key, kwargs[key])
+            del kwargs[key]
+    train_classify.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)
+
+
+class TrainClassifyGrayCNN(TrainClassifyGray, TrainClassifyCNN):
+    pass
+
+
+def train_classify_gray_CNN(CNN_structure,
+                            tfrecord_dir,
+                            checkpoint_dirs,
+                            log_dir,
+                            number_of_steps=None,
+                            **kwargs):
+    train_classify = TrainClassifyGrayCNN(CNN_structure)
     for key in kwargs.copy():
         if hasattr(train_classify, key):
             setattr(train_classify, key, kwargs[key])

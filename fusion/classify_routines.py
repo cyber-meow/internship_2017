@@ -6,34 +6,32 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from classify.train import TrainClassify
+from classify.train import TrainClassify, TrainClassifyGray
 
 slim = tf.contrib.slim
 
 
 class TrainClassifyFusion(TrainClassify):
 
+    default_trainable_scopes = ['Logits']
+
     def __init__(self, structure, **kwargs):
         super(TrainClassifyFusion, self).__init__(**kwargs)
         self.structure = structure
-
-    @property
-    def default_trainable_scopes(self):
-        return ['Logits']
 
     def compute_logits(self, inputs, num_classes,
                        modality='color', dropout_keep_prob=0.8):
         assert modality in ['color', 'depth']
         if modality == 'color':
             net, _ = self.structure(
-                inputs, inputs,
+                inputs, tf.zeros_like(inputs),
                 final_endpoint='Middle',
-                color_keep_prob=tf.constant(1-1e-5, tf.float32))
+                color_keep_prob=tf.constant(1, tf.float32))
         elif modality == 'depth':
             net, _ = self.structure(
-                inputs, inputs,
+                tf.zeros_like(inputs), inputs,
                 final_endpoint='Middle',
-                color_keep_prob=tf.constant(1e-5, tf.float32))
+                color_keep_prob=tf.constant(0, tf.float32))
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         net = slim.flatten(net, scope='PreLogitsFlatten')
         logits = slim.fully_connected(
@@ -56,6 +54,26 @@ def train_classify_fusion(structure,
                           number_of_steps=None,
                           **kwargs):
     train_classify = TrainClassifyFusion(structure)
+    for key in kwargs.copy():
+        if hasattr(train_classify, key):
+            setattr(train_classify, key, kwargs[key])
+            del kwargs[key]
+    train_classify.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)
+
+
+class TrainClassifyGrayFusion(TrainClassifyGray, TrainClassifyFusion):
+    pass
+
+
+def train_classify_gray_fusion(structure,
+                               tfrecord_dir,
+                               checkpoint_dirs,
+                               log_dir,
+                               number_of_steps=None,
+                               **kwargs):
+    train_classify = TrainClassifyGrayFusion(structure)
     for key in kwargs.copy():
         if hasattr(train_classify, key):
             setattr(train_classify, key, kwargs[key])

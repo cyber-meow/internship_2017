@@ -112,6 +112,27 @@ def train_CAE(CAE_structure, tfrecord_dir, log_dir,
                     number_of_steps=number_of_steps, **kwargs)
 
 
+class TrainGrayCAE(TrainCAE):
+
+    def get_data(self, tfrecord_dir, batch_size):
+        dataset = read_TFRecord.get_split('train', tfrecord_dir, channels=1)
+        self.images_original, _ = load_batch(
+            dataset, height=self.image_size, width=self.image_size,
+            batch_size=batch_size)
+        return dataset
+
+
+def train_gray_CAE(CAE_structure, tfrecord_dir, log_dir,
+                   number_of_steps=None, **kwargs):
+    train_CAE = TrainGrayCAE(CAE_structure)
+    for key in kwargs.copy():
+        if hasattr(train_CAE, key):
+            setattr(train_CAE, key, kwargs[key])
+            del kwargs[key]
+    train_CAE.train(tfrecord_dir, None, log_dir,
+                    number_of_steps=number_of_steps, **kwargs)
+
+
 class EvaluateCAE(Evaluate):
 
     def __init__(self, CAE_structure, image_size=299):

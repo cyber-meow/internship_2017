@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from classify.evaluate import EvaluateClassify
-from classify.train import TrainClassify
+from classify.train import TrainClassify, TrainClassifyGray
 
 slim = tf.contrib.slim
 
@@ -58,6 +58,27 @@ def train_classify_CAE(CAE_structure,
                        endpoint='Middle',
                        **kwargs):
     train_classify = TrainClassifyCAE(CAE_structure, endpoint)
+    for key in kwargs.copy():
+        if hasattr(train_classify, key):
+            setattr(train_classify, key, kwargs[key])
+            del kwargs[key]
+    train_classify.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)
+
+
+class TrainClassifyGrayCAE(TrainClassifyGray, TrainClassifyCAE):
+    pass
+
+
+def train_classify_gray_CAE(CAE_structure,
+                            tfrecord_dir,
+                            checkpoint_dirs,
+                            log_dir,
+                            number_of_steps=None,
+                            endpoint='Middle',
+                            **kwargs):
+    train_classify = TrainClassifyGrayCAE(CAE_structure, endpoint)
     for key in kwargs.copy():
         if hasattr(train_classify, key):
             setattr(train_classify, key, kwargs[key])

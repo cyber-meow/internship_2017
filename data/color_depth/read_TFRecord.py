@@ -22,8 +22,12 @@ _ITEMS_TO_DESCRIPTIONS = {
 }
 
 
-def get_split_color_depth(split_name, tfrecord_dir,
-                          file_pattern=None, reader=None):
+def get_split_color_depth(split_name,
+                          tfrecord_dir,
+                          file_pattern=None,
+                          reader=None,
+                          color_channels=3,
+                          depth_channels=3):
     """Gets a dataset tuple with instructions for reading flowers.
     Args:
       split_name: A train/validation split name.
@@ -74,10 +78,12 @@ def get_split_color_depth(split_name, tfrecord_dir,
     items_to_handlers = {
         'image/color': slim.tfexample_decoder.Image(
             image_key='image/color/encoded',
-            format_key='image/color/format'),
+            format_key='image/color/format',
+            channels=color_channels),
         'image/depth': slim.tfexample_decoder.Image(
             image_key='image/depth/encoded',
-            format_key='image/depth/format'),
+            format_key='image/depth/format',
+            channels=depth_channels),
         'label': slim.tfexample_decoder.Tensor('image/class/label'),
     }
 

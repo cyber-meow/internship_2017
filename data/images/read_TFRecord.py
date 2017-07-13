@@ -21,7 +21,8 @@ _ITEMS_TO_DESCRIPTIONS = {
 }
 
 
-def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
+def get_split(split_name, dataset_dir,
+              file_pattern=None, reader=None, channels=3):
     """Gets a dataset tuple with instructions for reading flowers.
     Args:
       split_name: A train/validation split name.
@@ -68,7 +69,7 @@ def get_split(split_name, dataset_dir, file_pattern=None, reader=None):
     }
 
     items_to_handlers = {
-        'image': slim.tfexample_decoder.Image(),
+        'image': slim.tfexample_decoder.Image(channels=channels),
         'label': slim.tfexample_decoder.Tensor('image/class/label'),
     }
 

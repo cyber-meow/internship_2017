@@ -31,7 +31,7 @@ def CAE_shadow(inputs,
             net = slim.dropout(net, keep_prob=dropout_keep_prob,
                                scope='Dropout')
             net = slim.conv2d_transpose(
-                net, 3, [3, 3], scope='ConvTrans2d_3x3')
+                net, inputs.get_shape()[3], [3, 3], scope='ConvTrans2d_3x3')
             endpoints['Final'] = net
             if final_endpoint == 'Final':
                 return net, endpoints
@@ -79,7 +79,8 @@ def CAE_6layers(inputs,
             # 99 x 99 x 32 / 27 * 27 * 32
             endpoint = 'Final'
             net = slim.conv2d_transpose(
-                net, 3, [5, 5], stride=3, scope='ConvTrans2d_c_5x5')
+                net, inputs.get_shape()[3], [5, 5], stride=3,
+                scope='ConvTrans2d_c_5x5')
             endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net, endpoints
