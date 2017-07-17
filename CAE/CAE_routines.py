@@ -7,32 +7,28 @@ from __future__ import print_function
 import os
 
 import tensorflow as tf
+from tensorflow.contrib.tensorboard.plugins import projector
 
-import data.images.read_TFRecord as read_TFRecord
-from data.images.load_batch import load_batch
+from data.images import get_split_images, load_batch_images
+
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
-from routines.train import Train
-from routines.evaluate import Evaluate
+from routines.train import TrainImages
+from routines.evaluate import EvaluateImages
 
 slim = tf.contrib.slim
 
 
-class TrainCAE(Train):
+class TrainCAE(TrainImages):
 
-    def __init__(self, CAE_structure, image_size=299,
-                 initial_learning_rate=0.01, **kwargs):
+    def __init__(self, CAE_structure, initial_learning_rate=0.01, **kwargs):
         super(TrainCAE, self).__init__(**kwargs)
         self.initial_learning_rate = initial_learning_rate
-        self.image_size = image_size
         self.CAE_structure = CAE_structure
 
-    def get_data(self, tfrecord_dir, batch_size):
-        dataset = read_TFRecord.get_split('train', tfrecord_dir)
-        self.images_original, _ = load_batch(
-            dataset, height=self.image_size, width=self.image_size,
-            batch_size=batch_size)
-        return dataset
+    def decide_used_data(self):
+        self.images_original = tf.cond(
+            self.training, lambda: self.images_train, lambda: self.images_test)
 
     def compute(self, **kwargs):
         self.reconstructions = \
@@ -101,50 +97,11 @@ class TrainInceptionCAE(TrainCAE):
         return restore
 
 
-def train_CAE(CAE_structure, tfrecord_dir, log_dir,
-              number_of_steps=None, **kwargs):
-    train_CAE = TrainCAE(CAE_structure)
-    for key in kwargs.copy():
-        if hasattr(train_CAE, key):
-            setattr(train_CAE, key, kwargs[key])
-            del kwargs[key]
-    train_CAE.train(tfrecord_dir, None, log_dir,
-                    number_of_steps=number_of_steps, **kwargs)
+class EvaluateCAE(EvaluateImages):
 
-
-class TrainGrayCAE(TrainCAE):
-
-    def get_data(self, tfrecord_dir, batch_size):
-        dataset = read_TFRecord.get_split('train', tfrecord_dir, channels=1)
-        self.images_original, _ = load_batch(
-            dataset, height=self.image_size, width=self.image_size,
-            batch_size=batch_size)
-        return dataset
-
-
-def train_gray_CAE(CAE_structure, tfrecord_dir, log_dir,
-                   number_of_steps=None, **kwargs):
-    train_CAE = TrainGrayCAE(CAE_structure)
-    for key in kwargs.copy():
-        if hasattr(train_CAE, key):
-            setattr(train_CAE, key, kwargs[key])
-            del kwargs[key]
-    train_CAE.train(tfrecord_dir, None, log_dir,
-                    number_of_steps=number_of_steps, **kwargs)
-
-
-class EvaluateCAE(Evaluate):
-
-    def __init__(self, CAE_structure, image_size=299):
-        self.image_size = image_size
+    def __init__(self, CAE_structure, **kwargs):
+        super(EvaluateCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
-
-    def get_data(self, split_name, tfrecord_dir, batch_size):
-        self.dataset = read_TFRecord.get_split(split_name, tfrecord_dir)
-        self.images, _ = load_batch(
-            self.dataset, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        return self.dataset
 
     def compute(self, **kwargs):
         self.reconstructions = \
@@ -156,8 +113,7 @@ class EvaluateCAE(Evaluate):
             inputs, keep_prob=dropout_keep_prob, scope='Input/Dropout')
 
         self.images = images_corrupted if dropout_input else inputs
-        reconstructions, _ = self.CAE_structure(
-            self.images, dropout_keep_prob=1)
+        reconstructions, _ = self.CAE_structure(self.images)
         return reconstructions
 
     def compute_log_data(self):
@@ -166,16 +122,9 @@ class EvaluateCAE(Evaluate):
         self.total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('losses/total', self.total_loss)
         tf.summary.scalar('losses/reconstruction', self.reconstruction_loss)
-        tf.summary.scalar('learning_rate', self.learning_rate)
         tf.summary.image('input', self.images)
         tf.summary.image('reconstruction', self.reconstructions)
         self.summary_op = tf.summary.merge_all()
-
-    def init_model(self, sess, checkpoint_dirs):
-        assert len(checkpoint_dirs) == 1
-        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
-        saver = tf.train.Saver(tf.model_variables())
-        saver.restore(sess, checkpoint_path)
 
     def step_log_info(self, sess):
         self.global_step_count, time_elapsed, tensor_values = \
@@ -187,18 +136,6 @@ class EvaluateCAE(Evaluate):
             'global step %s: loss: %.4f (%.2f sec/step)',
             self.global_step_count, self.loss, time_elapsed)
         return self.global_step_count, tensor_values[1]
-
-
-def evaluate_CAE(CAE_structure, tfrecord_dir,
-                 checkpoint_dirs, log_dir,
-                 number_of_steps=None, **kwargs):
-    evaluate_CAE = EvaluateCAE(CAE_structure)
-    for key in kwargs.copy():
-        if hasattr(evaluate_CAE, key):
-            setattr(evaluate_CAE, key, kwargs[key])
-            del kwargs[key]
-    evaluate_CAE.evaluate(tfrecord_dir, checkpoint_dirs, log_dir,
-                          number_of_steps=number_of_steps, **kwargs)
 
 
 def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
@@ -241,3 +178,56 @@ def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
             if log_dir is not None:
                 fw.add_summary(summaries)
             return reconstruction
+
+
+def visualize(CAE_structure, tfrecord_dir, checkpoint_dirs, log_dir,
+              split_name='train', batch_size=300, channels=3):
+
+    if not tf.gfile.Exists(log_dir):
+        tf.gfile.MakeDirs(log_dir)
+    metadata = os.path.abspath(os.path.join(log_dir, 'metadata.tsv'))
+
+    if not isinstance(checkpoint_dirs, (tuple, list)):
+        checkpoint_dirs = [checkpoint_dirs]
+
+    with tf.Graph().as_default():
+        tf.logging.set_verbosity(tf.logging.INFO)
+
+        with tf.name_scope('Data_provider'):
+            dataset = get_split_images(
+                split_name, tfrecord_dir, channels=channels)
+            images, labels = load_batch_images(
+                dataset, height=299,
+                width=299, batch_size=batch_size)
+
+        with slim.arg_scope(nets_arg_scope(is_training=False)):
+            representations, _ = CAE_structure(images, final_endpoint='Middle')
+            representations = slim.flatten(representations, scope='Flatten')
+
+        repr_var = tf.Variable(
+            tf.zeros_like(representations), name='Representation')
+        ag = tf.assign(repr_var, representations)
+
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+        saver = tf.train.Saver(tf.model_variables())
+        saver_repr = tf.train.Saver([repr_var])
+
+        with tf.Session() as sess:
+            with slim.queues.QueueRunners(sess):
+                saver.restore(sess, checkpoint_path)
+                _, lbs = sess.run([ag, labels])
+                saver_repr.save(sess, os.path.join(log_dir, 'repr.ckpt'))
+
+                with open(metadata, 'w') as metadata_file:
+                    metadata_file.write('index\tlabel\n')
+                    for index, label in enumerate(lbs):
+                        metadata_file.write('%d\t%d\n' % (index, label))
+
+                config = projector.ProjectorConfig()
+
+                embedding = config.embeddings.add()
+                embedding.tensor_name = repr_var.name
+
+                embedding.metadata_path = metadata
+                projector.visualize_embeddings(
+                    tf.summary.FileWriter(log_dir), config)

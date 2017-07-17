@@ -9,6 +9,9 @@ import abc
 
 import numpy as np
 import tensorflow as tf
+
+from data.images import load_batch_images, get_split_images
+from data.color_depth import load_batch_color_depth, get_split_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
 slim = tf.contrib.slim
@@ -109,7 +112,7 @@ class Evaluate(EvaluateAbstract):
 
     def used_arg_scope(self, use_batch_norm):
         return nets_arg_scope(
-            is_traing=False, use_batch_norm=use_batch_norm)
+            is_training=False, use_batch_norm=use_batch_norm)
 
     def eval_step(self, sess, global_step, *args):
         tensors_to_run = [global_step]
@@ -122,3 +125,61 @@ class Evaluate(EvaluateAbstract):
 
     def last_step_log_info(self, sess, batch_size):
         return self.step_log_info(sess)
+
+    def init_model(self, sess, checkpoint_dirs):
+        assert len(checkpoint_dirs) == 1
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+        saver = tf.train.Saver(tf.model_variables())
+        saver.restore(sess, checkpoint_path)
+
+
+class EvaluateImages(Evaluate):
+
+    def __init__(self, image_size=299, channels=3):
+        self.image_size = image_size
+        self.channels = channels
+
+    def get_data(self, split_name, tfrecord_dir, batch_size):
+        self.dataset = get_split_images(
+            split_name, tfrecord_dir, channels=self.channels)
+        self.images, self.labels = load_batch_images(
+            self.dataset, height=self.image_size,
+            width=self.image_size, batch_size=batch_size)
+        return self.dataset
+
+
+class EvaluateColorDepth(Evaluate):
+
+    def __init__(self, image_size=299, color_channels=3, depth_channels=3):
+        self.image_size = image_size
+        self.color_channels = color_channels
+        self.depth_channels = depth_channels
+
+    def get_data(self, split_name, tfrecord_dir, batch_size):
+        self.dataset = get_split_color_depth(
+            split_name,
+            tfrecord_dir,
+            color_channels=self.color_channels,
+            depth_channels=self.depth_channels)
+        self.images_color, self.images_depth, self.labels = \
+            load_batch_color_depth(
+                self.dataset, height=self.image_size,
+                width=self.image_size, batch_size=batch_size)
+        return self.dataset
+
+
+def evaluate(evaluate_class,
+             used_structure,
+             tfrecord_dir,
+             checkpoint_dirs,
+             log_dir,
+             number_of_steps=None,
+             **kwargs):
+    evaluate_instance = evaluate_class(used_structure)
+    for key in kwargs.copy():
+        if hasattr(evaluate_instance, key):
+            setattr(evaluate_instance, key, kwargs[key])
+            del kwargs[key]
+    evaluate_instance.evaluate(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)

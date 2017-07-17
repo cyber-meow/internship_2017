@@ -109,4 +109,4 @@ def fusion_CNN(color_inputs, depth_inputs):
                 net = slim.conv2d(net, 1024, [3, 3], scope='Conv2d_c_3x3')
 
                 # 1 x 1 x 1024
-                return net
+                return net, None

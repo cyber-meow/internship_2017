@@ -5,12 +5,12 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow.contrib.tensorboard.plugins import projector
 
-from fusion.fusion_AE import TrainFusion
+from routines.train import TrainColorDepth
 
 slim = tf.contrib.slim
 
 
-class TrainEmbedding(TrainFusion):
+class TrainEmbedding(TrainColorDepth):
 
     @property
     def default_trainable_scopes(self):
@@ -115,19 +115,3 @@ class TrainEmbedding(TrainFusion):
         sess.run(self.ag, feed_dict={self.training: False})
         tf.logging.info('Finished training. Final Loss: %s', self.loss)
         tf.logging.info('Saving model to disk now.')
-
-
-def train_embedding(structure,
-                    tfrecord_dir,
-                    checkpoint_dirs,
-                    log_dir,
-                    number_of_steps=None,
-                    **kwargs):
-    train_embedding = TrainEmbedding(structure)
-    for key in kwargs.copy():
-        if hasattr(train_embedding, key):
-            setattr(train_embedding, key, kwargs[key])
-            del kwargs[key]
-    train_embedding.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)

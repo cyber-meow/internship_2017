@@ -9,6 +9,9 @@ import abc
 
 import numpy as np
 import tensorflow as tf
+
+from data.images import load_batch_images, get_split_images
+from data.color_depth import load_batch_color_depth, get_split_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
 slim = tf.contrib.slim
@@ -192,10 +195,14 @@ class Train(TrainAbstract):
             self.get_summary_op()
             self.get_test_summary_op()
 
+            if checkpoint_dirs is None:
+                init_fn = None
+            else:
+                init_fn = self.get_init_fn(checkpoint_dirs)
+
             # Define the supervisor
             self.sv = tf.train.Supervisor(
-                logdir=log_dir, summary_op=None,
-                init_fn=self.get_init_fn(checkpoint_dirs))
+                logdir=log_dir, summary_op=None, init_fn=init_fn)
 
             with self.sv.managed_session() as sess:
                 self.extra_log_info()
@@ -306,3 +313,77 @@ class Train(TrainAbstract):
                                  last_moving_variance)
         except IndexError:
             tf.logging.info('No moiving mean or variance')
+
+
+class TrainImages(Train):
+
+    def __init__(self, image_size=299, channels=3, **kwargs):
+        super(TrainImages, self).__init__(**kwargs)
+        self.image_size = image_size
+        self.channels = channels
+
+    def get_data(self, tfrecord_dir, batch_size):
+        self.dataset_train = get_split_images(
+            'train', tfrecord_dir, channels=self.channels)
+        self.images_train, self.labels_train = load_batch_images(
+            self.dataset_train, height=self.image_size,
+            width=self.image_size, batch_size=batch_size)
+        self.dataset_test = get_split_images(
+            'validation', tfrecord_dir, channels=self.channels)
+        self.images_test, self.labels_test = load_batch_images(
+            self.dataset_test, height=self.image_size,
+            width=self.image_size, batch_size=batch_size)
+        return self.dataset_train
+
+
+class TrainColorDepth(Train):
+
+    def __init__(self, image_size=299,
+                 color_channels=3, depth_channels=3, **kwargs):
+        super(TrainColorDepth, self).__init__(**kwargs)
+        self.image_size = image_size
+        self.color_channels = color_channels
+        self.depth_channels = depth_channels
+
+    def get_data(self, tfrecord_dir, batch_size):
+
+        self.dataset_train = get_split_color_depth(
+            'train',
+            tfrecord_dir,
+            color_channels=self.color_channels,
+            depth_channels=self.depth_channels)
+
+        self.images_color_train, self.images_depth_train, self.labels_train = \
+            load_batch_color_depth(
+                self.dataset_train, height=self.image_size,
+                width=self.image_size, batch_size=batch_size)
+
+        self.dataset_test = get_split_color_depth(
+            'validation',
+            tfrecord_dir,
+            color_channels=self.color_channels,
+            depth_channels=self.depth_channels)
+
+        self.images_color_test, self.images_depth_test, self.labels_test = \
+            load_batch_color_depth(
+                self.dataset_test, height=self.image_size,
+                width=self.image_size, batch_size=batch_size)
+
+        return self.dataset_train
+
+
+def train(train_class,
+          used_structure,
+          tfrecord_dir,
+          checkpoint_dirs,
+          log_dir,
+          number_of_steps=None,
+          **kwargs):
+    train_instance = train_class(used_structure)
+    for key in kwargs.copy():
+        if hasattr(train_instance, key):
+            setattr(train_instance, key, kwargs[key])
+            del kwargs[key]
+    train_instance.train(
+        tfrecord_dir, checkpoint_dirs, log_dir,
+        number_of_steps=number_of_steps, **kwargs)

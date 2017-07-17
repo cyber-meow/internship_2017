@@ -8,31 +8,14 @@ import abc
 import tensorflow as tf
 from nets import inception_v4
 
-import data.images.read_TFRecord as read_TFRecord
-from data.images.load_batch import load_batch
-from routines.train import Train
+from routines.train import TrainImages
 
 slim = tf.contrib.slim
 
 
-class TrainClassify(Train):
+class TrainClassify(TrainImages):
 
     __meta_class__ = abc.ABCMeta
-
-    def __init__(self, image_size=299, **kwargs):
-        super(TrainClassify, self).__init__(**kwargs)
-        self.image_size = image_size
-
-    def get_data(self, tfrecord_dir, batch_size):
-        self.dataset_train = read_TFRecord.get_split('train', tfrecord_dir)
-        self.images_train, self.labels_train = load_batch(
-            self.dataset_train, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        self.dataset_test = read_TFRecord.get_split('validation', tfrecord_dir)
-        self.images_test, self.labels_test = load_batch(
-            self.dataset_test, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        return self.dataset_train
 
     def decide_used_data(self):
         self.images = tf.cond(
@@ -114,22 +97,6 @@ class TrainClassify(Train):
         tf.logging.info('Saving model to disk now.')
 
 
-class TrainClassifyGray(TrainClassify):
-
-    def get_data(self, tfrecord_dir, batch_size):
-        self.dataset_train = read_TFRecord.get_split(
-            'train', tfrecord_dir, channels=1)
-        self.images_train, self.labels_train = load_batch(
-            self.dataset_train, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        self.dataset_test = read_TFRecord.get_split(
-            'validation', tfrecord_dir, channels=1)
-        self.images_test, self.labels_test = load_batch(
-            self.dataset_test, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        return self.dataset_train
-
-
 class TrainClassifyInception(TrainClassify):
 
     @property
@@ -193,39 +160,3 @@ class TrainClassifyCNN(TrainClassify):
         logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')
         return logits
-
-
-def train_classify_CNN(CNN_structure,
-                       tfrecord_dir,
-                       checkpoint_dirs,
-                       log_dir,
-                       number_of_steps=None,
-                       **kwargs):
-    train_classify = TrainClassifyCNN(CNN_structure)
-    for key in kwargs.copy():
-        if hasattr(train_classify, key):
-            setattr(train_classify, key, kwargs[key])
-            del kwargs[key]
-    train_classify.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)
-
-
-class TrainClassifyGrayCNN(TrainClassifyGray, TrainClassifyCNN):
-    pass
-
-
-def train_classify_gray_CNN(CNN_structure,
-                            tfrecord_dir,
-                            checkpoint_dirs,
-                            log_dir,
-                            number_of_steps=None,
-                            **kwargs):
-    train_classify = TrainClassifyGrayCNN(CNN_structure)
-    for key in kwargs.copy():
-        if hasattr(train_classify, key):
-            setattr(train_classify, key, kwargs[key])
-            del kwargs[key]
-    train_classify.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)

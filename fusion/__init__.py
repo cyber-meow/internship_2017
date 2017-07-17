@@ -4,6 +4,5 @@ from __future__ import print_function
 
 from fusion.structure import *
 from fusion.fusion_AE import *
-from fusion.fusion_CNN import *
 from fusion.classify_routines import *
 from fusion.embedding import *

@@ -7,14 +7,14 @@ from __future__ import print_function
 import tensorflow as tf
 
 from classify.evaluate import EvaluateClassify
-from classify.train import TrainClassify, TrainClassifyGray
+from classify.train import TrainClassify
 
 slim = tf.contrib.slim
 
 
 class TrainClassifyCAE(TrainClassify):
 
-    def __init__(self, CAE_structure, endpoint, **kwargs):
+    def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
         super(TrainClassifyCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
@@ -50,48 +50,10 @@ class TrainClassifyCAE(TrainClassify):
         tf.logging.info('representation shape: %s', self.representation_shape)
 
 
-def train_classify_CAE(CAE_structure,
-                       tfrecord_dir,
-                       checkpoint_dirs,
-                       log_dir,
-                       number_of_steps=None,
-                       endpoint='Middle',
-                       **kwargs):
-    train_classify = TrainClassifyCAE(CAE_structure, endpoint)
-    for key in kwargs.copy():
-        if hasattr(train_classify, key):
-            setattr(train_classify, key, kwargs[key])
-            del kwargs[key]
-    train_classify.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)
-
-
-class TrainClassifyGrayCAE(TrainClassifyGray, TrainClassifyCAE):
-    pass
-
-
-def train_classify_gray_CAE(CAE_structure,
-                            tfrecord_dir,
-                            checkpoint_dirs,
-                            log_dir,
-                            number_of_steps=None,
-                            endpoint='Middle',
-                            **kwargs):
-    train_classify = TrainClassifyGrayCAE(CAE_structure, endpoint)
-    for key in kwargs.copy():
-        if hasattr(train_classify, key):
-            setattr(train_classify, key, kwargs[key])
-            del kwargs[key]
-    train_classify.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)
-
-
 class EvaluateClassifyCAE(EvaluateClassify):
 
-    def __init__(self, CAE_structure, endpoint, image_size=299):
-        self.image_size = image_size
+    def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
+        super(EvaluateClassifyCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
 
@@ -105,19 +67,3 @@ class EvaluateClassifyCAE(EvaluateClassify):
         self.logits = slim.fully_connected(
             net, self.dataset.num_classes, activation_fn=None, scope='Logits')
         return self.logits
-
-
-def evaluate_classify_CAE(CAE_structure,
-                          tfrecord_dir,
-                          checkpoint_dirs,
-                          log_dir=None,
-                          number_of_steps=None,
-                          endpoint='Middle',
-                          **kwargs):
-    evaluate_classify = EvaluateClassifyCAE(CAE_structure, endpoint)
-    for key in kwargs.copy():
-        if hasattr(evaluate_classify, key):
-            setattr(evaluate_classify, key, kwargs[key])
-            del kwargs[key]
-    evaluate_classify.evaluate(
-        tfrecord_dir, checkpoint_dirs, log_dir, number_of_steps, **kwargs)

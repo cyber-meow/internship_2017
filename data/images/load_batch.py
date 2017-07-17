@@ -8,7 +8,7 @@ from nets_base import inception_preprocessing
 slim = tf.contrib.slim
 
 
-def load_batch(dataset, batch_size=32, height=299, width=299):
+def load_batch_images(dataset, batch_size=32, height=299, width=299):
     """Loads a single batch of data.
 
     Args:
