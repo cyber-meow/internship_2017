@@ -13,8 +13,10 @@ from data.images import get_split_images, load_batch_images
 
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
+
 from routines.train import TrainImages
 from routines.evaluate import EvaluateImages
+from routines.visualize import VisualizeImages
 
 slim = tf.contrib.slim
 
@@ -41,6 +43,7 @@ class TrainCAE(TrainImages):
 
         assert dropout_position in ['fc', 'input']
         dropout_input = dropout_position == 'input'
+        self.images_original = inputs
         self.images = images_corrupted if dropout_input else inputs
 
         if dropout_input:
@@ -66,6 +69,7 @@ class TrainCAE(TrainImages):
             'losses/reconstruction', self.reconstruction_loss)
         tf.summary.scalar('losses/total', self.total_loss)
         tf.summary.scalar('learning_rate', self.learning_rate)
+        tf.summary.image('original', self.images_original)
         tf.summary.image('input', self.images)
         tf.summary.image('reconstruction', self.reconstructions)
         self.summary_op = tf.summary.merge_all()
@@ -109,9 +113,10 @@ class EvaluateCAE(EvaluateImages):
 
     def compute_reconstruction(self, inputs, dropout_input=False,
                                dropout_keep_prob=0.5):
-        images_corrupted = slim.dropout(
-            inputs, keep_prob=dropout_keep_prob, scope='Input/Dropout')
+        images_corrupted = tf.nn.dropout(
+            inputs, keep_prob=dropout_keep_prob, name='Input/Dropout')
 
+        self.images_original = self.images
         self.images = images_corrupted if dropout_input else inputs
         reconstructions, _ = self.CAE_structure(self.images)
         return reconstructions
@@ -122,6 +127,7 @@ class EvaluateCAE(EvaluateImages):
         self.total_loss = tf.losses.get_total_loss()
         tf.summary.scalar('losses/total', self.total_loss)
         tf.summary.scalar('losses/reconstruction', self.reconstruction_loss)
+        tf.summary.image('original', self.images_original)
         tf.summary.image('input', self.images)
         tf.summary.image('reconstruction', self.reconstructions)
         self.summary_op = tf.summary.merge_all()
@@ -178,56 +184,3 @@ def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
             if log_dir is not None:
                 fw.add_summary(summaries)
             return reconstruction
-
-
-def visualize(CAE_structure, tfrecord_dir, checkpoint_dirs, log_dir,
-              split_name='train', batch_size=300, channels=3):
-
-    if not tf.gfile.Exists(log_dir):
-        tf.gfile.MakeDirs(log_dir)
-    metadata = os.path.abspath(os.path.join(log_dir, 'metadata.tsv'))
-
-    if not isinstance(checkpoint_dirs, (tuple, list)):
-        checkpoint_dirs = [checkpoint_dirs]
-
-    with tf.Graph().as_default():
-        tf.logging.set_verbosity(tf.logging.INFO)
-
-        with tf.name_scope('Data_provider'):
-            dataset = get_split_images(
-                split_name, tfrecord_dir, channels=channels)
-            images, labels = load_batch_images(
-                dataset, height=299,
-                width=299, batch_size=batch_size)
-
-        with slim.arg_scope(nets_arg_scope(is_training=False)):
-            representations, _ = CAE_structure(images, final_endpoint='Middle')
-            representations = slim.flatten(representations, scope='Flatten')
-
-        repr_var = tf.Variable(
-            tf.zeros_like(representations), name='Representation')
-        ag = tf.assign(repr_var, representations)
-
-        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
-        saver = tf.train.Saver(tf.model_variables())
-        saver_repr = tf.train.Saver([repr_var])
-
-        with tf.Session() as sess:
-            with slim.queues.QueueRunners(sess):
-                saver.restore(sess, checkpoint_path)
-                _, lbs = sess.run([ag, labels])
-                saver_repr.save(sess, os.path.join(log_dir, 'repr.ckpt'))
-
-                with open(metadata, 'w') as metadata_file:
-                    metadata_file.write('index\tlabel\n')
-                    for index, label in enumerate(lbs):
-                        metadata_file.write('%d\t%d\n' % (index, label))
-
-                config = projector.ProjectorConfig()
-
-                embedding = config.embeddings.add()
-                embedding.tensor_name = repr_var.name
-
-                embedding.metadata_path = metadata
-                projector.visualize_embeddings(
-                    tf.summary.FileWriter(log_dir), config)

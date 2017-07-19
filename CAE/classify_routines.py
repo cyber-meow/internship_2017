@@ -23,14 +23,19 @@ class TrainClassifyCAE(TrainClassify):
     def default_trainable_scopes(self):
         return ['Logits']
 
-    def compute_logits(self, inputs, num_classes, dropout_keep_prob=0.8):
+    def compute_logits(self, inputs, num_classes,
+                       dropout_keep_prob=0.8, do_avg=False):
         if self.CAE_structure is not None:
             net, _ = self.CAE_structure(
                 inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
         else:
             net = inputs
-        self.representation_shape = net.get_shape()
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
+        if do_avg:
+            net = slim.avg_pool2d(
+                net, net.get_shape()[1:3], padding='VALID',
+                scope='PreLogitsAvgPool')
+        self.representation_shape = net.get_shape()
         net = slim.flatten(net, scope='PreLogitsFlatten')
         logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')

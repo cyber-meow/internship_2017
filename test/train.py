@@ -4,8 +4,9 @@ from __future__ import print_function
 
 from routines.train import train
 from classify import TrainClassifyCNN, CNN_9layers
-from CAE import TrainCAE, TrainClassifyCAE, CAE_6layers
-from fusion import TrainFusionAE, fusion_AE_6layers
+from CAE import TrainCAE, TrainClassifyCAE
+from CAE import CAE_6layers, CAE_12layers
+from fusion import TrainFusionAE, fusion_AE_6layers, TrainEmbedding
 from fusion import TrainClassifyCommonRepr, TrainClassifyFusion
 
 
@@ -51,7 +52,7 @@ def train_CAE6_test(tfrecord_dir=None, log_dir=None, **kwargs):
     train(TrainCAE, CAE_6layers, tfrecord_dir, None, log_dir, 50, **kwargs)
 
 
-# endpoint, dropout_keep_prob
+# endpoint, dropout_keep_prob, do_avg
 def train_CAE6_classify_test(
         tfrecord_dir=None, checkpoint_dirs=None, log_dir=None, **kwargs):
     if tfrecord_dir is None:
@@ -108,3 +109,41 @@ def train_fusionAE6_single_classify_test(
         log_dir = 'test/log/fusionAE6_color_classify'
     train(TrainClassifyCommonRepr, fusion_AE_6layers, tfrecord_dir,
           checkpoint_dirs, log_dir, number_of_steps, **kwargs)
+
+
+# dropout_position, dropout_keep_prob
+def train_CAE12_test(tfrecord_dir=None, log_dir=None, **kwargs):
+    if tfrecord_dir is None:
+        tfrecord_dir = '../dataset/fingerspelling5/tfrecords/color_separated'
+    if log_dir is None:
+        log_dir = 'test/log/CAE12'
+    train(TrainCAE, CAE_12layers, tfrecord_dir, None, log_dir, 50,
+          image_size=83, channels=1, **kwargs)
+
+
+# endpoint, dropout_keep_prob, do_avg
+def train_CAE12_classify_test(
+        tfrecord_dir=None, checkpoint_dirs=None, log_dir=None, **kwargs):
+    if tfrecord_dir is None:
+        tfrecord_dir = '../dataset/fingerspelling5/tfrecords/color_separated'
+    if checkpoint_dirs is None:
+        checkpoint_dirs = ['test/log/CAE12']
+    if log_dir is None:
+        log_dir = 'test/log/CAE12_classify'
+    train(TrainClassifyCAE, CAE_12layers, tfrecord_dir,
+          checkpoint_dirs, log_dir, 50,
+          image_size=83, channels=1, do_avg=True, **kwargs)
+
+
+# feature_length
+def train_CAE6_embedding_test(
+        tfrecord_dir=None, checkpoint_dirs=None, log_dir=None, **kwargs):
+    if tfrecord_dir is None:
+        tfrecord_dir = \
+            '../dataset/fingerspelling5/tfrecords/color_depth_separated'
+    if checkpoint_dirs is None:
+        checkpoint_dirs = ['test/log/CAE6', 'test/log/CAE6_depth']
+    if log_dir is None:
+        log_dir = 'test/log/embedding_CAE6'
+    train(TrainEmbedding, CAE_6layers, tfrecord_dir,
+          checkpoint_dirs, log_dir, 50, **kwargs)

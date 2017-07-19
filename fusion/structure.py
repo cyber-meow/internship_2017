@@ -7,7 +7,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from CAE.structure import CAE_6layers
-from classify.CNN_structure import CNN_9layers
+from classify.CNN_structure import CNN_9layers, CNN_10layers
 
 slim = tf.contrib.slim
 
@@ -30,6 +30,7 @@ def deconvolve_3layer(inputs, channels, scope=None):
 
 def fusion_AE_6layers(color_inputs, depth_inputs,
                       final_endpoint='Final',
+                      scope=None,
                       color_keep_prob=None, depth_keep_prob=None):
     if color_keep_prob is None:
         if depth_keep_prob is None:
@@ -40,7 +41,7 @@ def fusion_AE_6layers(color_inputs, depth_inputs,
         depth_keep_prob = tf.constant(1, tf.float32) - color_keep_prob
     endpoints = {}
 
-    with tf.variable_scope('Fusion'):
+    with tf.variable_scope(scope, 'Fusion'):
         # 299 x 299 x 3, 299 x 299 x 3
         color_net, _ = CAE_6layers(
             color_inputs, final_endpoint='Conv2d_b_3x3', scope='Color')
@@ -85,8 +86,8 @@ def fusion_AE_6layers(color_inputs, depth_inputs,
         raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 
-def fusion_CNN(color_inputs, depth_inputs):
-    with tf.variable_scope('FusionCNN'):
+def fusion_CNN_11layers(color_inputs, depth_inputs, scope=None):
+    with tf.variable_scope(scope, 'FusionCNN'):
         # 299 x 299 x 3
         color_net = CNN_9layers(
             color_inputs, final_endpoint='Conv2d_f_3x3', scope='Color')
@@ -109,4 +110,33 @@ def fusion_CNN(color_inputs, depth_inputs):
                 net = slim.conv2d(net, 1024, [3, 3], scope='Conv2d_c_3x3')
 
                 # 1 x 1 x 1024
+                return net, None
+
+
+def fusion_CNN_10layers(color_inputs, depth_inputs, scope=None):
+    with tf.variable_scope(scope, 'FusionCNN'):
+        # 83 x 83 x 1
+        color_net = CNN_10layers(
+            color_inputs, final_endpoint='Conv2d_e_2x2', scope='Color')
+        depth_net = CNN_10layers(
+            depth_inputs, final_endpoint='Conv2d_e_2x2', scope='Depth')
+
+        # 8 x 8 x 96
+        net = color_net + depth_net
+        in_channels = color_inputs.get_shape()[3]
+
+        with tf.variable_scope('AfterFusion'):
+            with slim.arg_scope([slim.conv2d, slim.max_pool2d],
+                                stride=1, padding='VALID'):
+                net = slim.conv2d(net, in_channels*192, [2, 2],
+                                  scope='Conv2d_a_2x2')
+
+                # 7 x 7 x 192
+                net = slim.conv2d(net, 256, [3, 3], stride=2,
+                                  scope='Conv2d_b_3x3')
+
+                # 3 x 3 x 256
+                net = slim.conv2d(net, 512, [3, 3], scope='Conv2d_c_3x3')
+
+                # 1 x 1 x 512
                 return net, None

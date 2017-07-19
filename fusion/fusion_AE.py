@@ -4,11 +4,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 import tensorflow as tf
+from tensorflow.contrib.tensorboard.plugins import projector
 
 from nets_base.arg_scope import nets_arg_scope
 from routines.train import TrainColorDepth
 from routines.evaluate import EvaluateImages, EvaluateColorDepth
+from routines.visualize import VisualizeColorDepth, VisualizeImages
 
 slim = tf.contrib.slim
 
@@ -199,16 +203,18 @@ class EvaluateFusionAE(EvaluateColorDepth):
             lambda: tf.zeros_like(depth_inputs),
             lambda: images_depth_corrupted)
         assert dropout_position in ['fc', 'input']
-        dropout_input = dropout_position == 'input'
+        self.dropout_input = dropout_position == 'input'
 
-        if dropout_input:
+        if self.dropout_input:
+            self.images_color_original = self.images_color
+            self.images_depth_original = self.images_depth
             self.images_color = images_color_corrupted
             self.images_depth = images_depth_corrupted
         else:
             self.images_color = color_inputs
             self.images_depth = depth_inputs
 
-        if dropout_input:
+        if self.dropout_input:
             color_keep_prob = depth_keep_prob = tf.constant(1, tf.float32)
 
         (reconstructions_color, reconstructions_depth), _ = \
@@ -218,6 +224,9 @@ class EvaluateFusionAE(EvaluateColorDepth):
         return reconstructions_color, reconstructions_depth
 
     def compute_log_data(self):
+        if self.dropout_input:
+            tf.summary.image('original/color', self.images_color_original)
+            tf.summary.image('original/depth', self.images_depth_original)
         tf.summary.image('input/color', self.images_color)
         tf.summary.image('input/depth', self.images_depth)
         tf.summary.image('reconstruction/color', self.reconstructions_color)
@@ -232,9 +241,6 @@ class EvaluateFusionAE(EvaluateColorDepth):
             'global step %s: %.2f sec/step',
             self.global_step_count, time_elapsed)
         return self.global_step_count, tensor_values[0]
-
-    def used_arg_scope(self, use_batch_norm):
-        return nets_arg_scope(is_training=True, use_batch_norm=use_batch_norm)
 
 
 class EvaluateFusionAESingle(EvaluateImages):
@@ -276,5 +282,116 @@ class EvaluateFusionAESingle(EvaluateImages):
             self.global_step_count, time_elapsed)
         return self.global_step_count, tensor_values[0]
 
-    def used_arg_scope(self, use_batch_norm):
-        return nets_arg_scope(is_training=True, use_batch_norm=use_batch_norm)
+
+class VisualizeColorOrDepth(VisualizeColorDepth):
+
+    def compute(self, endpoint='Middle'):
+
+        if endpoint is None:
+            self.representations_color, _ = self.structure(
+                self.images_color, tf.zeros_like(self.images_depth),
+                color_keep_prob=tf.constant(1, tf.float32), scope='Color')
+            self.representations_depth, _ = self.structure(
+                tf.zeros_like(self.images_color), self.images_depth,
+                depth_keep_prob=tf.constant(1, tf.float32), scope='Depth')
+        else:
+            self.representations_color, _ = self.structure(
+                self.images_color, tf.zeros_like(self.images_depth),
+                final_endpoint=endpoint, scope='Color',
+                color_keep_prob=tf.constant(1, tf.float32))
+            self.representations_depth, _ = self.structure(
+                tf.zeros_like(self.images_color), self.images_depth,
+                final_endpoint=endpoint, scope='Depth',
+                depth_keep_prob=tf.constant(1, tf.float32))
+
+        self.representations_color = slim.flatten(
+            self.representations_color, scope='Color/Flatten')
+        self.representations_depth = slim.flatten(
+            self.representations_depth, scope='Depth/Flatten')
+
+        self.repr_var_color = tf.Variable(
+            tf.zeros_like(self.representations_color),
+            name='Color/Representation')
+        self.repr_var_depth = tf.Variable(
+            tf.zeros_like(self.representations_depth),
+            name='Depth/Representation')
+
+        self.assign = tf.group(
+            tf.assign(self.repr_var_color, self.representations_color),
+            tf.assign(self.repr_var_depth, self.representations_depth))
+
+        self.saver_repr = tf.train.Saver(
+            [self.repr_var_color, self.repr_var_depth])
+
+    def init_model(self, sess, checkpoint_dirs):
+
+        assert len(checkpoint_dirs) == 1
+
+        variables_color = {}
+        variables_depth = {}
+
+        for var in tf.model_variables():
+            if var.op.name.startswith('Color'):
+                variables_color['Fusion'+var.op.name[5:]] = var
+            if var.op.name.startswith('Depth'):
+                variables_depth['Fusion'+var.op.name[5:]] = var
+
+        saver_color = tf.train.Saver(variables_color)
+        saver_depth = tf.train.Saver(variables_depth)
+
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+
+        saver_color.restore(sess, checkpoint_path)
+        saver_depth.restore(sess, checkpoint_path)
+
+    def config_embedding(self, sess, log_dir):
+
+        _, lbs = sess.run([self.assign, self.labels])
+        self.saver_repr.save(sess, os.path.join(log_dir, 'repr.ckpt'))
+
+        metadata = os.path.abspath(os.path.join(log_dir, 'metadata.tsv'))
+        with open(metadata, 'w') as metadata_file:
+            metadata_file.write('index\tlabel\n')
+            for index, label in enumerate(lbs):
+                metadata_file.write('%d\t%d\n' % (index, label))
+
+        config = projector.ProjectorConfig()
+
+        embedding_color = config.embeddings.add()
+        embedding_color.tensor_name = self.repr_var_color.name
+        embedding_color.metadata_path = metadata
+
+        embedding_depth = config.embeddings.add()
+        embedding_depth.tensor_name = self.repr_var_depth.name
+        embedding_depth.metadata_path = metadata
+
+        projector.visualize_embeddings(
+            tf.summary.FileWriter(log_dir), config)
+
+
+class VisualizeColorAndDepth(VisualizeColorDepth, VisualizeImages):
+
+    def compute(self, endpoint='Middle'):
+
+        if endpoint is None:
+            self.representations = self.structure(
+                self.images_color, self.images_depth,
+                color_keep_prob=tf.constant(1, tf.float32),
+                depth_keep_prob=tf.constant(1, tf.float32))
+        else:
+            self.representations, _ = self.structure(
+                self.images_color, self.images_depth,
+                final_endpoint=endpoint,
+                color_keep_prob=tf.constant(1, tf.float32),
+                depth_keep_prob=tf.constant(1, tf.float32))
+
+        self.representations = slim.flatten(
+            self.representations, scope='Flatten')
+
+        self.repr_var = tf.Variable(
+            tf.zeros_like(self.representations),
+            name='Representation')
+
+        self.assign = tf.assign(self.repr_var, self.representations)
+
+        self.saver_repr = tf.train.Saver([self.repr_var])
