@@ -75,6 +75,28 @@ class EvaluateClassify(EvaluateImages):
         return self.global_step_count, tensor_values[1]
 
 
+class EvaluateClassifyCNN(EvaluateClassify):
+
+    def __init__(self, CNN_structure, **kwargs):
+        super(EvaluateClassifyCNN, self).__init__(**kwargs)
+        self.CNN_structure = CNN_structure
+
+    def compute_logits(self, inputs, num_classes,
+                       dropout_keep_prob=0.8, endpoint=None):
+        if self.CNN_structure is not None:
+            if endpoint is not None:
+                net = self.CNN_structure(inputs, final_endpoint=endpoint)
+            else:
+                net = self.CNN_structure(inputs)
+        else:
+            net = inputs
+        net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
+        net = slim.flatten(net, scope='PreLogitsFlatten')
+        logits = slim.fully_connected(
+            net, num_classes, activation_fn=None, scope='Logits')
+        return logits
+
+
 class EvaluateClassifyInception(EvaluateClassify):
 
     def compute_logits(self, inputs):

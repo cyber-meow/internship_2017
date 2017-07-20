@@ -4,11 +4,14 @@ from __future__ import print_function
 
 from routines.train import train
 from classify import TrainClassifyCNN, CNN_9layers
+
 from CAE import TrainCAE, TrainClassifyCAE
 from CAE import CAE_6layers, CAE_12layers
+
 from fusion import TrainFusionAE, fusion_AE_6layers, TrainEmbedding
 from fusion import TrainClassifyCommonRepr, TrainClassifyFusion
 
+from audio import CNN_mfcc, TrainClassifyAudio
 
 """
 General arguments included in **kwargs:
@@ -147,3 +150,13 @@ def train_CAE6_embedding_test(
         log_dir = 'test/log/embedding_CAE6'
     train(TrainEmbedding, CAE_6layers, tfrecord_dir,
           checkpoint_dirs, log_dir, 50, **kwargs)
+
+
+# dropout_keep_prob
+def train_classify_audio_test(tfrecord_dir=None, log_dir=None, **kwargs):
+    if tfrecord_dir is None:
+        tfrecord_dir = '../dataset/avletters/tfrecords/mfcc_sep'
+    if log_dir is None:
+        log_dir = 'test/log/classif_audio'
+    train(TrainClassifyAudio, CNN_mfcc,
+          tfrecord_dir, None, log_dir, 50, **kwargs)

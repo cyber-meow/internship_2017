@@ -73,7 +73,7 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
     def compute_logits(self, color_inputs, depth_inputs, num_classes,
                        dropout_keep_prob=0.8, endpoint=None):
         if endpoint is None:
-            net, _ = self.structure(color_inputs, depth_inputs)
+            net = self.structure(color_inputs, depth_inputs)
         else:
             net, _ = self.structure(color_inputs, depth_inputs,
                                     final_endpoint=endpoint)
@@ -111,3 +111,11 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
             [ac_test_summary, ls_test_summary,
              imgs_color_test, imgs_depth_test])
         return self.test_summary_op
+
+    def get_init_fn(self, checkpoint_dirs):
+        assert len(checkpoint_dirs) == 1
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+        assert checkpoint_path is not None
+        variables_to_restore = self.get_variables_to_restore(['Fusion'])
+        return slim.assign_from_checkpoint_fn(
+            checkpoint_path, variables_to_restore)

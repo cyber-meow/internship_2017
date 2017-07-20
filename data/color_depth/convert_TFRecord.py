@@ -10,7 +10,6 @@ import math
 import random
 
 import tensorflow as tf
-
 from data import dataset_utils
 
 

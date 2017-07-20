@@ -150,9 +150,13 @@ class TrainClassifyCNN(TrainClassify):
         super(TrainClassifyCNN, self).__init__(**kwargs)
         self.CNN_structure = CNN_structure
 
-    def compute_logits(self, inputs, num_classes, dropout_keep_prob=0.8):
+    def compute_logits(self, inputs, num_classes,
+                       dropout_keep_prob=0.8, endpoint=None):
         if self.CNN_structure is not None:
-            net = self.CNN_structure(inputs)
+            if endpoint is not None:
+                net = self.CNN_structure(inputs, final_endpoint=endpoint)
+            else:
+                net = self.CNN_structure(inputs)
         else:
             net = inputs
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')

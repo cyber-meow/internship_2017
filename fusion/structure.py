@@ -110,7 +110,7 @@ def fusion_CNN_11layers(color_inputs, depth_inputs, scope=None):
                 net = slim.conv2d(net, 1024, [3, 3], scope='Conv2d_c_3x3')
 
                 # 1 x 1 x 1024
-                return net, None
+                return net
 
 
 def fusion_CNN_10layers(color_inputs, depth_inputs, scope=None):
@@ -139,4 +139,4 @@ def fusion_CNN_10layers(color_inputs, depth_inputs, scope=None):
                 net = slim.conv2d(net, 512, [3, 3], scope='Conv2d_c_3x3')
 
                 # 1 x 1 x 512
-                return net, None
+                return net

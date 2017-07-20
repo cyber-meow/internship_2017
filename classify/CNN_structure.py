@@ -88,7 +88,7 @@ def CNN_10layers(inputs,
     in_channels = inputs.get_shape()[3]
 
     with tf.variable_scope(scope, 'CNN', [inputs]):
-        with slim.arg_scope([slim.conv2d, slim.max_pool2d, slim.avg_pool2d],
+        with slim.arg_scope([slim.conv2d, slim.max_pool2d],
                             stride=1, padding='VALID'):
 
             # 83 x 83 x 1

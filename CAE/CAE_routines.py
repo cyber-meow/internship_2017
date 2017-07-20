@@ -7,16 +7,12 @@ from __future__ import print_function
 import os
 
 import tensorflow as tf
-from tensorflow.contrib.tensorboard.plugins import projector
-
-from data.images import get_split_images, load_batch_images
 
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
 
 from routines.train import TrainImages
 from routines.evaluate import EvaluateImages
-from routines.visualize import VisualizeImages
 
 slim = tf.contrib.slim
 

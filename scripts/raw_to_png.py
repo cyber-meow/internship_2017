@@ -2,7 +2,6 @@
 Change raw depth maps (320 x 240 16 bit) to png images
 """
 
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
