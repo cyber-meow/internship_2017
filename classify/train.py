@@ -151,12 +151,25 @@ class TrainClassifyCNN(TrainClassify):
         self.CNN_structure = CNN_structure
 
     def compute_logits(self, inputs, num_classes,
-                       dropout_keep_prob=0.8, endpoint=None):
+                       dropout_keep_prob=0.8, endpoint=None,
+                       per_layer_dropout=None):
         if self.CNN_structure is not None:
             if endpoint is not None:
-                net = self.CNN_structure(inputs, final_endpoint=endpoint)
+                if per_layer_dropout is not None:
+                    net = self.CNN_structure(
+                        inputs, final_endpoint=endpoint,
+                        per_layer_dropout=per_layer_dropout,
+                        dropout_keep_prob=dropout_keep_prob)
+                else:
+                    net = self.CNN_structure(inputs, final_endpoint=endpoint)
             else:
-                net = self.CNN_structure(inputs)
+                if per_layer_dropout is not None:
+                    net = self.CNN_structure(
+                        inputs,
+                        per_layer_dropout=per_layer_dropout,
+                        dropout_keep_prob=dropout_keep_prob)
+                else:
+                    net = self.CNN_structure(inputs)
         else:
             net = inputs
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')

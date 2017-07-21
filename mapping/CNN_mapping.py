@@ -12,8 +12,7 @@ import numpy as np
 import tensorflow as tf
 from nets import inception_v4
 
-from data.color_depth.read_TFRecord import get_split_color_depth
-from data.color_depth.load_batch import load_batch_color_depth
+from data.color_depth import get_split_color_depth, load_batch_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
 slim = tf.contrib.slim

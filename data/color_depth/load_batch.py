@@ -13,15 +13,17 @@ def load_batch_color_depth(dataset,
                            height=299,
                            width=299,
                            common_queue_capacity=800,
-                           common_queue_min=400):
+                           common_queue_min=400,
+                           shuffle=True):
     """Loads a single batch of data.
 
     Args:
-      dataset: The dataset to load.
-      batch_size: The number of images in the batch.
-      height: The size of each image after preprocessing.
-      width: The size of each image after preprocessing.
-      common_queue_capacity, common_queue_min: decide the shuffle degree
+      dataset: The dataset to load
+      batch_size: The number of images in the batch
+      height: The size of each image after preprocessing
+      width: The size of each image after preprocessing
+      common_queue_capacity, common_queue_min: Decide the shuffle degree
+      shuffle: Whether to shuffle or not
 
     Returns:
       images_color: A Tensor of size [batch_size, height, width, 3],

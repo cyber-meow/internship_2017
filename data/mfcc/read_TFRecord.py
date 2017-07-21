@@ -92,3 +92,36 @@ def get_split_mfcc(split_name,
         items_to_descriptions=_ITEMS_TO_DESCRIPTIONS,
         num_classes=num_classes,
         labels_to_names=labels_to_names)
+
+
+def load_batch_mfcc(dataset,
+                    batch_size=32,
+                    common_queue_capacity=800,
+                    common_queue_min=400,
+                    shuffle=True):
+    """Loads a single batch of data.
+
+    Args:
+      dataset: The dataset to load
+      batch_size: The number of images in the batch
+      common_queue_capacity, common_queue_min: Decide the shuffle degree
+      shuffle: Whether to shuffle or not
+
+    Returns:
+      mfccs: A Tensor of size [batch_size, feature_len, time_frames, 1]
+      labels: A Tensor of size [batch_size], whose values range between
+        0 and dataset.num_classes.
+    """
+    data_provider = slim.dataset_data_provider.DatasetDataProvider(
+        dataset, common_queue_capacity=common_queue_capacity,
+        common_queue_min=common_queue_min, shuffle=shuffle)
+    mfcc, label = data_provider.get(['mfcc', 'label'])
+
+    # Batch it up.
+    mfccs, labels = tf.train.batch(
+        [mfcc, label],
+        batch_size=batch_size,
+        num_threads=1,
+        capacity=2*batch_size)
+
+    return mfccs, labels

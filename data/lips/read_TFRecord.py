@@ -1,5 +1,3 @@
-"""Provides data for the dataset from TFRecords for color-depth image pairs"""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -9,26 +7,23 @@ import fnmatch
 import tensorflow as tf
 
 from data import dataset_utils
-from nets_base import inception_preprocessing
 
 slim = tf.contrib.slim
 
 
-_FILE_PATTERN = 'color_depth_%s_*.tfrecord'
+_FILE_PATTERN = 'lips_%s_*.tfrecord'
 
 _ITEMS_TO_DESCRIPTIONS = {
-    'image/color': 'A color image of varying size.',
-    'image/depth': 'A depth map of varying size',
+    'lips': 'The images for the video for lipreading',
     'label': 'A single integer representing the label',
 }
 
 
-def get_split_color_depth(split_name,
-                          tfrecord_dir,
-                          file_pattern=None,
-                          reader=None,
-                          color_channels=3,
-                          depth_channels=3):
+def get_split_lips(split_name,
+                   tfrecord_dir,
+                   file_pattern=None,
+                   reader=None,
+                   num_frames=12):
     """Gets a dataset tuple with instructions for reading flowers.
     Args:
       split_name: A train/validation split name.
@@ -68,24 +63,15 @@ def get_split_color_depth(split_name,
 
     # Create the keys_to_features dictionary for the decoder
     keys_to_features = {
-        'image/color/encoded': tf.FixedLenFeature((), tf.string),
-        'image/color/format': tf.FixedLenFeature((), tf.string),
-        'image/depth/encoded': tf.FixedLenFeature((), tf.string),
-        'image/depth/format': tf.FixedLenFeature((), tf.string),
-        'image/class/label': tf.FixedLenFeature(
+        'video/data': tf.FixedLenFeature((60, 80, num_frames*2), tf.float32),
+        'video/label': tf.FixedLenFeature(
           (), tf.int64, default_value=tf.zeros((), dtype=tf.int64)),
     }
 
     items_to_handlers = {
-        'image/color': slim.tfexample_decoder.Image(
-            image_key='image/color/encoded',
-            format_key='image/color/format',
-            channels=color_channels),
-        'image/depth': slim.tfexample_decoder.Image(
-            image_key='image/depth/encoded',
-            format_key='image/depth/format',
-            channels=depth_channels),
-        'label': slim.tfexample_decoder.Tensor('image/class/label'),
+        'video': slim.tfexample_decoder.Tensor(
+            'video/data', shape=(60, 80, num_frames*2, 1)),
+        'label': slim.tfexample_decoder.Tensor('video/label'),
     }
 
     decoder = slim.tfexample_decoder.TFExampleDecoder(
@@ -108,50 +94,48 @@ def get_split_color_depth(split_name,
         labels_to_names=labels_to_names)
 
 
-def load_batch_color_depth(dataset,
-                           batch_size=32,
-                           height=299,
-                           width=299,
-                           common_queue_capacity=800,
-                           common_queue_min=400,
-                           shuffle=True):
+def load_batch_lips(dataset,
+                    batch_size=32,
+                    common_queue_capacity=800,
+                    common_queue_min=400,
+                    shuffle=True):
     """Loads a single batch of data.
 
     Args:
       dataset: The dataset to load
       batch_size: The number of images in the batch
-      height: The size of each image after preprocessing
-      width: The size of each image after preprocessing
       common_queue_capacity, common_queue_min: Decide the shuffle degree
       shuffle: Whether to shuffle or not
 
     Returns:
-      images_color: A Tensor of size [batch_size, height, width, 3],
-        RGB image samples that have been preprocessed.
-      images_depth: A Tensor of size [batch_size, height, width, 3],
-        depth image samples that have been preprocessed.
+      mfccs: A Tensor of size [batch_size, feature_len, time_frames, 1]
       labels: A Tensor of size [batch_size], whose values range between
         0 and dataset.num_classes.
     """
     data_provider = slim.dataset_data_provider.DatasetDataProvider(
         dataset, common_queue_capacity=common_queue_capacity,
-        common_queue_min=common_queue_min)
-    image_color, image_depth, label = data_provider.get(
-        ['image/color', 'image/depth', 'label'])
+        common_queue_min=common_queue_min, shuffle=shuffle)
+    video, label = data_provider.get(['video', 'label'])
 
-    # Preprocess image for usage by Inception.
-    image_color = inception_preprocessing.preprocess_image(
-        image_color, height, width, is_training=False)
-    image_color = tf.image.adjust_contrast(image_color, 10)
-    image_depth = inception_preprocessing.preprocess_image(
-        image_depth, height, width, is_training=False)
-    image_depth = tf.image.adjust_contrast(image_depth, 10)
+    transformed_images = []
+    for i in range(video.get_shape()[2]):
+        transformed_images.append(tf.expand_dims(
+            tf.image.random_brightness(
+                video[:, :, i, :], max_delta=1.), 2))
+    video = tf.concat(transformed_images, 2)
+
+    transformed_images = []
+    for i in range(video.get_shape()[2]):
+        transformed_images.append(tf.expand_dims(
+            tf.image.random_contrast(
+                video[:, :, i, :], lower=0.2, upper=1.8), 2))
+    video = tf.concat(transformed_images, 2)
 
     # Batch it up.
-    images_color, images_depth, labels = tf.train.batch(
-        [image_color, image_depth, label],
+    videos, labels = tf.train.batch(
+        [video, label],
         batch_size=batch_size,
         num_threads=1,
         capacity=2*batch_size)
 
-    return images_color, images_depth, labels
+    return videos, labels

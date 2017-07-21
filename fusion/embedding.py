@@ -51,10 +51,10 @@ class TrainEmbedding(TrainColorDepth):
             return color_net, depth_net
 
     def get_total_loss(self):
-        color_repr = slim.unit_norm(self.color_repr, 0)
-        depth_repr = slim.unit_norm(self.depth_repr, 0)
+        color_repr = slim.unit_norm(self.color_repr, 1)
+        depth_repr = slim.unit_norm(self.depth_repr, 1)
         self.cos_loss = tf.losses.cosine_distance(
-            color_repr, depth_repr, 0)
+            color_repr, depth_repr, 1)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
 
@@ -143,8 +143,8 @@ class VisualizeCommonEmbedding(VisualizeColorDepth, VisualizeImages):
             depth_net = slim.fully_connected(
                 depth_net, feature_length, activation_fn=None, scope='Depth')
 
-        color_net = slim.unit_norm(color_net, 0)
-        depth_net = slim.unit_norm(depth_net, 0)
+        color_net = slim.unit_norm(color_net, 1)
+        depth_net = slim.unit_norm(depth_net, 1)
 
         self.representations = tf.concat([color_net, depth_net], 0)
 

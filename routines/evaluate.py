@@ -62,6 +62,7 @@ class Evaluate(EvaluateAbstract):
                  number_of_steps=None,
                  batch_size=12,
                  split_name='validation',
+                 shuffle=False,
                  use_batch_norm=True,
                  use_batch_stat=False,
                  **kwargs):
@@ -76,7 +77,8 @@ class Evaluate(EvaluateAbstract):
             tf.logging.set_verbosity(tf.logging.INFO)
 
             with tf.name_scope('Data_provider'):
-                dataset = self.get_data(split_name, tfrecord_dir, batch_size)
+                dataset = self.get_data(
+                    split_name, tfrecord_dir, batch_size, shuffle)
 
             if number_of_steps is None:
                 number_of_steps = int(np.ceil(dataset.num_samples/batch_size))
@@ -141,12 +143,12 @@ class EvaluateImages(Evaluate):
         self.image_size = image_size
         self.channels = channels
 
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_images(
             split_name, tfrecord_dir, channels=self.channels)
         self.images, self.labels = load_batch_images(
             self.dataset, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
+            width=self.image_size, batch_size=batch_size, shuffle=shuffle)
         return self.dataset
 
 
@@ -157,7 +159,7 @@ class EvaluateColorDepth(Evaluate):
         self.color_channels = color_channels
         self.depth_channels = depth_channels
 
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_color_depth(
             split_name,
             tfrecord_dir,
@@ -166,7 +168,7 @@ class EvaluateColorDepth(Evaluate):
         self.images_color, self.images_depth, self.labels = \
             load_batch_color_depth(
                 self.dataset, height=self.image_size,
-                width=self.image_size, batch_size=batch_size)
+                width=self.image_size, batch_size=batch_size, shuffle=shuffle)
         return self.dataset
 
 
