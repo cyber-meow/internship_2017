@@ -41,19 +41,19 @@ def CNN_mfcc(inputs,
 
             # 6 x 6 x 13
             endpoint = 'Conv2d_c_2x2'
-            net = slim.conv2d(inputs, 23, [2, 2], scope='Conv2d_c_2x2')
+            net = slim.conv2d(net, 23, [2, 2], scope='Conv2d_c_2x2')
             if final_endpoint == endpoint:
                 return net
 
             # 5 x 5 x 23
             endpoint = 'Conv2d_d_3x3'
-            net = slim.conv2d(inputs, 31, [3, 3], scope='Conv2d_d_3x3')
+            net = slim.conv2d(net, 31, [3, 3], scope='Conv2d_d_3x3')
             if final_endpoint == endpoint:
                 return net
 
             # 3 x 3 x 31
             endpoint = 'Conv2d_e_3x3'
-            net = slim.conv2d(inputs, 43, [3, 3], scope='Conv2d_e_3x3')
+            net = slim.conv2d(net, 43, [3, 3], scope='Conv2d_e_3x3')
             if final_endpoint == endpoint:
                 return net
 

@@ -174,6 +174,7 @@ class TrainClassifyCNN(TrainClassify):
             net = inputs
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         net = slim.flatten(net, scope='PreLogitsFlatten')
+        print(net.get_shape())
         logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')
         return logits

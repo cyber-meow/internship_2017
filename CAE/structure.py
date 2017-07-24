@@ -44,47 +44,52 @@ def CAE_6layers(inputs,
                 dropout_keep_prob=0.5,
                 scope=None):
     endpoints = {}
+    in_channels = inputs.get_shape()[3]
 
     with tf.variable_scope(scope, 'CAE', [inputs]):
         with slim.arg_scope([slim.conv2d, slim.conv2d_transpose],
                             stride=2, padding='VALID'):
 
-            # 299 x 299 x 3 / 83 * 83 * 3
+            # 299 x 299 x 3 / 83 x 83 x 1
             net = slim.conv2d(
-                inputs, 32, [5, 5], stride=3, scope='Conv2d_a_5x5')
+                inputs, in_channels*7, [5, 5], stride=3, scope='Conv2d_a_5x5')
 
-            # 99 x 99 x 32 / 27 * 27 * 32
+            # 99 x 99 x 21 / 27 x 27 x 7
             endpoint = 'Conv2d_b_3x3'
-            net = slim.conv2d(net, 48, [3, 3], scope='Conv2d_b_3x3')
+            net = slim.conv2d(net, in_channels*13, [3, 3],
+                              scope='Conv2d_b_3x3')
             endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net, endpoints
 
-            # 49 x 49 x 48 / 13 * 13 * 48
+            # 49 x 49 x 39 / 13 x 13 x 13
             endpoint = 'Middle'
-            net = slim.conv2d(net, 64, [3, 3], scope='Conv2d_c_3x3')
+            net = slim.conv2d(net, in_channels*19, [3, 3],
+                              scope='Conv2d_c_3x3')
             endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net, endpoints
 
-            # 24 x 24 x 64 / 6 * 6 * 64
+            # 24 x 24 x 57 / 6 x 6 x 19
             net = slim.dropout(net, keep_prob=dropout_keep_prob,
                                scope='Dropout')
             net = slim.conv2d_transpose(
-                net, 48, [3, 3], scope='ConvTrans2d_a_3x3')
-            # 49 x 49 x 48 / 13 * 13 * 48
-            net = slim.conv2d_transpose(
-                net, 32, [3, 3], scope='ConvTrans2d_b_3x3')
+                net, in_channels*13, [3, 3], scope='ConvTrans2d_a_3x3')
 
-            # 99 x 99 x 32 / 27 * 27 * 32
+            # 49 x 49 x 36 / 13 x 13 x 13
+            net = slim.conv2d_transpose(
+                net, in_channels*7, [3, 3], scope='ConvTrans2d_b_3x3')
+
+            # 99 x 99 x 21 / 27 x 27 x 7
             endpoint = 'Final'
             net = slim.conv2d_transpose(
-                net, inputs.get_shape()[3], [5, 5], stride=3,
+                net, in_channels, [5, 5], stride=3,
                 scope='ConvTrans2d_c_5x5')
             endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net, endpoints
 
+            # 299 x 299 x 3 / 83 x 83 x 1
             raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 

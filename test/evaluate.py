@@ -10,7 +10,7 @@ from fusion import EvaluateFusionAE, EvaluateFusionAESingle, fusion_AE_6layers
 """
 General arguments included in **kwargs:
   number_of_epochs, use_batch_norm, trainable_scopes,
-  split_name, batch_size, number_of_steps
+  split_name, batch_size, number_of_steps, shuffle
 
 Arguments for single modality inputs:
   image_size, channels

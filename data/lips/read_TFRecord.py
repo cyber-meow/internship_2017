@@ -63,14 +63,14 @@ def get_split_lips(split_name,
 
     # Create the keys_to_features dictionary for the decoder
     keys_to_features = {
-        'video/data': tf.FixedLenFeature((60, 80, num_frames*2), tf.float32),
+        'video/data': tf.FixedLenFeature((60, 80, num_frames), tf.float32),
         'video/label': tf.FixedLenFeature(
           (), tf.int64, default_value=tf.zeros((), dtype=tf.int64)),
     }
 
     items_to_handlers = {
         'video': slim.tfexample_decoder.Tensor(
-            'video/data', shape=(60, 80, num_frames*2, 1)),
+            'video/data', shape=(60, 80, num_frames, 1)),
         'label': slim.tfexample_decoder.Tensor('video/label'),
     }
 
@@ -98,7 +98,8 @@ def load_batch_lips(dataset,
                     batch_size=32,
                     common_queue_capacity=800,
                     common_queue_min=400,
-                    shuffle=True):
+                    shuffle=True,
+                    is_training=True):
     """Loads a single batch of data.
 
     Args:
@@ -117,19 +118,24 @@ def load_batch_lips(dataset,
         common_queue_min=common_queue_min, shuffle=shuffle)
     video, label = data_provider.get(['video', 'label'])
 
-    transformed_images = []
-    for i in range(video.get_shape()[2]):
-        transformed_images.append(tf.expand_dims(
-            tf.image.random_brightness(
-                video[:, :, i, :], max_delta=1.), 2))
-    video = tf.concat(transformed_images, 2)
+    if is_training:
 
-    transformed_images = []
-    for i in range(video.get_shape()[2]):
-        transformed_images.append(tf.expand_dims(
-            tf.image.random_contrast(
-                video[:, :, i, :], lower=0.2, upper=1.8), 2))
-    video = tf.concat(transformed_images, 2)
+        transformed_images = []
+
+        delta = tf.random_uniform((), -1, 1)
+        contrast_factor = tf.random_uniform((), 0.2, 1.8)
+        bbox_begin, bbox_end, _ = tf.image.sample_distorted_bounding_box(
+            [60, 80, 1], [[[0, 0, 1, 1]]], area_range=[0.8, 1])
+
+        for i in range(video.get_shape()[2]):
+            image = video[:, :, i, :]
+            image = tf.image.adjust_brightness(image, delta)
+            image = tf.image.adjust_contrast(image, contrast_factor)
+            image = tf.slice(image, bbox_begin, bbox_end)
+            image.set_shape([None, None, 1])
+            image = tf.image.resize_images(image, [60, 80])
+            transformed_images.append(tf.expand_dims(image, 2))
+        video = tf.concat(transformed_images, 2)
 
     # Batch it up.
     videos, labels = tf.train.batch(

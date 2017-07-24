@@ -15,7 +15,8 @@ slim = tf.contrib.slim
 class EvaluateClassify(EvaluateImages):
 
     def compute(self, **kwargs):
-        self.logits = self.compute_logits(self.images, **kwargs)
+        self.logits = self.compute_logits(
+            self.images, self.dataset.num_classes, **kwargs)
 
     @abc.abstractmethod
     def compute_logits(self, inputs):
@@ -55,11 +56,12 @@ class EvaluateClassify(EvaluateImages):
         true_names = [dataset.labels_to_names[i] for i in labels]
         predicted_names = [dataset.labels_to_names[i] for i in predictions]
 
-        tf.logging.info('Information for the last batch')
-        tf.logging.info('Ground Truth: [%s]', true_names)
-        tf.logging.info('Prediciotn: [%s]', predicted_names)
-
         if hasattr(self, 'fw'):
+
+            tf.logging.info('Information for the last batch')
+            tf.logging.info('Ground Truth: [%s]', true_names)
+            tf.logging.info('Prediciotn: [%s]', predicted_names)
+
             with tf.name_scope('last_images'):
                 for i in range(batch_size):
                     image_pl = tf.placeholder(
@@ -99,9 +101,9 @@ class EvaluateClassifyCNN(EvaluateClassify):
 
 class EvaluateClassifyInception(EvaluateClassify):
 
-    def compute_logits(self, inputs):
+    def compute_logits(self, inputs, num_classes):
         logits, _ = inception_v4.inception_v4(
-            inputs, num_classes=self.dataset.num_classes, is_training=False)
+            inputs, num_classes=num_classes, is_training=False)
         return logits
 
 

@@ -17,7 +17,7 @@ import tensorflow as tf
 from data import dataset_utils
 
 
-def read_mat(file_path, num_frames=12):
+def read_mat(file_path, num_frames=12, laplace=False):
     """Read and preprocess a mat file containing images
 
     Args:
@@ -31,12 +31,13 @@ def read_mat(file_path, num_frames=12):
     video_data = scipy.signal.resample(video_data, num_frames, axis=1)
     video_data = preprocessing.scale(video_data, axis=0)
     video_data = np.rot90(video_data.reshape((80, 60, num_frames)), k=-1)
-    new_video_data = np.empty((60, 80, num_frames*2))
-    for i in range(num_frames):
-        new_video_data[:, :, 2*i] = video_data[:, :, i]
-        new_video_data[:, :, 2*i+1] = \
-            scipy.ndimage.filters.laplace(video_data[:, :, i])
-    return new_video_data
+    if laplace:
+        new_video_data = np.empty((60, 80, num_frames))
+        for i in range(num_frames):
+            new_video_data[:, :, i] = \
+                scipy.ndimage.filters.laplace(video_data[:, :, i])
+        video_data = new_video_data
+    return video_data
 
 
 def to_tfexample(mfcc_data, class_id):

@@ -62,7 +62,7 @@ class EvaluateClassifyCAE(EvaluateClassify):
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
 
-    def compute_logits(self, inputs):
+    def compute_logits(self, inputs, num_classes):
         if self.CAE_structure is not None:
             net, _ = self.CAE_structure(
                 inputs, final_endpoint=self.endpoint)
@@ -70,5 +70,5 @@ class EvaluateClassifyCAE(EvaluateClassify):
             net = inputs
         net = slim.flatten(net, scope='PreLogitsFlatten')
         self.logits = slim.fully_connected(
-            net, self.dataset.num_classes, activation_fn=None, scope='Logits')
+            net, num_classes, activation_fn=None, scope='Logits')
         return self.logits
