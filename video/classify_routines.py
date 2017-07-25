@@ -95,6 +95,7 @@ def CNN_lips(inputs,
 
 
 def CNN_lips5(inputs,
+              entry_point='inputs',
               final_endpoint='Conv3d_d_4x5x3',
               scope=None,
               per_layer_dropout=False,
@@ -105,26 +106,29 @@ def CNN_lips5(inputs,
                             stride=2, padding='SAME'):
 
             # 60 x 80 x 12 x 1
-            print(inputs.get_shape())
-            endpoint = 'Conv3d_a_3x3x2'
-            net = slim.convolution(inputs, 7, [3, 3, 2], stride=[2, 2, 1],
-                                   scope='Conv3d_a_2x2x2')
-            if final_endpoint == endpoint:
-                return net
-            if per_layer_dropout:
-                net = slim.dropout(net, dropout_keep_prob)
+            if entry_point == 'inputs':
+                endpoint = 'Conv3d_a_3x3x2'
+                print(inputs.get_shape())
+                net = slim.convolution(inputs, 7, [3, 3, 2], stride=[2, 2, 1],
+                                       scope='Conv3d_a_2x2x2')
+                if final_endpoint == endpoint:
+                    return net
+                if per_layer_dropout:
+                    net = slim.dropout(net, dropout_keep_prob)
 
-            # 30 x 40 x 12 x 7
-            print(net.get_shape())
-            endpoint = 'Conv3d_b_3x3x2'
-            net = slim.convolution(net, 17, [3, 3, 2], stride=[2, 2, 1],
-                                   scope='Conv3d_b_3x3x2')
-            if final_endpoint == endpoint:
-                return net
-            if per_layer_dropout:
-                net = slim.dropout(net, dropout_keep_prob)
+                # 30 x 40 x 12 x 7
+                print(net.get_shape())
+                endpoint = 'Conv3d_b_3x3x2'
+                net = slim.convolution(net, 17, [3, 3, 2], stride=[2, 2, 1],
+                                       scope='Conv3d_b_3x3x2')
+                if final_endpoint == endpoint:
+                    return net
+                if per_layer_dropout:
+                    net = slim.dropout(net, dropout_keep_prob)
 
             # 15 x 20 x 12 x 17
+            elif entry_point == 'Conv3d_b_3x3x2':
+                net = inputs
             print(net.get_shape())
             endpoint = 'MaxPool_a_2x2x2'
             net = slim.pool(net, [2, 2, 2], 'MAX', scope='MaxPool_a_2x2x2')

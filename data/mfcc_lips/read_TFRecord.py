@@ -11,22 +11,24 @@ from data import dataset_utils
 slim = tf.contrib.slim
 
 
-_FILE_PATTERN = 'lips_%s_*.tfrecord'
+_FILE_PATTERN = 'mfcc_lips_%s_*.tfrecord'
 
 _ITEMS_TO_DESCRIPTIONS = {
+    'mfcc': 'The mfcc data of the audio',
     'lips': 'The images for the video of lipreading',
     'label': 'A single integer representing the label',
 }
 
 
-def get_split_lips(split_name,
-                   tfrecord_dir,
-                   file_pattern=None,
-                   reader=None,
-                   num_frames=12):
+def get_split_mfcc_lips(split_name,
+                        tfrecord_dir,
+                        file_pattern=None,
+                        reader=None,
+                        num_frames_audio=24,
+                        num_frames_video=12):
     """Gets a dataset tuple with instructions for reading flowers.
     Args:
-      split_name: A train/validation split name.
+      split_name: A train_all/train_AT/train_UZ/validation split name.
       tfrecord_dir: The base directory of the dataset sources.
       file_pattern: The file pattern to use when matching the dataset sources.
         It is assumed that the pattern contains a '%s' string so that the
@@ -35,14 +37,7 @@ def get_split_lips(split_name,
 
     Returns:
       A `Dataset` namedtuple.
-
-    Raises:
-      ValueError: if `split_name` is not a valid train/validation split.
     """
-    if split_name not in ['train', 'validation']:
-        raise ValueError(
-            'The split_name %s is not recognized.' % (split_name)
-            + 'Please input either train or validation as the split_name')
 
     if not file_pattern:
         file_pattern = _FILE_PATTERN
@@ -63,15 +58,19 @@ def get_split_lips(split_name,
 
     # Create the keys_to_features dictionary for the decoder
     keys_to_features = {
-        'video/data': tf.FixedLenFeature((60, 80, num_frames), tf.float32),
-        'video/label': tf.FixedLenFeature(
+        'audio/mfcc': tf.FixedLenFeature((26, num_frames_audio), tf.float32),
+        'video/data': tf.FixedLenFeature(
+            (60, 80, num_frames_video), tf.float32),
+        'label': tf.FixedLenFeature(
           (), tf.int64, default_value=tf.zeros((), dtype=tf.int64)),
     }
 
     items_to_handlers = {
+        'mfcc': slim.tfexample_decoder.Tensor(
+            'audio/mfcc', shape=(26, num_frames_audio, 1)),
         'video': slim.tfexample_decoder.Tensor(
-            'video/data', shape=(60, 80, num_frames, 1)),
-        'label': slim.tfexample_decoder.Tensor('video/label'),
+            'video/data', shape=(60, 80, num_frames_video, 1)),
+        'label': slim.tfexample_decoder.Tensor('label'),
     }
 
     decoder = slim.tfexample_decoder.TFExampleDecoder(
@@ -94,12 +93,12 @@ def get_split_lips(split_name,
         labels_to_names=labels_to_names)
 
 
-def load_batch_lips(dataset,
-                    batch_size=32,
-                    common_queue_capacity=800,
-                    common_queue_min=400,
-                    shuffle=True,
-                    is_training=True):
+def load_batch_mfcc_lips(dataset,
+                         batch_size=32,
+                         common_queue_capacity=800,
+                         common_queue_min=400,
+                         shuffle=True,
+                         is_training=True):
     """Loads a single batch of data.
 
     Args:
@@ -116,7 +115,7 @@ def load_batch_lips(dataset,
     data_provider = slim.dataset_data_provider.DatasetDataProvider(
         dataset, common_queue_capacity=common_queue_capacity,
         common_queue_min=common_queue_min, shuffle=shuffle)
-    video, label = data_provider.get(['video', 'label'])
+    mfcc, video, label = data_provider.get(['mfcc', 'video', 'label'])
 
     if is_training:
 
@@ -138,10 +137,10 @@ def load_batch_lips(dataset,
         video = tf.concat(transformed_images, 2)
 
     # Batch it up.
-    videos, labels = tf.train.batch(
-        [video, label],
+    mfccs, videos, labels = tf.train.batch(
+        [mfcc, video, label],
         batch_size=batch_size,
         num_threads=1,
         capacity=2*batch_size)
 
-    return videos, labels
+    return mfccs, videos, labels

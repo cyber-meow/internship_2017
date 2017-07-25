@@ -40,9 +40,9 @@ def read_mat(file_path, num_frames=12, laplace=False):
     return video_data
 
 
-def to_tfexample(mfcc_data, class_id):
+def to_tfexample(video_data, class_id):
     return tf.train.Example(features=tf.train.Features(feature={
-        'video/data': dataset_utils.float_feature(mfcc_data),
+        'video/data': dataset_utils.float_feature(video_data),
         'video/label': dataset_utils.int64_feature(class_id)
     }))
 

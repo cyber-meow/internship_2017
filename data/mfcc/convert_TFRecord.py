@@ -14,7 +14,7 @@ import tensorflow as tf
 from data import dataset_utils
 
 
-def parse_mfcc(file_path, feature_len=26):
+def parse_mfcc(file_path, feature_len=26, num_frames=24):
     """Parse a htk mfcc ascii file (output by HList) to a numpy array
 
     Args:
@@ -27,11 +27,11 @@ def parse_mfcc(file_path, feature_len=26):
     with open(file_path, 'r') as f:
         f.readline()
         content = f.read().split(':')[1:]
-    mfccs = np.empty((feature_len, len(content)))
+    mfcc = np.empty((feature_len, len(content)))
 
     for i, frame in enumerate(content):
-        mfccs[:, i] = [float(x) for x in frame.split()[:feature_len]]
-    return mfccs
+        mfcc[:, i] = [float(x) for x in frame.split()[:feature_len]]
+    return scipy.signal.resample(mfcc, num_frames, axis=1)
 
 
 def to_tfexample(mfcc_data, class_id):
@@ -75,9 +75,9 @@ def convert_dataset(split_name,
                             i+1, len(file_paths), split_name, shard_id))
                     sys.stdout.flush()
 
-                    mfccs = parse_mfcc(file_paths[i], feature_len=feature_len)
-                    mfcc_data = list(scipy.signal.resample(
-                        mfccs, num_frames, axis=1).reshape(-1))
+                    mfccs = parse_mfcc(file_paths[i], feature_len=feature_len,
+                                       num_frames=num_frames)
+                    mfcc_data = list(mfccs.reshape(-1))
 
                     class_name = os.path.basename(file_paths[i])[0]
                     class_id = class_names_to_ids[class_name]
