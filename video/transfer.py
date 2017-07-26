@@ -40,10 +40,22 @@ class EvaluateClassifyAudioAll(EvaluateClassifyAudio):
         return self.dataset
 
 
+class TrainClassifyVideoAll(TrainClassifyVideo):
+
+    def get_data(self, tfrecord_dir, batch_size):
+        self.dataset_train = get_split_mfcc_lips('train_all', tfrecord_dir)
+        _, self.videos_train, self.labels_train = load_batch_mfcc_lips(
+            self.dataset_train, batch_size=batch_size)
+        self.dataset_test = get_split_mfcc_lips('validation', tfrecord_dir)
+        _, self.videos_test, self.labels_test = load_batch_mfcc_lips(
+            self.dataset_test, batch_size=batch_size, is_training=False)
+        return self.dataset_train
+
+
 class TrainClassifyVideo20(TrainClassifyVideo):
 
     def get_data(self, tfrecord_dir, batch_size):
-        self.dataset_train = get_split_mfcc_lips('train_AT', tfrecord_dir)
+        self.dataset_train = get_split_mfcc_lips('trainAT', tfrecord_dir)
         _, self.videos_train, self.labels_train = load_batch_mfcc_lips(
             self.dataset_train, batch_size=batch_size)
         self.dataset_test = get_split_mfcc_lips('validation', tfrecord_dir)
@@ -79,26 +91,25 @@ class TrainTransfer(TrainClassify):
 
     def get_data(self, tfrecord_dir, batch_size):
 
-        self.dataset_train_AT = get_split_mfcc_lips('train_AT', tfrecord_dir)
-        _, self.videos_train, self.labels_train_AT = load_batch_mfcc_lips(
-            self.dataset_train_AT, batch_size=batch_size)
+        self.dataset_trainAT = get_split_mfcc_lips('trainAT', tfrecord_dir)
+        _, self.videos_train, self.labels_trainAT = load_batch_mfcc_lips(
+            self.dataset_trainAT, batch_size=batch_size)
 
-        self.dataset_train_UZ = get_split_mfcc_lips('train_UZ', tfrecord_dir)
-        self.mfccs_train, _, self.labels_train_UZ = load_batch_mfcc_lips(
-            self.dataset_train_UZ, batch_size=batch_size, is_training=False)
+        self.dataset_trainUZ = get_split_mfcc_lips('trainUZ', tfrecord_dir)
+        self.mfccs_train, _, self.labels_trainUZ = load_batch_mfcc_lips(
+            self.dataset_trainUZ, batch_size=batch_size, is_training=False)
 
         self.dataset_test = get_split_mfcc_lips('validation', tfrecord_dir)
         _, self.videos_test, self.labels_test = load_batch_mfcc_lips(
             self.dataset_test, batch_size=batch_size, is_training=False)
 
         self.all_mfccs, self.all_videos, all_labels = load_batch_mfcc_lips(
-            self.dataset_train_AT, shuffle=False,
-            batch_size=self.dataset_train_AT.num_samples)
+            self.dataset_trainAT, shuffle=False,
+            batch_size=self.dataset_trainAT.num_samples)
 
-        self.all_labels = tf.Variable(all_labels, trainable=False)
-        self.dataset_train = self.dataset_train_AT
+        self.dataset_train = self.dataset_trainAT
 
-        return self.dataset_train_AT
+        return self.dataset_trainAT
 
     def decide_used_data(self):
         self.videos = tf.cond(
@@ -106,22 +117,24 @@ class TrainTransfer(TrainClassify):
             lambda: self.videos_test)
 
     def compute(self, audio_midpoint='Conv2d_b_3x3',
-                video_midpoint='Conv3d_b_3x3x2', K=10, **kwargs):
+                video_midpoint='Conv3d_b_3x3x2',
+                audio_video_prob=0.8,
+                K=10, **kwargs):
 
-        num_samples = self.dataset_train_AT.num_samples
+        num_samples = self.dataset_trainAT.num_samples
 
         with tf.variable_scope('Prepare/Audio'):
-            self.all_mfcc_reprs = tf.reshape(tf.Variable(
+            self.all_mfcc_reprs = tf.Variable(tf.reshape(
                 self.audio_structure(
                     self.all_mfccs, final_endpoint=audio_midpoint),
-                trainable=False), [num_samples, -1])
+                [num_samples, -1]), trainable=False, name='mfcc_reprs')
 
         with tf.variable_scope('Prepare/Video'):
             self.all_video_reprs = tf.Variable(self.video_structure(
                 self.all_videos, final_endpoint=video_midpoint),
-                trainable=False)
+                trainable=False, name='video_reprs')
 
-        num_classes = self.dataset_train_AT.num_classes
+        num_classes = self.dataset_trainAT.num_classes
         video_logits = self.compute_logits_from_video(
             self.videos, num_classes, **kwargs)
         audio_logits = self.compute_logits_from_audio(
@@ -131,12 +144,13 @@ class TrainTransfer(TrainClassify):
             video_midpoint=video_midpoint, K=K, **kwargs)
 
         self.video_or_audio = tf.random_uniform([])
+        self.audio_video_prob = audio_video_prob
         logits = tf.cond(
-            self.video_or_audio < 0.25,
+            self.video_or_audio < audio_video_prob,
             lambda: audio_logits, lambda: video_logits)
         labels = tf.cond(
-            self.video_or_audio < 0.25,
-            lambda: self.labels_train_UZ, lambda: self.labels_train_AT)
+            self.video_or_audio < audio_video_prob,
+            lambda: self.labels_trainUZ, lambda: self.labels_trainAT)
 
         self.logits = tf.cond(
             self.training, lambda: logits, lambda: video_logits)
@@ -168,7 +182,7 @@ class TrainTransfer(TrainClassify):
         for i in range(audio_reprs.get_shape()[0]):
             audio_repr = tf.reshape(audio_reprs[i], [1, -1])
             audio_repr = tf.tile(
-                audio_repr, [self.dataset_train_AT.num_samples, -1])
+                audio_repr, [self.dataset_trainAT.num_samples, 1])
             distances = tf.negative(tf.sqrt(tf.reduce_sum(
                 tf.square(audio_repr-self.all_mfcc_reprs), axis=1)))
             values, indices = tf.nn.top_k(distances, k=K)
@@ -219,7 +233,7 @@ class TrainTransfer(TrainClassify):
 
         total_loss = tensor_values[0]
         global_step_count = tensor_values[1]
-        use_audio = tensor_values[-1] < 0.25
+        use_audio = tensor_values[-1] < self.audio_video_prob
 
         tf.logging.info(
             'global step %s: loss: %.4f (%.2f sec/step)',
@@ -259,13 +273,60 @@ class TrainTransfer(TrainClassify):
         checkpoint_path_video = tf.train.latest_checkpoint(
             checkpoint_dir_video)
 
+        # Since we only have A~T for initialization but audio trained on A~Z
         def restore(sess):
+            tf.logging.info('Start restoring parameters.')
+            tf.logging.info('Initializing some parameters.')
+            sess.run(self.init_op_1)
+            tf.logging.info('Restoring parameters for audio preparation.')
             saver_prepare_audio.restore(sess, checkpoint_path_audio)
+            tf.logging.info('Restoring parameters for video preparation.')
             saver_prepare_video.restore(sess, checkpoint_path_video)
-            saver_audio.restore(sess, checkpoint_dir_audio)
-            saver_main.restore(sess, checkpoint_dir_video)
-            sess.run(tf.variables_initializer([
-                self.all_mfcc_reprs, self.all_video_reprs, self.all_labels]),
-                feed_dict={self.batch_stat: True, self.training: True})
-
+            tf.logging.info('Restoring parameters for main audio part.')
+            saver_audio.restore(sess, checkpoint_path_audio)
+            tf.logging.info('Restoring parameters for main video part.')
+            saver_main.restore(sess, checkpoint_path_video)
         return restore
+
+    def get_supervisor(self, log_dir, init_fn):
+        names = ['global_step', 'beta1_power', 'beta2_power']
+        variables_to_init = []
+        for var in tf.global_variables():
+            # if (var in [self.all_mfcc_reprs, self.all_video_reprs] or
+            if (var.op.name in names or
+                    var.op.name.endswith('Adam') or
+                    var.op.name.endswith('Adam_1')):
+                print(var)
+                variables_to_init.append(var)
+        self.init_op_1 = tf.variables_initializer(variables_to_init)
+        self.init_op_2 = tf.variables_initializer(
+            [self.all_mfcc_reprs, self.all_video_reprs])
+        return tf.train.Supervisor(
+            logdir=log_dir, summary_op=None, init_fn=init_fn,
+            init_op=None, ready_op=None, save_model_secs=0)
+
+    def extra_log_info(self, sess):
+        tf.logging.info('Preparing pre-computed representations.')
+        sess.run(self.init_op_2, feed_dict={self.batch_stat: True})
+        tf.logging.info('Finish restoring and preparing values.')
+        self.sv.saver.save(sess, self.sv.save_path,
+                           global_step=self.sv.global_step)
+
+
+class EvaluateTransfer(EvaluateClassifyVideo):
+
+    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
+        self.dataset = get_split_mfcc_lips(split_name, tfrecord_dir)
+        _, self.videos, self.labels = load_batch_mfcc_lips(
+            self.dataset, batch_size=batch_size,
+            shuffle=shuffle, is_training=False)
+        return self.dataset
+
+    def init_model(self, sess, checkpoint_dirs):
+        assert len(checkpoint_dirs) == 1
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+        variables_to_restore = {}
+        for var in tf.model_variables():
+            variables_to_restore['Main/'+var.op.name] = var
+        saver = tf.train.Saver(variables_to_restore)
+        saver.restore(sess, checkpoint_path)

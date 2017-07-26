@@ -51,7 +51,7 @@ class TrainClassifyCAE(TrainClassify):
         return slim.assign_from_checkpoint_fn(
             checkpoint_path, variables_to_restore)
 
-    def extra_log_info(self):
+    def extra_log_info(self, sess):
         tf.logging.info('representation shape: %s', self.representation_shape)
 
 

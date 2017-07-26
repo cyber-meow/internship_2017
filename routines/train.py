@@ -78,7 +78,14 @@ class TrainAbstract(object):
     def get_init_fn(self, checkpoint_dirs):
         return None
 
-    def extra_log_info(self):
+    def get_init_feed_dict(self):
+        return None
+
+    @abc.abstractmethod
+    def get_supervisor(self, log_dir, init_fn):
+        pass
+
+    def extra_log_info(self, sess):
         pass
 
     @abc.abstractmethod
@@ -201,11 +208,10 @@ class Train(TrainAbstract):
                 init_fn = self.get_init_fn(checkpoint_dirs)
 
             # Define the supervisor
-            self.sv = tf.train.Supervisor(
-                logdir=log_dir, summary_op=None, init_fn=init_fn)
+            self.sv = self.get_supervisor(log_dir, init_fn)
 
             with self.sv.managed_session() as sess:
-                self.extra_log_info()
+                self.extra_log_info(sess)
                 for step in xrange(number_of_steps):
                     if (step+1) % save_summaries_steps == 0:
                         summaries = self.normal_log_info(sess)
@@ -297,6 +303,11 @@ class Train(TrainAbstract):
 
     def get_optimizer(self):
         return tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+
+    def get_supervisor(self, log_dir, init_fn):
+        return tf.train.Supervisor(
+            logdir=log_dir, summary_op=None, init_fn=init_fn,
+            init_feed_dict=self.get_init_feed_dict())
 
     def get_batch_norm_summary(self):
         # Track moving mean and moving varaince

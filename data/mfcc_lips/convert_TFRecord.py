@@ -107,18 +107,32 @@ def convert_mfcc_lips(dataset_dir_audio,
     training_pairs = filename_pairs[:-num_val_samples]
     validation_pairs = filename_pairs[-num_val_samples:]
 
-    AT_pairs = []
-    UZ_pairs = []
+    train_AT_pairs = []
+    train_UZ_pairs = []
     for p in training_pairs:
         if 'U' <= os.path.basename(p[0])[0] <= 'Z':
-            UZ_pairs.append(p)
+            train_UZ_pairs.append(p)
         else:
-            AT_pairs.append(p)
+            train_AT_pairs.append(p)
 
-    split_names = ['train_all', 'train_AT', 'train_UZ', 'validation']
-    pairs = [training_pairs, AT_pairs, UZ_pairs, validation_pairs]
+    validation_AT_pairs = []
+    validation_UZ_pairs = []
+    for p in validation_pairs:
+        if 'U' <= os.path.basename(p[0])[0] <= 'Z':
+            validation_UZ_pairs.append(p)
+        else:
+            validation_AT_pairs.append(p)
 
-    for i in range(4):
+    split_names = [
+        'train_all', 'trainAT', 'trainUZ',
+        'validation', 'validationAT', 'validationUZ'
+    ]
+    pairs = [
+        training_pairs, train_AT_pairs, train_UZ_pairs,
+        validation_pairs, validation_AT_pairs, validation_UZ_pairs
+    ]
+
+    for i in range(6):
         convert_dataset(split_names[i], pairs[i],
                         class_names_to_ids,
                         tfrecord_dir,
