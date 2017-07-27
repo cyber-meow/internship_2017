@@ -1,5 +1,3 @@
-"""Implement a shadow CAE that reads raw image as input"""
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -11,40 +9,40 @@ import tensorflow as tf
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
 
-from routines.train import TrainImages
-from routines.evaluate import EvaluateImages
+from Image.basics import TrainImages
+from Image.basics import EvaluateImages
 
 slim = tf.contrib.slim
 
 
 class TrainCAE(TrainImages):
 
-    def __init__(self, CAE_structure, initial_learning_rate=0.01, **kwargs):
+    initial_learning_rate = 0.01
+
+    def __init__(self, CAE_structure, **kwargs):
         super(TrainCAE, self).__init__(**kwargs)
-        self.initial_learning_rate = initial_learning_rate
         self.CAE_structure = CAE_structure
 
     def decide_used_data(self):
         self.images_original = tf.cond(
             self.training, lambda: self.images_train, lambda: self.images_test)
 
-    def compute(self, **kwargs):
-        self.reconstructions = \
-            self.compute_reconstruction(self.images_original, **kwargs)
+    def compute(self, dropout_position='fc', dropout_keep_prob=0.7):
 
-    def compute_reconstruction(self, inputs, dropout_position='fc',
-                               dropout_keep_prob=0.7):
         images_corrupted = slim.dropout(
-            inputs, keep_prob=dropout_keep_prob, scope='Input/Dropout')
+            self.images, keep_prob=dropout_keep_prob, scope='Input/Dropout')
 
         assert dropout_position in ['fc', 'input']
         dropout_input = dropout_position == 'input'
-        self.images_original = inputs
-        self.images = images_corrupted if dropout_input else inputs
+        self.images_original = self.images
+        self.images = images_corrupted if dropout_input else self.images
 
         if dropout_input:
             dropout_keep_prob = 1
+        self.reconstructions = self.compute_reconstruction(
+            self.images, dropout_keep_prob=dropout_keep_prob)
 
+    def compute_reconstruction(self, inputs, dropout_keep_prob=0.7):
         reconstructions, _ = self.CAE_structure(
             self.images, dropout_keep_prob=dropout_keep_prob)
         return reconstructions
@@ -54,10 +52,6 @@ class TrainCAE(TrainImages):
             self.reconstructions, self.images_original)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
-
-    def get_metric_op(self):
-        self.metric_op = None
-        return self.metric_op
 
     def get_summary_op(self):
         self.get_batch_norm_summary()
@@ -70,14 +64,10 @@ class TrainCAE(TrainImages):
         tf.summary.image('reconstruction', self.reconstructions)
         self.summary_op = tf.summary.merge_all()
 
-    def normal_log_info(self, sess):
+    def summary_log_info(self, sess):
         self.loss, _, summaries = self.train_step(
             sess, self.train_op, self.sv.global_step, self.summary_op)
-        return summaries
-
-    def final_log_info(self, sess):
-        tf.logging.info('Finished training. Final Loss: %s', self.loss)
-        tf.logging.info('Saving model to disk now.')
+        self.sv.summary_computed(sess, summaries)
 
 
 class TrainInceptionCAE(TrainCAE):
@@ -140,9 +130,8 @@ class EvaluateCAE(EvaluateImages):
         return self.global_step_count, tensor_values[1]
 
 
-def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
-
-    image_size = 299
+def reconstruct(image_path, train_dir, CAE_structure,
+                log_dir=None, image_size=299, channels=3):
 
     with tf.Graph().as_default():
 
@@ -150,9 +139,9 @@ def reconstruct(image_path, train_dir, CAE_structure, log_dir=None):
         _, image_ext = os.path.splitext(image_path)
 
         if image_ext in ['.jpg', '.jpeg']:
-            image = tf.image.decode_jpeg(image_string, channels=3)
+            image = tf.image.decode_jpeg(image_string, channels=channels)
         elif image_ext == '.png':
-            image = tf.image.decode_png(image_string, channels=3)
+            image = tf.image.decode_png(image_string, channels=channels)
         else:
             raise ValueError('image format not supported, must be jpg or png')
 

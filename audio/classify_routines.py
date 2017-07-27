@@ -7,6 +7,7 @@ import tensorflow as tf
 from audio.basics import TrainAudio, EvaluateAudio
 from classify.train import TrainClassifyCNN
 from classify.evaluate import EvaluateClassifyCNN
+from data.avicar import load_batch_avicar, get_split_avicar
 
 slim = tf.contrib.slim
 
@@ -184,3 +185,53 @@ class EvaluateClassifyAudio(EvaluateAudio, EvaluateClassifyCNN):
 
     def last_step_log_info(self, sess, batch_size):
         return self.step_log_info(sess)
+
+
+class TrainClassifyAvicar(TrainClassifyCNN):
+
+    def get_data(self, tfrecord_dir, batch_size):
+        self.dataset_train = get_split_avicar('train', tfrecord_dir)
+        self.mfccs_train, self.labels_train = \
+            load_batch_avicar(self.dataset_train, batch_size=batch_size)
+        self.dataset_test = get_split_avicar('validation', tfrecord_dir)
+        self.mfccs_test, self.labels_test = \
+            load_batch_avicar(self.dataset_test, batch_size=batch_size)
+        return self.dataset_train
+
+    def decide_used_data(self):
+        self.mfccs = tf.cond(
+            self.training, lambda: self.mfccs_train, lambda: self.mfccs_test)
+        self.labels = tf.cond(
+            self.training, lambda: self.labels_train, lambda: self.labels_test)
+
+    def compute(self, use_delta=False, **kwargs):
+        if use_delta:
+            mfcc_deltas = delta(self.mfccs)
+            delta_deltas = delta(mfcc_deltas)
+            data = tf.concat([self.mfccs, mfcc_deltas, delta_deltas], axis=3)
+        else:
+            data = self.mfccs
+        self.logits = self.compute_logits(
+            data, self.dataset_train.num_classes, **kwargs)
+
+    def get_summary_op(self):
+        self.get_batch_norm_summary()
+        tf.summary.scalar('learning_rate', self.learning_rate)
+        tf.summary.histogram('logits', self.logits)
+        tf.summary.scalar('losses/train/cross_entropy',
+                          self.cross_entropy_loss)
+        tf.summary.scalar('losses/train/total', self.total_loss)
+        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
+        tf.summary.scalar('accuracy/train/streaming', self.accuracy)
+        self.summary_op = tf.summary.merge_all()
+        return self.summary_op
+
+    def get_test_summary_op(self):
+        # Summaries for the test part
+        ac_test_summary = tf.summary.scalar(
+            'accuracy/test', self.accuracy_no_streaming)
+        ls_test_summary = tf.summary.scalar(
+            'losses/test/total', self.total_loss)
+        self.test_summary_op = tf.summary.merge(
+            [ac_test_summary, ls_test_summary])
+        return self.test_summary_op

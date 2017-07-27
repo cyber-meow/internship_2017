@@ -2,11 +2,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import abc
-
 import tensorflow as tf
-from nets import inception_v4
 
 from routines.train import TrainImages
 
@@ -15,17 +12,14 @@ slim = tf.contrib.slim
 
 class TrainClassify(TrainImages):
 
-    __meta_class__ = abc.ABCMeta
-
+    @abc.abstractmethod
     def decide_used_data(self):
-        self.images = tf.cond(
-            self.training, lambda: self.images_train, lambda: self.images_test)
-        self.labels = tf.cond(
-            self.training, lambda: self.labels_train, lambda: self.labels_test)
+        pass
 
+    @abc.abstractmethod
     def compute(self, **kwargs):
-        self.logits = self.compute_logits(
-            self.images, self.dataset_train.num_classes, **kwargs)
+        """Feed proper inputs to the method compute_logits"""
+        pass
 
     @abc.abstractmethod
     def compute_logits(self, inputs, num_classes):
@@ -41,10 +35,10 @@ class TrainClassify(TrainImages):
 
     def get_metric_op(self):
         self.predictions = tf.argmax(tf.nn.softmax(self.logits), 1)
-        self.accuracy, self.accuracy_update = \
+        self.streaming_accuracy, self.streaming_accuracy_update = \
             tf.metrics.accuracy(self.predictions, self.labels)
         self.metric_op = tf.group(self.accuracy_update)
-        self.accuracy_no_streaming = tf.reduce_mean(tf.cast(
+        self.accuracy = tf.reduce_mean(tf.cast(
             tf.equal(self.predictions, self.labels), tf.float32))
         return self.metric_op
 
@@ -55,93 +49,39 @@ class TrainClassify(TrainImages):
         tf.summary.scalar('losses/train/cross_entropy',
                           self.cross_entropy_loss)
         tf.summary.scalar('losses/train/total', self.total_loss)
-        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
-        tf.summary.scalar('accuracy/train/streaming', self.accuracy)
-        tf.summary.image('train', self.images, max_outputs=4)
+        tf.summary.scalar('accuracy/train', self.accuracy)
+        tf.summary.scalar('accuracy/train/streaming', self.streaming_accuracy)
         self.summary_op = tf.summary.merge_all()
         return self.summary_op
 
     def get_test_summary_op(self):
         # Summaries for the test part
-        ac_test_summary = tf.summary.scalar(
-            'accuracy/test', self.accuracy_no_streaming)
-        ls_test_summary = tf.summary.scalar(
+        accuracy_test_summary = tf.summary.scalar(
+            'accuracy/test', self.accuracy)
+        loss_test_summary = tf.summary.scalar(
             'losses/test/total', self.total_loss)
-        imgs_test_summary = tf.summary.image(
-            'test', self.images, max_outputs=4)
         self.test_summary_op = tf.summary.merge(
-            [ac_test_summary, ls_test_summary, imgs_test_summary])
+            [accuracy_test_summary, loss_test_summary])
         return self.test_summary_op
 
-    def normal_log_info(self, sess):
-        loss, _, _, summaries, accuracy_rate = \
+    def summary_log_info(self, sess):
+        loss, _, _, summaries, streaming_accuracy_rate, accuracy_rate = \
             self.train_step(
                 sess, self.train_op, self.sv.global_step, self.metric_op,
-                self.summary_op, self.accuracy)
-        tf.logging.info('Current Streaming Accuracy:%s', accuracy_rate)
-        return summaries
+                self.summary_op, self.streaming_accuracy, self.accuracy)
+        tf.logging.info(
+            'Current Streaming Accuracy:%s', streaming_accuracy_rate)
+        tf.logging.info('Current Accuracy:%s', accuracy_rate)
+        self.sv.summary_computed(sess, summaries)
 
     def test_log_info(self, sess, test_use_batch):
-        ls, acu, summaries_test = sess.run(
-            [self.total_loss, self.accuracy_no_streaming,
-             self.test_summary_op],
+        loss, accuracy_rate, summaries_test = sess.run(
+            [self.total_loss, self.accuracy, self.test_summary_op],
             feed_dict={self.training: False,
                        self.batch_stat: test_use_batch})
-        tf.logging.info('Current Test Loss: %s', ls)
-        tf.logging.info('Current Test Accuracy: %s', acu)
-        return summaries_test
-
-    def final_log_info(self, sess):
-        tf.logging.info('Finished training. Final Loss: %s', self.loss)
-        tf.logging.info('Final Accuracy: %s', sess.run(self.accuracy))
-        tf.logging.info('Saving model to disk now.')
-
-
-class TrainClassifyInception(TrainClassify):
-
-    @property
-    def default_trainable_scopes(self):
-        return ['InceptionV4/Mixed_7d', 'InceptionV4/Logits',
-                'InceptionV4/AuxLogits']
-
-    def compute_logits(self, inputs, num_classes, **kwargs):
-        logits, _ = inception_v4.inception_v4(
-            inputs, num_classes=num_classes,
-            is_training=self.training, **kwargs)
-        return logits
-
-    def get_init_fn(self, checkpoint_dirs):
-        """Returns a function run by the chief worker to
-           warm-start the training."""
-        checkpoint_exclude_scopes = [
-            'InceptionV4/Logits', 'InceptionV4/AuxLogits']
-        variables_to_restore = self.get_variables_to_restore(
-            scopes=None, exclude=checkpoint_exclude_scopes)
-
-        assert len(checkpoint_dirs) == 1
-        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
-        if checkpoint_path is None:
-            checkpoint_path = os.path.join(
-                checkpoint_dirs[0], 'inception_v4.ckpt')
-
-        return slim.assign_from_checkpoint_fn(
-            checkpoint_path, variables_to_restore)
-
-
-def fine_tune_inception(tfrecord_dir,
-                        checkpoint_dirs,
-                        log_dir,
-                        number_of_steps=None,
-                        image_size=299,
-                        **kwargs):
-    fine_tune = TrainClassifyInception(image_size)
-    for key in kwargs.copy():
-        if hasattr(fine_tune, key):
-            setattr(fine_tune, key, kwargs[key])
-            del kwargs[key]
-    fine_tune.train(
-        tfrecord_dir, checkpoint_dirs, log_dir,
-        number_of_steps=number_of_steps, **kwargs)
+        tf.logging.info('Current Test Loss: %s', loss)
+        tf.logging.info('Current Test Accuracy: %s', accuracy_rate)
+        self.sv.summary_computed(sess, summaries_test)
 
 
 class TrainClassifyCNN(TrainClassify):
@@ -174,7 +114,7 @@ class TrainClassifyCNN(TrainClassify):
             net = inputs
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         net = slim.flatten(net, scope='PreLogitsFlatten')
-        print(net.get_shape())
+        print('Prelogits shape: ', net.get_shape())
         logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')
         return logits

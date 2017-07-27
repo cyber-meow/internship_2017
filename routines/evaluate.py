@@ -19,7 +19,7 @@ slim = tf.contrib.slim
 
 class EvaluateAbstract(object):
 
-    __meta_class__ = abc.ABCMeta
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def used_arg_scope(self, use_batch_norm):

@@ -10,7 +10,6 @@ import abc
 import numpy as np
 import tensorflow as tf
 
-from data.images import load_batch_images, get_split_images
 from data.color_depth import load_batch_color_depth, get_split_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
@@ -19,15 +18,7 @@ slim = tf.contrib.slim
 
 class TrainAbstract(object):
 
-    __meta_class__ = abc.ABCMeta
-
-    @property
-    def default_trainable_scopes(self):
-        return None
-
-    @abc.abstractmethod
-    def used_arg_scope(self, use_batch_norm, renorm):
-        pass
+    __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
     def train(self, *args):
@@ -46,7 +37,11 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
-    def compute(self, *args):
+    def used_arg_scope(self, use_batch_norm, renorm):
+        pass
+
+    @abc.abstractmethod
+    def compute(self, **kwargs):
         pass
 
     @abc.abstractmethod
@@ -62,53 +57,49 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
-    def get_metric_op(self):
-        pass
-
-    def get_test_metrics(self):
-        pass
-
-    @abc.abstractmethod
-    def get_summary_op(self):
-        pass
-
-    def get_test_summary_op(self):
-        pass
-
-    def get_init_fn(self, checkpoint_dirs):
-        return None
-
-    def get_init_feed_dict(self):
-        return None
-
-    @abc.abstractmethod
     def get_supervisor(self, log_dir, init_fn):
-        pass
-
-    def extra_log_info(self, sess):
         pass
 
     @abc.abstractmethod
     def normal_log_info(self, sess):
         pass
 
-    def test_log_info(self, sess, is_training):
+    @property
+    def default_trainable_scopes(self):
+        return None
+
+    def get_summary_op(self):
         pass
 
-    @abc.abstractmethod
+    def get_test_summary_op(self):
+        pass
+
+    def get_metric_op(self):
+        pass
+
+    def get_init_fn(self, checkpoint_dirs):
+        """Returns a function run by the chief worker to
+           warm-start the training."""
+        return None
+
+    def extra_initialization(self, sess):
+        pass
+
+    def test_log_info(self, sess, test_use_batch):
+        pass
+
     def final_log_info(self, sess):
         pass
 
 
 class Train(TrainAbstract):
 
-    def __init__(self,
-                 initial_learning_rate=0.005,
-                 lr_decay_steps=100,
-                 lr_decay_rate=0.8):
-        self.initial_learning_rate = initial_learning_rate
-        self.lr_decay_steps = lr_decay_steps
-        self.lr_decay_rate = lr_decay_rate
+    initial_learning_rate = 0.005
+    lr_decay_steps = 100
+    lr_decay_rate = 0.8
+
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
 
     def train(self,
               tfrecord_dir,
@@ -118,8 +109,10 @@ class Train(TrainAbstract):
               number_of_epochs=5,
               batch_size=24,
               save_summaries_steps=5,
+              save_model_steps=250,
               do_test=True,
               trainable_scopes=None,
+              use_default_trainable_scopes=True,
               use_batch_norm=True,
               renorm=False,
               test_use_batch=False,
@@ -143,6 +136,7 @@ class Train(TrainAbstract):
             trainable_scopes: The layers to train, if left None then all
             **kwargs: Arguments pass to the main structure/function
         """
+        # Create the log directory if it doesn't exist
         if not tf.gfile.Exists(log_dir):
             tf.gfile.MakeDirs(log_dir)
 
@@ -153,16 +147,21 @@ class Train(TrainAbstract):
         with tf.Graph().as_default():
             tf.logging.set_verbosity(tf.logging.INFO)
 
+            # Read the data
             with tf.name_scope('Data_provider'):
                 dataset = self.get_data(tfrecord_dir, batch_size)
 
+            # Use number_of_epochs when number_of_steps is not given
             if number_of_steps is None:
                 number_of_steps = int(np.ceil(
                     dataset.num_samples * number_of_epochs / batch_size))
 
-            # Decide if we're training or not
+            # Decide if we're training or not to use the right data
             self.training = tf.placeholder(tf.bool, shape=(), name='training')
             self.decide_used_data()
+
+            # Decide if we use batch statstic or moving mean/variance
+            # for the test (see test_log_info)
             self.batch_stat = tf.placeholder(
                 tf.bool, shape=(), name='batch_stat')
 
@@ -179,8 +178,10 @@ class Train(TrainAbstract):
             self.get_learning_rate()
             optimizer = self.get_optimizer()
 
+            # Decide what variables need to be trained
             if trainable_scopes is None:
-                if self.default_trainable_scopes is None:
+                if (not use_default_trainable_scopes or
+                        self.default_trainable_scopes is None):
                     variables_to_train = tf.trainable_variables()
                 else:
                     variables_to_train = self.get_variables_to_train(
@@ -190,18 +191,19 @@ class Train(TrainAbstract):
                     self.get_variables_to_train(trainable_scopes)
             print(variables_to_train)
 
+            # Create the training operation
             self.train_op = slim.learning.create_train_op(
                 total_loss, optimizer,
                 variables_to_train=variables_to_train)
 
-            # The metrics to predict
+            # The metrics to predict (may be omitted)
             self.get_metric_op()
-            self.get_test_metrics()
 
-            # Create some summaries to visualize the training process:
+            # Create some summaries to visualize the training process
             self.get_summary_op()
             self.get_test_summary_op()
 
+            # Define the initialization function used by the supervisor
             if checkpoint_dirs is None:
                 init_fn = None
             else:
@@ -211,32 +213,31 @@ class Train(TrainAbstract):
             self.sv = self.get_supervisor(log_dir, init_fn)
 
             with self.sv.managed_session() as sess:
-                self.extra_log_info(sess)
-                for step in xrange(number_of_steps):
-                    if (step+1) % save_summaries_steps == 0:
-                        summaries = self.normal_log_info(sess)
-                        self.sv.summary_computed(sess, summaries)
-                        if do_test:
-                            summaries_test = self.test_log_info(
-                                sess, test_use_batch)
-                            if summaries_test is not None:
-                                self.sv.summary_computed(sess, summaries_test)
-                    elif self.metric_op is not None:
-                        self.loss = self.train_step(
-                            sess, self.train_op, self.sv.global_step,
-                            self.metric_op)[0]
-                    else:
-                        self.loss = self.train_step(
-                            sess, self.train_op, self.sv.global_step)[0]
-                self.final_log_info(sess)
-                self.sv.saver.save(sess, self.sv.save_path,
-                                   global_step=self.sv.global_step)
 
-    def used_arg_scope(self, use_batch_norm, renorm):
-        return nets_arg_scope(
-            is_training=self.batch_stat,
-            use_batch_norm=use_batch_norm,
-            renorm=renorm)
+                # Finalize the initialization if necessary
+                self.extra_initialization(sess)
+
+                # Run the training process
+                for step in xrange(number_of_steps):
+
+                    # Save summries from time to time
+                    if (step+1) % save_summaries_steps == 0:
+                        self.summary_log_info(sess)
+                        if do_test:
+                            self.test_log_info(sess)
+                    else:
+                        self.step_log_info()
+
+                    # Save the model from time to time
+                    if (step+1) % save_model_steps == 0:
+                        self.sv.saver.save(
+                            sess, self.sv.save_path,
+                            global_step=self.sv.global_step)
+
+                # Finish training and save model to checkpoint
+                self.final_log_info(sess)
+                self.sv.saver.save(
+                    sess, self.sv.save_path, global_step=self.sv.global_step)
 
     def train_step(self, sess, train_op, global_step, *args):
         tensors_to_run = [train_op, global_step]
@@ -255,6 +256,41 @@ class Train(TrainAbstract):
             'global step %s: loss: %.4f (%.2f sec/step)',
             global_step_count, total_loss, time_elapsed)
         return tensor_values
+
+    def used_arg_scope(self, use_batch_norm, renorm):
+        return nets_arg_scope(
+            is_training=self.batch_stat,
+            use_batch_norm=use_batch_norm,
+            renorm=renorm)
+
+    def get_learning_rate(self):
+        # Exponentially decaying learning rate
+        self.learning_rate = tf.train.exponential_decay(
+            learning_rate=self.initial_learning_rate,
+            global_step=self.global_step,
+            decay_steps=self.lr_decay_steps,
+            decay_rate=self.lr_decay_rate, staircase=True)
+        return self.learning_rate
+
+    def get_optimizer(self):
+        return tf.train.AdamOptimizer(learning_rate=self.learning_rate)
+
+    def get_supervisor(self, log_dir, init_fn):
+        return tf.train.Supervisor(
+            logdir=log_dir, summary_op=None,
+            init_fn=init_fn, save_model_secs=0)
+
+    def step_log_info(self, sess):
+        if hasattr(self, 'metric_op'):
+            self.loss = self.train_step(
+                sess, self.train_op, self.sv.global_step, self.metric_op)[0]
+        else:
+            self.loss = self.train_step(
+                sess, self.train_op, self.sv.global_step)[0]
+
+    def final_log_info(self, sess):
+        tf.logging.info('Finished training. Final Loss: %s', self.loss)
+        tf.logging.info('Saving model to disk now.')
 
     @staticmethod
     def get_variables_to_train(scopes):
@@ -292,23 +328,6 @@ class Train(TrainAbstract):
 
         return variables_to_restore_final
 
-    def get_learning_rate(self):
-        # Exponentially decaying learning rate
-        self.learning_rate = tf.train.exponential_decay(
-            learning_rate=self.initial_learning_rate,
-            global_step=self.global_step,
-            decay_steps=self.lr_decay_steps,
-            decay_rate=self.lr_decay_rate, staircase=True)
-        return self.learning_rate
-
-    def get_optimizer(self):
-        return tf.train.AdamOptimizer(learning_rate=self.learning_rate)
-
-    def get_supervisor(self, log_dir, init_fn):
-        return tf.train.Supervisor(
-            logdir=log_dir, summary_op=None, init_fn=init_fn,
-            init_feed_dict=self.get_init_feed_dict())
-
     def get_batch_norm_summary(self):
         # Track moving mean and moving varaince
         try:
@@ -324,27 +343,6 @@ class Train(TrainAbstract):
                                  last_moving_variance)
         except IndexError:
             tf.logging.info('No moiving mean or variance')
-
-
-class TrainImages(Train):
-
-    def __init__(self, image_size=299, channels=3, **kwargs):
-        super(TrainImages, self).__init__(**kwargs)
-        self.image_size = image_size
-        self.channels = channels
-
-    def get_data(self, tfrecord_dir, batch_size):
-        self.dataset_train = get_split_images(
-            'train', tfrecord_dir, channels=self.channels)
-        self.images_train, self.labels_train = load_batch_images(
-            self.dataset_train, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        self.dataset_test = get_split_images(
-            'validation', tfrecord_dir, channels=self.channels)
-        self.images_test, self.labels_test = load_batch_images(
-            self.dataset_test, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
-        return self.dataset_train
 
 
 class TrainColorDepth(Train):
