@@ -2,11 +2,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import time
-
 import tensorflow as tf
 
-from classify import TrainClassify
+from classify.train import TrainClassify
 from data.mfcc_lips import load_batch_mfcc_lips, get_split_mfcc_lips
 
 from audio.classify_routines import TrainClassifyAudio, EvaluateClassifyAudio
@@ -18,7 +16,7 @@ from video.classify_routines import CNN_lips5
 slim = tf.contrib.slim
 
 
-class TrainClassifyAudioAll(TrainClassifyAudio):
+class TrainClassifyAudioAVSR(TrainClassifyAudio):
 
     def get_data(self, tfrecord_dir, batch_size):
         self.dataset_train = get_split_mfcc_lips('train_all', tfrecord_dir)
@@ -30,17 +28,19 @@ class TrainClassifyAudioAll(TrainClassifyAudio):
         return self.dataset_train
 
 
-class EvaluateClassifyAudioAll(EvaluateClassifyAudio):
+class EvaluateClassifyAudioAVSR(EvaluateClassifyAudio):
 
     def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_mfcc_lips(split_name, tfrecord_dir)
+        if batch_size is None:
+            batch_size = self.dataset.num_samples
         self.mfccs, _, self.labels = load_batch_mfcc_lips(
             self.dataset, batch_size=batch_size,
             shuffle=shuffle, is_training=False)
         return self.dataset
 
 
-class TrainClassifyVideoAll(TrainClassifyVideo):
+class TrainClassifyVideoAVSR(TrainClassifyVideo):
 
     def get_data(self, tfrecord_dir, batch_size):
         self.dataset_train = get_split_mfcc_lips('train_all', tfrecord_dir)
@@ -52,7 +52,7 @@ class TrainClassifyVideoAll(TrainClassifyVideo):
         return self.dataset_train
 
 
-class TrainClassifyVideo20(TrainClassifyVideo):
+class TrainClassifyVideoAVSRAT(TrainClassifyVideo):
 
     def get_data(self, tfrecord_dir, batch_size):
         self.dataset_train = get_split_mfcc_lips('trainAT', tfrecord_dir)
@@ -64,10 +64,12 @@ class TrainClassifyVideo20(TrainClassifyVideo):
         return self.dataset_train
 
 
-class EvaluateClassifyVideo20(EvaluateClassifyVideo):
+class EvaluateClassifyVideoAVSR(EvaluateClassifyVideo):
 
     def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_mfcc_lips(split_name, tfrecord_dir)
+        if batch_size is None:
+            batch_size = self.dataset.num_samples
         _, self.videos, self.labels = load_batch_mfcc_lips(
             self.dataset, batch_size=batch_size,
             shuffle=shuffle, is_training=False)
@@ -76,7 +78,9 @@ class EvaluateClassifyVideo20(EvaluateClassifyVideo):
 
 class TrainTransfer(TrainClassify):
 
-    default_trainable_scopes = ['Main']
+    @property
+    def default_trainable_scopes(self):
+        return ['Main']
 
     def __init__(self, audio_structure='', video_structure='', **kwargs):
         super(TrainTransfer, self).__init__(**kwargs)
@@ -118,7 +122,7 @@ class TrainTransfer(TrainClassify):
 
     def compute(self, audio_midpoint='Conv2d_b_3x3',
                 video_midpoint='Conv3d_b_3x3x2',
-                audio_video_prob=0.8,
+                use_audio_prob=0.9,
                 K=10, **kwargs):
 
         num_samples = self.dataset_trainAT.num_samples
@@ -144,18 +148,21 @@ class TrainTransfer(TrainClassify):
             video_midpoint=video_midpoint, K=K, **kwargs)
 
         self.video_or_audio = tf.random_uniform([])
-        self.audio_video_prob = audio_video_prob
+        self.use_audio_prob = use_audio_prob
         logits = tf.cond(
-            self.video_or_audio < audio_video_prob,
+            self.video_or_audio < self.use_audio_prob,
             lambda: audio_logits, lambda: video_logits)
         labels = tf.cond(
-            self.video_or_audio < audio_video_prob,
+            self.video_or_audio < self.use_audio_prob,
             lambda: self.labels_trainUZ, lambda: self.labels_trainAT)
 
         self.logits = tf.cond(
             self.training, lambda: logits, lambda: video_logits)
         self.labels = tf.cond(
             self.training, lambda: labels, lambda: self.labels_test)
+
+    def compute_logits(self, inputs, num_classes):
+        pass
 
     def compute_logits_from_video(self, inputs, num_classes,
                                   dropout_keep_prob=0.8,
@@ -199,51 +206,30 @@ class TrainTransfer(TrainClassify):
             entry_point=video_midpoint, reuse=True)
         return logits
 
-    def get_summary_op(self):
-        self.get_batch_norm_summary()
-        tf.summary.scalar('learning_rate', self.learning_rate)
-        tf.summary.histogram('logits', self.logits)
-        tf.summary.scalar('losses/train/cross_entropy',
-                          self.cross_entropy_loss)
-        tf.summary.scalar('losses/train/total', self.total_loss)
-        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
-        tf.summary.scalar('accuracy/train/streaming', self.accuracy)
-        self.summary_op = tf.summary.merge_all()
-        return self.summary_op
-
-    def get_test_summary_op(self):
-        ac_test_summary = tf.summary.scalar(
-            'accuracy/test', self.accuracy_no_streaming)
-        ls_test_summary = tf.summary.scalar(
-            'losses/test/total', self.total_loss)
-        self.test_summary_op = tf.summary.merge(
-            [ac_test_summary, ls_test_summary])
-        return self.test_summary_op
-
-    def train_step(self, sess, train_op, global_step, *args):
-        tensors_to_run = [train_op, global_step]
-        tensors_to_run.extend(args)
-        tensors_to_run.append(self.video_or_audio)
-
-        start_time = time.time()
-        tensor_values = sess.run(
-            tensors_to_run,
-            feed_dict={self.training: True, self.batch_stat: True})
-        time_elapsed = time.time() - start_time
-
-        total_loss = tensor_values[0]
-        global_step_count = tensor_values[1]
-        use_audio = tensor_values[-1] < self.audio_video_prob
-
-        tf.logging.info(
-            'global step %s: loss: %.4f (%.2f sec/step)',
-            global_step_count, total_loss, time_elapsed)
-
+    def step_log_info(self, sess):
+        self.loss, _,  video_or_audio = self.train_step(
+            sess, self.train_op, self.sv.global_step, self.video_or_audio)
+        use_audio = video_or_audio < self.use_audio_prob
         if use_audio:
-            tf.logging.info('use audios to train')
+            tf.logging.info('audios were used to train')
         else:
-            tf.logging.info('use videos to train')
-        return tensor_values[:-1]
+            tf.logging.info('videos were used to train')
+
+    def summary_log_info(self, sess):
+        self.loss, _, _, summaries, streaming_accuracy_rate, \
+            accuracy_rate, video_or_audio = self.train_step(
+                sess, self.train_op, self.sv.global_step,
+                self.metric_op, self.summary_op, self.streaming_accuracy,
+                self.accuracy, self.video_or_audio)
+        use_audio = video_or_audio < self.use_audio_prob
+        if use_audio:
+            tf.logging.info('audios were used to train')
+        else:
+            tf.logging.info('videos were used to train')
+        tf.logging.info(
+            'Current Streaming Accuracy:%s', streaming_accuracy_rate)
+        tf.logging.info('Current Accuracy:%s', accuracy_rate)
+        self.sv.summary_computed(sess, summaries)
 
     def get_init_fn(self, checkpoint_dirs):
         checkpoint_dir_audio, checkpoint_dir_video = checkpoint_dirs
@@ -305,7 +291,7 @@ class TrainTransfer(TrainClassify):
             logdir=log_dir, summary_op=None, init_fn=init_fn,
             init_op=None, ready_op=None, save_model_secs=0)
 
-    def extra_log_info(self, sess):
+    def extra_initialization(self, sess):
         tf.logging.info('Preparing pre-computed representations.')
         sess.run(self.init_op_2, feed_dict={self.batch_stat: True})
         tf.logging.info('Finish restoring and preparing values.')
@@ -317,6 +303,8 @@ class EvaluateTransfer(EvaluateClassifyVideo):
 
     def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_mfcc_lips(split_name, tfrecord_dir)
+        if batch_size is None:
+            batch_size = self.dataset.num_samples
         _, self.videos, self.labels = load_batch_mfcc_lips(
             self.dataset, batch_size=batch_size,
             shuffle=shuffle, is_training=False)

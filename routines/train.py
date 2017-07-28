@@ -60,6 +60,10 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
+    def step_log_info(self, sess):
+        pass
+
+    @abc.abstractmethod
     def summary_log_info(self, sess):
         pass
 
