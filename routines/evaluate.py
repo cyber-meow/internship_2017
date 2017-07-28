@@ -3,14 +3,11 @@ from __future__ import division
 from __future__ import print_function
 
 from six.moves import xrange
-import time
-
 import abc
 
 import numpy as np
 import tensorflow as tf
 
-from data.images import load_batch_images, get_split_images
 from data.color_depth import load_batch_color_depth, get_split_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
@@ -22,10 +19,6 @@ class EvaluateAbstract(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def used_arg_scope(self, use_batch_norm):
-        pass
-
-    @abc.abstractmethod
     def evaluate(self, *args):
         pass
 
@@ -34,10 +27,11 @@ class EvaluateAbstract(object):
         pass
 
     @abc.abstractmethod
-    def compute(self, *args):
+    def used_arg_scope(self, batch_stat, use_batch_norm):
         pass
 
-    def compute_log_data(self):
+    @abc.abstractmethod
+    def compute(self, *args):
         pass
 
     @abc.abstractmethod
@@ -52,6 +46,9 @@ class EvaluateAbstract(object):
     def last_step_log_info(self, sess, batch_size):
         pass
 
+    def compute_log_data(self):
+        pass
+
 
 class Evaluate(EvaluateAbstract):
 
@@ -60,11 +57,11 @@ class Evaluate(EvaluateAbstract):
                  checkpoint_dirs,
                  log_dir=None,
                  number_of_steps=None,
-                 batch_size=12,
+                 batch_size=None,
                  split_name='validation',
                  shuffle=False,
                  use_batch_norm=True,
-                 use_batch_stat=False,
+                 batch_stat=False,
                  **kwargs):
 
         if log_dir is not None and not tf.gfile.Exists(log_dir):
@@ -80,11 +77,13 @@ class Evaluate(EvaluateAbstract):
                 dataset = self.get_data(
                     split_name, tfrecord_dir, batch_size, shuffle)
 
+            if batch_size is None:
+                batch_size = dataset.num_samples
             if number_of_steps is None:
                 number_of_steps = int(np.ceil(dataset.num_samples/batch_size))
 
             with slim.arg_scope(self.used_arg_scope(
-                    use_batch_stat, use_batch_norm)):
+                    batch_stat, use_batch_norm)):
                 self.compute(**kwargs)
 
             self.compute_log_data()
@@ -103,29 +102,13 @@ class Evaluate(EvaluateAbstract):
                     self.init_model(sess, checkpoint_dirs)
 
                     for step in xrange(number_of_steps-1):
-                        global_step_count, summaries = self.step_log_info(sess)
-                        if summaries is not None and log_dir is not None:
-                            self.fw.add_summary(
-                                summaries, global_step=global_step_count)
-                    global_step_count, summaries_last = \
-                        self.last_step_log_info(sess, batch_size)
-                    if summaries_last is not None and log_dir is not None:
-                        self.fw.add_summary(
-                            summaries_last, global_step=global_step_count)
+                        self.step_log_info(sess)
+                    self.last_step_log_info(sess, batch_size)
                     tf.logging.info('Finished evaluation')
 
-    def used_arg_scope(self, use_batch_stat, use_batch_norm):
+    def used_arg_scope(self, batch_stat, use_batch_norm):
         return nets_arg_scope(
-            is_training=use_batch_stat, use_batch_norm=use_batch_norm)
-
-    def eval_step(self, sess, global_step, *args):
-        tensors_to_run = [global_step]
-        tensors_to_run.extend(args)
-        start_time = time.time()
-        tensor_values = sess.run(tensors_to_run)
-        time_elapsed = time.time() - start_time
-        global_step_count = tensor_values[0]
-        return global_step_count, time_elapsed, tensor_values[1:]
+            is_training=batch_stat, use_batch_norm=use_batch_norm)
 
     def last_step_log_info(self, sess, batch_size):
         return self.step_log_info(sess)
@@ -135,21 +118,6 @@ class Evaluate(EvaluateAbstract):
         checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
         saver = tf.train.Saver(tf.model_variables())
         saver.restore(sess, checkpoint_path)
-
-
-class EvaluateImages(Evaluate):
-
-    def __init__(self, image_size=299, channels=3):
-        self.image_size = image_size
-        self.channels = channels
-
-    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
-        self.dataset = get_split_images(
-            split_name, tfrecord_dir, channels=self.channels)
-        self.images, self.labels = load_batch_images(
-            self.dataset, height=self.image_size,
-            width=self.image_size, batch_size=batch_size, shuffle=shuffle)
-        return self.dataset
 
 
 class EvaluateColorDepth(Evaluate):

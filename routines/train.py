@@ -61,7 +61,7 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
-    def normal_log_info(self, sess):
+    def summary_log_info(self, sess):
         pass
 
     @property
@@ -224,9 +224,9 @@ class Train(TrainAbstract):
                     if (step+1) % save_summaries_steps == 0:
                         self.summary_log_info(sess)
                         if do_test:
-                            self.test_log_info(sess)
+                            self.test_log_info(sess, test_use_batch)
                     else:
-                        self.step_log_info()
+                        self.step_log_info(sess)
 
                     # Save the model from time to time
                     if (step+1) % save_model_steps == 0:

@@ -5,16 +5,12 @@ from __future__ import print_function
 import abc
 import tensorflow as tf
 
-from routines.train import TrainImages
+from routines.train import Train
 
 slim = tf.contrib.slim
 
 
-class TrainClassify(TrainImages):
-
-    @abc.abstractmethod
-    def decide_used_data(self):
-        pass
+class TrainClassify(Train):
 
     @abc.abstractmethod
     def compute(self, **kwargs):
@@ -37,7 +33,7 @@ class TrainClassify(TrainImages):
         self.predictions = tf.argmax(tf.nn.softmax(self.logits), 1)
         self.streaming_accuracy, self.streaming_accuracy_update = \
             tf.metrics.accuracy(self.predictions, self.labels)
-        self.metric_op = tf.group(self.accuracy_update)
+        self.metric_op = tf.group(self.streaming_accuracy_update)
         self.accuracy = tf.reduce_mean(tf.cast(
             tf.equal(self.predictions, self.labels), tf.float32))
         return self.metric_op
@@ -113,8 +109,8 @@ class TrainClassifyCNN(TrainClassify):
         else:
             net = inputs
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
-        net = slim.flatten(net, scope='PreLogitsFlatten')
         print('Prelogits shape: ', net.get_shape())
+        net = slim.flatten(net, scope='PreLogitsFlatten')
         logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')
         return logits

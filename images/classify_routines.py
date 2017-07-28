@@ -3,17 +3,19 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import time
 
 import tensorflow as tf
 from nets import inception_v4
 
-from images.basics import TrainImages
-from classify.train import TrainClassifyCNN
+from images.basics import TrainImages, EvaluateImages
+from classify.train import TrainClassify, TrainClassifyCNN
+from classify.evaluate import EvaluateClassify, EvaluateClassifyCNN
 
 slim = tf.contrib.slim
 
 
-class TrainClassifyImages(TrainImages):
+class TrainClassifyImages(TrainImages, TrainClassify):
 
     def decide_used_data(self):
         self.images = tf.cond(
@@ -29,7 +31,7 @@ class TrainClassifyImages(TrainImages):
 
     def get_summary_op(self):
         super(TrainClassifyImages, self).get_summary_op()
-        tf.summary.image('train')
+        tf.summary.image('train', self.images)
         self.summary_op = tf.summary.merge_all()
         return self.summary_op
 
@@ -39,6 +41,53 @@ class TrainClassifyImages(TrainImages):
         self.test_summary_op = tf.summary.merge(
             [summary_op, images_test_summary])
         return self.test_summary_op
+
+
+class EvaluateClassifyImages(EvaluateImages, EvaluateClassify):
+
+    def compute(self, **kwargs):
+        self.logits = self.compute_logits(
+            self.images, self.dataset.num_classes, **kwargs)
+
+    def last_step_log_info(self, sess, batch_size):
+        start_time = time.time()
+        global_step_count, accuracy_rate, ac_summary, labels, \
+            predictions, images = sess.run([
+                self.global_step_op, self.accuracy,
+                self.accuracy_summary,
+                self.labels, self.predictions, self.images])
+        time_elapsed = time.time() - start_time
+
+        tf.logging.info(
+            'global step %s: accurarcy: %.4f (%.2f sec/step)',
+            global_step_count, accuracy_rate, time_elapsed)
+
+        dataset = self.dataset
+        true_names = [dataset.labels_to_names[i] for i in labels]
+        predicted_names = [dataset.labels_to_names[i] for i in predictions]
+
+        if batch_size > 20:
+            batch_size = 20
+        image_size = self.image_size
+
+        tf.logging.info('Information for the last batch')
+        tf.logging.info('Ground Truth: [%s]', true_names[:batch_size])
+        tf.logging.info('Prediciotn: [%s]', predicted_names[:batch_size])
+
+        if hasattr(self, 'fw'):
+            with tf.name_scope('last_images'):
+                for i in range(batch_size):
+                    image_pl = tf.placeholder(
+                        dtype=tf.float32,
+                        shape=(1, image_size, image_size, self.channels))
+                    image_summary = tf.summary.image(
+                        'image_true_{}_predicted_{}'.format(
+                            true_names[i], predicted_names[i]), image_pl)
+                    self.fw.add_summary(
+                        sess.run(image_summary,
+                                 feed_dict={image_pl: [images[i]]}),
+                        global_step=self.global_step_count)
+            self.fw.add_summary(ac_summary, global_step=global_step_count)
 
 
 class TrainClassifyInception(TrainClassifyImages):
@@ -85,7 +134,19 @@ def fine_tune_inception(tfrecord_dir,
         number_of_steps=number_of_steps, **kwargs)
 
 
-class TrainClassifyImagesCNN(TrainClassifyImages, TrainClassifyCNN):
+class EvaluateClassifyInception(EvaluateClassify):
+
+    def compute_logits(self, inputs, num_classes):
+        logits, _ = inception_v4.inception_v4(
+            inputs, num_classes=num_classes, is_training=False)
+        return logits
+
+
+class TrainClassifyImagesCNN(TrainClassifyCNN, TrainClassifyImages):
+    pass
+
+
+class EvaluateClassifyImagesCNN(EvaluateClassifyCNN, EvaluateClassifyImages):
     pass
 
 

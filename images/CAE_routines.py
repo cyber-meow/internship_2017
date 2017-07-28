@@ -9,8 +9,8 @@ import tensorflow as tf
 from nets_base import inception_preprocessing
 from nets_base.arg_scope import nets_arg_scope
 
-from Image.basics import TrainImages
-from Image.basics import EvaluateImages
+from images.basics import TrainImages
+from images.basics import EvaluateImages
 
 slim = tf.contrib.slim
 
