@@ -17,14 +17,6 @@ slim = tf.contrib.slim
 
 class TrainClassifyImages(TrainImages, TrainClassify):
 
-    def decide_used_data(self):
-        self.images = tf.cond(
-            self.training, lambda: self.images_train,
-            lambda: self.images_test)
-        self.labels = tf.cond(
-            self.training, lambda: self.labels_train,
-            lambda: self.labels_test)
-
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
             self.images, self.dataset_train.num_classes, **kwargs)
@@ -134,7 +126,7 @@ def fine_tune_inception(tfrecord_dir,
         number_of_steps=number_of_steps, **kwargs)
 
 
-class EvaluateClassifyInception(EvaluateClassify):
+class EvaluateClassifyInception(EvaluateClassifyImages):
 
     def compute_logits(self, inputs, num_classes):
         logits, _ = inception_v4.inception_v4(
@@ -163,7 +155,7 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
 
     def compute_logits(self, inputs, num_classes,
                        dropout_keep_prob=0.8, do_avg=False):
-        net, _ = self.CAE_structure(
+        net = self.CAE_structure(
             inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         if do_avg:
@@ -185,15 +177,15 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
             checkpoint_path, variables_to_restore)
 
 
-class EvaluateClassifyCAE(EvaluateClassifyImages):
+class EvaluateClassifyImagesCAE(EvaluateClassifyImages):
 
     def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
-        super(EvaluateClassifyCAE, self).__init__(**kwargs)
+        super(EvaluateClassifyImagesCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
 
     def compute_logits(self, inputs, num_classes):
-        net, _ = self.CAE_structure(
+        net = self.CAE_structure(
             inputs, final_endpoint=self.endpoint)
         net = slim.flatten(net, scope='PreLogitsFlatten')
         self.logits = slim.fully_connected(

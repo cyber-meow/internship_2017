@@ -8,7 +8,6 @@ import abc
 import numpy as np
 import tensorflow as tf
 
-from data.color_depth import load_batch_color_depth, get_split_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
 slim = tf.contrib.slim
@@ -57,7 +56,7 @@ class Evaluate(EvaluateAbstract):
                  checkpoint_dirs,
                  log_dir=None,
                  number_of_steps=None,
-                 batch_size=None,
+                 batch_size=24,
                  split_name='validation',
                  shuffle=False,
                  use_batch_norm=True,
@@ -118,26 +117,6 @@ class Evaluate(EvaluateAbstract):
         checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
         saver = tf.train.Saver(tf.model_variables())
         saver.restore(sess, checkpoint_path)
-
-
-class EvaluateColorDepth(Evaluate):
-
-    def __init__(self, image_size=299, color_channels=3, depth_channels=3):
-        self.image_size = image_size
-        self.color_channels = color_channels
-        self.depth_channels = depth_channels
-
-    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
-        self.dataset = get_split_color_depth(
-            split_name,
-            tfrecord_dir,
-            color_channels=self.color_channels,
-            depth_channels=self.depth_channels)
-        self.images_color, self.images_depth, self.labels = \
-            load_batch_color_depth(
-                self.dataset, height=self.image_size,
-                width=self.image_size, batch_size=batch_size, shuffle=shuffle)
-        return self.dataset
 
 
 def evaluate(evaluate_class,

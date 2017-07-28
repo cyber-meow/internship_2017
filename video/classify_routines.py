@@ -162,45 +162,24 @@ def CNN_lips5(inputs,
 
 class TrainClassifyVideo(TrainVideo, TrainClassifyCNN):
 
-    def decide_used_data(self):
-        self.videos = tf.cond(
-            self.training, lambda: self.videos_train, lambda: self.videos_test)
-        self.images_ex0 = tf.transpose(self.videos[0], [2, 0, 1, 3])
-        self.images_ex1 = tf.transpose(self.videos[1], [2, 0, 1, 3])
-        self.labels = tf.cond(
-            self.training, lambda: self.labels_train, lambda: self.labels_test)
-
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
             self.videos, self.dataset_train.num_classes, **kwargs)
 
     def get_summary_op(self):
-        self.get_batch_norm_summary()
-        tf.summary.scalar('learning_rate', self.learning_rate)
-        tf.summary.histogram('logits', self.logits)
-        tf.summary.image('train_0', self.images_ex0, max_outputs=12)
-        tf.summary.image('train_1', self.images_ex1, max_outputs=12)
-        tf.summary.scalar('losses/train/cross_entropy',
-                          self.cross_entropy_loss)
-        tf.summary.scalar('losses/train/total', self.total_loss)
-        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
-        tf.summary.scalar('accuracy/train/streaming', self.accuracy)
+        super(TrainClassifyVideo, self).get_summary_op()
+        self.video0 = tf.transpose(self.videos[0], [2, 0, 1, 3])
+        self.video1 = tf.transpose(self.videos[1], [2, 0, 1, 3])
+        tf.summary.image('train0', self.video0, max_outputs=12)
+        tf.summary.image('train1', self.video1, max_outputs=12)
         self.summary_op = tf.summary.merge_all()
         return self.summary_op
 
     def get_test_summary_op(self):
-        # Summaries for the test part
-        ac_test_summary = tf.summary.scalar(
-            'accuracy/test', self.accuracy_no_streaming)
-        ls_test_summary = tf.summary.scalar(
-            'losses/test/total', self.total_loss)
-        img_test_summary0 = tf.summary.image(
-            'test_0', self.images_ex0, max_outputs=12)
-        img_test_summary1 = tf.summary.image(
-            'test_1', self.images_ex1, max_outputs=12)
-        self.test_summary_op = tf.summary.merge(
-            [ac_test_summary, ls_test_summary,
-             img_test_summary0, img_test_summary1])
+        summary_op = super(TrainClassifyVideo, self).get_test_summary_op()
+        v0 = tf.summary.image('test0', self.video0, max_outputs=12)
+        v1 = tf.summary.image('test1', self.video1, max_outputs=12)
+        self.test_summary_op = tf.summary.merge([summary_op, v0, v1])
         return self.test_summary_op
 
 
@@ -209,6 +188,3 @@ class EvaluateClassifyVideo(EvaluateVideo, EvaluateClassifyCNN):
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
             self.videos, self.dataset.num_classes, **kwargs)
-
-    def last_step_log_info(self, sess, batch_size):
-        return self.step_log_info(sess)

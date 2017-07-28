@@ -10,7 +10,6 @@ import abc
 import numpy as np
 import tensorflow as tf
 
-from data.color_depth import load_batch_color_depth, get_split_color_depth
 from nets_base.arg_scope import nets_arg_scope
 
 slim = tf.contrib.slim
@@ -249,12 +248,12 @@ class Train(TrainAbstract):
             feed_dict={self.training: True, self.batch_stat: True})
         time_elapsed = time.time() - start_time
 
-        total_loss = tensor_values[0]
+        self.loss = tensor_values[0]
         global_step_count = tensor_values[1]
 
         tf.logging.info(
             'global step %s: loss: %.4f (%.2f sec/step)',
-            global_step_count, total_loss, time_elapsed)
+            global_step_count, self.loss, time_elapsed)
         return tensor_values
 
     def used_arg_scope(self, use_batch_norm, renorm):
@@ -343,42 +342,6 @@ class Train(TrainAbstract):
                                  last_moving_variance)
         except IndexError:
             tf.logging.info('No moiving mean or variance')
-
-
-class TrainColorDepth(Train):
-
-    def __init__(self, image_size=299,
-                 color_channels=3, depth_channels=3, **kwargs):
-        super(TrainColorDepth, self).__init__(**kwargs)
-        self.image_size = image_size
-        self.color_channels = color_channels
-        self.depth_channels = depth_channels
-
-    def get_data(self, tfrecord_dir, batch_size):
-
-        self.dataset_train = get_split_color_depth(
-            'train',
-            tfrecord_dir,
-            color_channels=self.color_channels,
-            depth_channels=self.depth_channels)
-
-        self.images_color_train, self.images_depth_train, self.labels_train = \
-            load_batch_color_depth(
-                self.dataset_train, height=self.image_size,
-                width=self.image_size, batch_size=batch_size)
-
-        self.dataset_test = get_split_color_depth(
-            'validation',
-            tfrecord_dir,
-            color_channels=self.color_channels,
-            depth_channels=self.depth_channels)
-
-        self.images_color_test, self.images_depth_test, self.labels_test = \
-            load_batch_color_depth(
-                self.dataset_test, height=self.image_size,
-                width=self.image_size, batch_size=batch_size)
-
-        return self.dataset_train
 
 
 def train(train_class,

@@ -132,12 +132,6 @@ def delta(coefs, N=2):
 
 class TrainClassifyAudio(TrainAudio, TrainClassifyCNN):
 
-    def decide_used_data(self):
-        self.mfccs = tf.cond(
-            self.training, lambda: self.mfccs_train, lambda: self.mfccs_test)
-        self.labels = tf.cond(
-            self.training, lambda: self.labels_train, lambda: self.labels_test)
-
     def compute(self, use_delta=False, **kwargs):
         if use_delta:
             mfcc_deltas = delta(self.mfccs)
@@ -147,28 +141,6 @@ class TrainClassifyAudio(TrainAudio, TrainClassifyCNN):
             data = self.mfccs
         self.logits = self.compute_logits(
             data, self.dataset_train.num_classes, **kwargs)
-
-    def get_summary_op(self):
-        self.get_batch_norm_summary()
-        tf.summary.scalar('learning_rate', self.learning_rate)
-        tf.summary.histogram('logits', self.logits)
-        tf.summary.scalar('losses/train/cross_entropy',
-                          self.cross_entropy_loss)
-        tf.summary.scalar('losses/train/total', self.total_loss)
-        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
-        tf.summary.scalar('accuracy/train/streaming', self.accuracy)
-        self.summary_op = tf.summary.merge_all()
-        return self.summary_op
-
-    def get_test_summary_op(self):
-        # Summaries for the test part
-        ac_test_summary = tf.summary.scalar(
-            'accuracy/test', self.accuracy_no_streaming)
-        ls_test_summary = tf.summary.scalar(
-            'losses/test/total', self.total_loss)
-        self.test_summary_op = tf.summary.merge(
-            [ac_test_summary, ls_test_summary])
-        return self.test_summary_op
 
 
 class EvaluateClassifyAudio(EvaluateAudio, EvaluateClassifyCNN):
@@ -182,9 +154,6 @@ class EvaluateClassifyAudio(EvaluateAudio, EvaluateClassifyCNN):
             data = self.mfccs
         self.logits = self.compute_logits(
             data, self.dataset.num_classes, **kwargs)
-
-    def last_step_log_info(self, sess, batch_size):
-        return self.step_log_info(sess)
 
 
 class TrainClassifyAvicar(TrainClassifyCNN):
@@ -213,25 +182,3 @@ class TrainClassifyAvicar(TrainClassifyCNN):
             data = self.mfccs
         self.logits = self.compute_logits(
             data, self.dataset_train.num_classes, **kwargs)
-
-    def get_summary_op(self):
-        self.get_batch_norm_summary()
-        tf.summary.scalar('learning_rate', self.learning_rate)
-        tf.summary.histogram('logits', self.logits)
-        tf.summary.scalar('losses/train/cross_entropy',
-                          self.cross_entropy_loss)
-        tf.summary.scalar('losses/train/total', self.total_loss)
-        tf.summary.scalar('accuracy/train', self.accuracy_no_streaming)
-        tf.summary.scalar('accuracy/train/streaming', self.accuracy)
-        self.summary_op = tf.summary.merge_all()
-        return self.summary_op
-
-    def get_test_summary_op(self):
-        # Summaries for the test part
-        ac_test_summary = tf.summary.scalar(
-            'accuracy/test', self.accuracy_no_streaming)
-        ls_test_summary = tf.summary.scalar(
-            'losses/test/total', self.total_loss)
-        self.test_summary_op = tf.summary.merge(
-            [ac_test_summary, ls_test_summary])
-        return self.test_summary_op

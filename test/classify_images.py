@@ -29,7 +29,8 @@ def train_raw(num_steps):
 
 def evaluate_raw(split_name='validation'):
     EvaluateClassifyImagesCNN(None).evaluate(
-        tfrecord_dir, log_dir_raw, None, split_name=split_name)
+        tfrecord_dir, log_dir_raw, None,
+        split_name=split_name, batch_size=None)
 
 
 def train_CNN9(num_steps):
@@ -39,7 +40,8 @@ def train_CNN9(num_steps):
 
 def evaluate_CNN9(split_name='validation'):
     EvaluateClassifyImagesCNN(CNN_9layers).evaluate(
-        tfrecord_dir, log_dir_CNN9, None, split_name=split_name)
+        tfrecord_dir, log_dir_CNN9, None,
+        split_name=split_name, batch_size=None)
 
 
 def fine_tune_inception(num_steps):
@@ -49,4 +51,5 @@ def fine_tune_inception(num_steps):
 
 def evaluate_inception(split_name='validation'):
     EvaluateClassifyInception().evaluate(
-        tfrecord_dir, log_dir_inception, None, split_name=split_name)
+        tfrecord_dir, log_dir_inception, None,
+        split_name=split_name, batch_size=None)

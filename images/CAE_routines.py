@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import time
 
 import tensorflow as tf
 
@@ -23,10 +24,6 @@ class TrainCAE(TrainImages):
         super(TrainCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
 
-    def decide_used_data(self):
-        self.images_original = tf.cond(
-            self.training, lambda: self.images_train, lambda: self.images_test)
-
     def compute(self, dropout_position='fc', dropout_keep_prob=0.7):
 
         images_corrupted = slim.dropout(
@@ -43,7 +40,7 @@ class TrainCAE(TrainImages):
             self.images, dropout_keep_prob=dropout_keep_prob)
 
     def compute_reconstruction(self, inputs, dropout_keep_prob=0.7):
-        reconstructions, _ = self.CAE_structure(
+        reconstructions = self.CAE_structure(
             self.images, dropout_keep_prob=dropout_keep_prob)
         return reconstructions
 
@@ -93,18 +90,19 @@ class EvaluateCAE(EvaluateImages):
         super(EvaluateCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
 
-    def compute(self, **kwargs):
-        self.reconstructions = \
-            self.compute_reconstruction(self.images, **kwargs)
+    def compute(self, do_dropout=False, dropout_keep_prob=0.7):
 
-    def compute_reconstruction(self, inputs, dropout_input=False,
-                               dropout_keep_prob=0.5):
         images_corrupted = tf.nn.dropout(
-            inputs, keep_prob=dropout_keep_prob, name='Input/Dropout')
+            self.images, keep_prob=dropout_keep_prob, name='Input/Dropout')
 
         self.images_original = self.images
-        self.images = images_corrupted if dropout_input else inputs
-        reconstructions, _ = self.CAE_structure(self.images)
+        self.images = images_corrupted if do_dropout else self.images
+
+        self.reconstructions = \
+            self.compute_reconstruction(self.images)
+
+    def compute_reconstruction(self, inputs):
+        reconstructions = self.CAE_structure(self.images)
         return reconstructions
 
     def compute_log_data(self):
@@ -119,15 +117,15 @@ class EvaluateCAE(EvaluateImages):
         self.summary_op = tf.summary.merge_all()
 
     def step_log_info(self, sess):
-        self.global_step_count, time_elapsed, tensor_values = \
-            self.eval_step(
-                sess, self.global_step_op,
-                self.total_loss, self.summary_op)
-        self.loss = tensor_values[0]
+        start_time = time.time()
+        global_step_count, loss, summary = sess.run(
+            [self.global_step_op, self.total_loss, self.summary_op])
+        time_elapsed = time.time() - start_time
         tf.logging.info(
             'global step %s: loss: %.4f (%.2f sec/step)',
-            self.global_step_count, self.loss, time_elapsed)
-        return self.global_step_count, tensor_values[1]
+            global_step_count, loss, time_elapsed)
+        if hasattr(self, 'fw'):
+            self.fw.add_summary(summary, global_step=global_step_count)
 
 
 def reconstruct(image_path, train_dir, CAE_structure,

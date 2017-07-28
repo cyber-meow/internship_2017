@@ -26,11 +26,19 @@ class TrainAudio(Train):
             self.dataset_test, batch_size=batch_size)
         return self.dataset_train
 
+    def decide_used_data(self):
+        self.mfccs = tf.cond(
+            self.training, lambda: self.mfccs_train, lambda: self.mfccs_test)
+        self.labels = tf.cond(
+            self.training, lambda: self.labels_train, lambda: self.labels_test)
+
 
 class EvaluateAudio(Evaluate):
 
     def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_mfcc(split_name, tfrecord_dir)
+        if batch_size is None:
+            batch_size = self.dataset.num_samples
         self.mfccs, self.labels = load_batch_mfcc(
             self.dataset, batch_size=batch_size, shuffle=shuffle)
         return self.dataset
