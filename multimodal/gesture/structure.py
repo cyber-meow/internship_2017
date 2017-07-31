@@ -41,7 +41,8 @@ def fusionAE_6layers(color_inputs, depth_inputs,
         depth_keep_prob = tf.constant(1, tf.float32) - color_keep_prob
 
     in_channels = color_inputs.get_shape()[3]
-    assert depth_inputs.get_shape()[3] == in_channels
+    print(color_inputs.get_shape())
+    print(depth_inputs.get_shape())
     # endpoints = {}
 
     with tf.variable_scope(scope, 'Fusion'):

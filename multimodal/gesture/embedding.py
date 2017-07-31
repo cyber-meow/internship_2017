@@ -7,8 +7,7 @@ import os
 import tensorflow as tf
 from tensorflow.contrib.tensorboard.plugins import projector
 
-from routines.train import TrainColorDepth
-from routines.visualize import VisualizeColorDepth, VisualizeImages
+from multimodal.gesture.basics import TrainColorDepth, VisualizeColorDepth
 
 slim = tf.contrib.slim
 
@@ -23,23 +22,15 @@ class TrainEmbedding(TrainColorDepth):
         super(TrainEmbedding, self).__init__(**kwargs)
         self.structure = structure
 
-    def decide_used_data(self):
-        self.images_color = tf.cond(
-            self.training, lambda: self.images_color_train,
-            lambda: self.images_color_test)
-        self.images_depth = tf.cond(
-            self.training, lambda: self.images_depth_train,
-            lambda: self.images_depth_test)
-
     def compute(self, **kwargs):
         self.color_repr, self.depth_repr = self.compute_embedding(
             self.images_color, self.images_depth, **kwargs)
 
     def compute_embedding(self, color_inputs, depth_inputs,
                           feature_length=512):
-        color_net, _ = self.structure(
+        color_net = self.structure(
             color_inputs, final_endpoint='Middle', scope='Color')
-        depth_net, _ = self.structure(
+        depth_net = self.structure(
             depth_inputs, final_endpoint='Middle', scope='Depth')
         color_net = slim.flatten(color_net)
         depth_net = slim.flatten(depth_net)
@@ -57,10 +48,6 @@ class TrainEmbedding(TrainColorDepth):
             color_repr, depth_repr, 1)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
-
-    def get_metric_op(self):
-        self.metric_op = None
-        return self.metric_op
 
     def get_summary_op(self):
         self.get_batch_norm_summary()
@@ -82,8 +69,6 @@ class TrainEmbedding(TrainColorDepth):
         return self.test_summary_op
 
     def get_init_fn(self, checkpoint_dirs):
-        """Returns a function run by the chief worker to
-           warm-start the training."""
         checkpoint_dir_color, checkpoint_dir_depth = checkpoint_dirs
 
         variables_color = {}
@@ -108,10 +93,10 @@ class TrainEmbedding(TrainColorDepth):
             saver_depth.restore(sess, checkpoint_path_depth)
         return restore
 
-    def normal_log_info(self, sess):
+    def summary_log_info(self, sess):
         self.loss, _, summaries = self.train_step(
             sess, self.train_op, self.sv.global_step, self.summary_op)
-        return summaries
+        self.sv.summary_computed(sess, summaries)
 
     def test_log_info(self, sess, test_use_batch):
         ls, summaries_test = sess.run(
@@ -119,14 +104,10 @@ class TrainEmbedding(TrainColorDepth):
             feed_dict={self.training: False,
                        self.batch_stat: test_use_batch})
         tf.logging.info('Current Test Loss: %s', ls)
-        return summaries_test
-
-    def final_log_info(self, sess):
-        tf.logging.info('Finished training. Final Loss: %s', self.loss)
-        tf.logging.info('Saving model to disk now.')
+        self.sv.summary_computed(summaries_test)
 
 
-class VisualizeCommonEmbedding(VisualizeColorDepth, VisualizeImages):
+class VisualizeCommonEmbedding(VisualizeColorDepth):
 
     def compute(self, feature_length=512):
 
@@ -157,17 +138,17 @@ class VisualizeCommonEmbedding(VisualizeColorDepth, VisualizeImages):
 
     def config_embedding(self, sess, log_dir):
 
-        _, lbs = sess.run([self.assign, self.labels])
+        _, labels = sess.run([self.assign, self.labels])
         self.saver_repr.save(sess, os.path.join(log_dir, 'repr.ckpt'))
 
         metadata = os.path.abspath(os.path.join(log_dir, 'metadata.tsv'))
         with open(metadata, 'w') as metadata_file:
             metadata_file.write('index\tlabel\n')
-            for index, label in enumerate(lbs):
+            for index, label in enumerate(labels):
                 metadata_file.write('%d\tcolor[%d]\n' % (index, label))
-            for index, label in enumerate(lbs):
+            for index, label in enumerate(labels):
                 metadata_file.write(
-                    '%d\tdepth[%d]\n' % (index+len(lbs), label))
+                    '%d\tdepth[%d]\n' % (index+len(labels), label))
 
         config = projector.ProjectorConfig()
 

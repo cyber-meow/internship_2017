@@ -5,7 +5,7 @@ from __future__ import print_function
 import os
 
 import tensorflow as tf
-from datasets import dataset_utils
+from data import dataset_utils
 from nets import inception_v4
 from nets_base import inception_preprocessing
 

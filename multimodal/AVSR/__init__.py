@@ -2,4 +2,4 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from multimoda.AVSR.tranfer import *
+from multimoda.AVSR.transfer import *

@@ -61,13 +61,13 @@ class FusionTest(object):
                 fusionAE_6layers, image_size=83, channels=1).train(
             self.tfrecord_dir_depth, self.log_dir_fusion,
             self.log_dir_classify_single, number_of_epochs=1,
-            save_model_steps=500)
+            save_model_steps=500, modality='depth')
 
     def evaluate_classify_fusion_single(self, split_name='validation'):
         EvaluateClassifyCommonRepr(
                 fusionAE_6layers, image_size=83, channels=1).evaluate(
             self.tfrecord_dir_depth, self.log_dir_classify_single, None,
-            split_name=split_name, batch_size=None)
+            split_name=split_name, batch_size=None, modality='depth')
 
     def train_classify_fusion_both(self):
         TrainClassifyFusion(fusionAE_6layers, image_size=83,
