@@ -74,7 +74,7 @@ class FusionTest(object):
                             color_channels=1, depth_channels=1).train(
             self.tfrecord_dir, self.log_dir_fusion,
             self.log_dir_classify_both, number_of_epochs=1,
-            save_model_steps=500, endpoint='Middle')
+            save_model_steps=500, endpoint='Middle', trainable_scopes='Logits')
 
     def evaluate_classify_fusion_both(self, split_name='validation'):
         EvaluateClassifyFusion(fusionAE_6layers, image_size=83,

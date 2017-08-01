@@ -18,6 +18,7 @@ class Visualize(object):
                   split_name='train',
                   use_batch_norm=True,
                   batch_stat=False,
+                  shuffle=True,
                   **kwargs):
 
         if log_dir is not None and not tf.gfile.Exists(log_dir):
@@ -30,7 +31,7 @@ class Visualize(object):
         with tf.Graph().as_default():
 
             with tf.name_scope('Data_provider'):
-                self.get_data(split_name, tfrecord_dir, batch_size)
+                self.get_data(split_name, tfrecord_dir, batch_size, shuffle)
 
             with slim.arg_scope(self.used_arg_scope(
                     batch_stat, use_batch_norm)):

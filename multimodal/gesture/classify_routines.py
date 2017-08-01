@@ -76,6 +76,11 @@ class EvaluateClassifyCommonRepr(EvaluateClassifyImages):
 
 
 class TrainClassifyFusion(TrainColorDepth, TrainClassify):
+    """
+    To train a lineair classifier from a common representation
+    that is learned by an auto-encoder, use endpoint='Middle'
+    an trainables_scopes='Logits'
+    """
 
     def __init__(self, structure, **kwargs):
         super(TrainClassifyFusion, self).__init__(**kwargs)

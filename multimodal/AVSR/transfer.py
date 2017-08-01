@@ -8,10 +8,10 @@ from classify.train import TrainClassify
 from data.mfcc_lips import load_batch_mfcc_lips, get_split_mfcc_lips
 
 from audio.classify_routines import TrainClassifyAudio, EvaluateClassifyAudio
-from audio.classify_routines import CNN_mfcc
+from audio.CNN_structure import CNN_mfcc6
 
 from video.classify_routines import TrainClassifyVideo, EvaluateClassifyVideo
-from video.classify_routines import CNN_lips5
+from video.CNN_structure import CNN_lips5
 
 slim = tf.contrib.slim
 
@@ -85,7 +85,7 @@ class TrainTransfer(TrainClassify):
     def __init__(self, audio_structure='', video_structure='', **kwargs):
         super(TrainTransfer, self).__init__(**kwargs)
         if audio_structure == '':
-            self.audio_structure = CNN_mfcc
+            self.audio_structure = CNN_mfcc6
         else:
             self.audio_structure = audio_structure
         if video_structure == '':

@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from audio import CNN_mfcc
+from audio import CNN_mfcc6
 from video import CNN_lips5
 
 from multimodal.AVSR import TrainClassifyAudioAVSR
@@ -22,11 +22,11 @@ class TransferTest(object):
     log_dir_transfer = 'test/log/transfer/main'
 
     def train_audio(self, num_steps):
-        TrainClassifyAudioAVSR(CNN_mfcc).train(
+        TrainClassifyAudioAVSR(CNN_mfcc6).train(
             self.tfrecord_dir, None, self.log_dir_audio, num_steps)
 
     def evaluate_audio(self, split_name):
-        EvaluateClassifyAudioAVSR(CNN_mfcc).evaluate(
+        EvaluateClassifyAudioAVSR(CNN_mfcc6).evaluate(
             self.tfrecord_dir, self.log_dir_audio, None,
             batch_size=None, split_name=split_name)
 
@@ -51,7 +51,7 @@ class TransferTest(object):
             batch_size=None, split_name=split_name)
 
     def train_transfer(self, num_steps):
-        TrainTransfer(audio_structure=CNN_mfcc, video_structure=CNN_lips5,
+        TrainTransfer(audio_structure=CNN_mfcc6, video_structure=CNN_lips5,
                       initial_learning_rate=8e-4, lr_decay_rate=0.96).train(
             self.tfrecord_dir, [self.log_dir_audio, self.log_dir_video_AT],
             self.log_dir_transfer, num_steps, K=6, use_audio_prob=0.9)

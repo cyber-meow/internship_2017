@@ -22,7 +22,7 @@ def parse_mfcc(file_path, feature_len=26, num_frames=24):
       feature_len: The feature length for each time frame
 
     Returns:
-      a numpy array of size (num_frames, feature_len)
+      a numpy array of size (feature_len, num_frames)
     """
     with open(file_path, 'r') as f:
         f.readline()

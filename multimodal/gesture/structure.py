@@ -47,9 +47,9 @@ def fusionAE_6layers(color_inputs, depth_inputs,
 
     with tf.variable_scope(scope, 'Fusion'):
         # 299 x 299 x 3 / 83 x 83 x 1
-        color_net, _ = CAE_6layers(
+        color_net = CAE_6layers(
             color_inputs, final_endpoint='Conv2d_b_3x3', scope='Color')
-        depth_net, _ = CAE_6layers(
+        depth_net = CAE_6layers(
             depth_inputs, final_endpoint='Conv2d_b_3x3', scope='Depth')
 
         # 49 x 49 x 69 / 13 x 13 x 23

@@ -36,14 +36,7 @@ def get_split_avicar(split_name,
 
     Returns:
       A `Dataset` namedtuple.
-
-    Raises:
-      ValueError: if `split_name` is not a valid train/validation split.
     """
-    if split_name not in ['train', 'validation']:
-        raise ValueError(
-            'The split_name %s is not recognized.' % (split_name)
-            + 'Please input either train or validation as the split_name')
 
     if not file_pattern:
         file_pattern = _FILE_PATTERN

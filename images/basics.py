@@ -69,12 +69,14 @@ class VisualizeImages(Visualize):
         self.image_size = image_size
         self.channels = channels
 
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_images(
             split_name, tfrecord_dir, channels=self.channels)
+        if batch_size is None:
+            batch_size = self.dataset.num_samples
         self.images, self.labels = load_batch_images(
             self.dataset, height=self.image_size,
-            width=self.image_size, batch_size=batch_size)
+            width=self.image_size, batch_size=batch_size, shuffle=shuffle)
         return self.dataset
 
     def compute(self, endpoint='Middle', do_avg=False):
