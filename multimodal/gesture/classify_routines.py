@@ -17,7 +17,9 @@ slim = tf.contrib.slim
 
 class TrainClassifyCommonRepr(TrainClassifyImages):
 
-    default_trainable_scopes = ['Logits']
+    @property
+    def default_trainable_scopes(self):
+        return ['Logits']
 
     def __init__(self, structure, **kwargs):
         super(TrainClassifyCommonRepr, self).__init__(**kwargs)
@@ -148,6 +150,71 @@ class EvaluateClassifyFusion(EvaluateColorDepth, EvaluateClassify):
             net = self.structure(
                 color_inputs, depth_inputs, final_endpoint=endpoint)
         net = slim.flatten(net, scope='PrelogitsFlatten')
+        logits = slim.fully_connected(
+            net, num_classes, activation_fn=None, scope='Logits')
+        return logits
+
+
+class TrainClassifyEmbedding(TrainClassifyImages):
+
+    @property
+    def default_trainable_scopes(self):
+        return ['Logits']
+
+    def __init__(self, structure, **kwargs):
+        super(TrainClassifyEmbedding, self).__init__(**kwargs)
+        self.structure = structure
+
+    def compute_logits(self, inputs, num_classes, endpoint='Middle',
+                       modality='color', feature_length=512,
+                       dropout_keep_prob=0.8, unit_normalization=True):
+        assert modality in ['color', 'depth']
+        scope_name = 'Color' if modality == 'color' else 'Depth'
+
+        with tf.variable_scope(scope_name):
+            net = self.structure(
+                inputs, final_endpoint=endpoint)
+            net = slim.flatten(net)
+        with tf.variable_scope('Embedding'):
+            net = slim.fully_connected(net, feature_length, scope=scope_name)
+        if unit_normalization:
+            net = slim.unit_norm(net, 1)
+        net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
+        logits = slim.fully_connected(
+            net, num_classes, activation_fn=None, scope='Logits')
+        return logits
+
+    def get_init_fn(self, checkpoint_dirs):
+        assert len(checkpoint_dirs) == 1
+        checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
+        assert checkpoint_path is not None
+        variables_to_restore = self.get_variables_to_restore(
+            ['Embedding', 'Color', 'Depth'])
+        return slim.assign_from_checkpoint_fn(
+            checkpoint_path, variables_to_restore)
+
+
+class EvaluateClassifyEmbedding(EvaluateClassifyImages):
+
+    def __init__(self, structure, **kwargs):
+        super(EvaluateClassifyEmbedding, self).__init__(**kwargs)
+        self.structure = structure
+
+    def compute_logits(self, inputs, num_classes,
+                       endpoint='Middle', modality='color',
+                       feature_length=512,
+                       unit_normalization=True):
+        assert modality in ['color', 'depth']
+        scope_name = 'Color' if modality == 'color' else 'Depth'
+
+        with tf.variable_scope(scope_name):
+            net = self.structure(
+                inputs, final_endpoint=endpoint)
+            net = slim.flatten(net)
+        with tf.variable_scope('Embedding'):
+            net = slim.fully_connected(net, feature_length, scope=scope_name)
+        if unit_normalization:
+            net = slim.unit_norm(net, 1)
         logits = slim.fully_connected(
             net, num_classes, activation_fn=None, scope='Logits')
         return logits

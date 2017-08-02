@@ -142,10 +142,10 @@ def load_batch_color_depth(dataset,
     # Preprocess image for usage by Inception.
     image_color = inception_preprocessing.preprocess_image(
         image_color, height, width, is_training=False)
-    image_color = tf.image.adjust_contrast(image_color, 10)
+    image_color = tf.image.per_image_standardization(image_color)
     image_depth = inception_preprocessing.preprocess_image(
         image_depth, height, width, is_training=False)
-    image_depth = tf.image.adjust_contrast(image_depth, 10)
+    image_depth = tf.image.per_image_standardization(image_depth)
 
     # Batch it up.
     images_color, images_depth, labels = tf.train.batch(

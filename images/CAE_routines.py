@@ -47,6 +47,7 @@ class TrainCAE(TrainImages):
     def get_total_loss(self):
         self.reconstruction_loss = tf.losses.mean_squared_error(
             self.reconstructions, self.images_original)
+        tf.losses.add_loss(self.no_zero_loss)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
 

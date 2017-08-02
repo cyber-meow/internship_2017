@@ -88,7 +88,7 @@ class VisualizeColorDepth(Visualize):
         self.color_channels = color_channels
         self.depth_channels = depth_channels
 
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_color_depth(
             split_name,
             tfrecord_dir,
@@ -97,5 +97,5 @@ class VisualizeColorDepth(Visualize):
         self.images_color, self.images_depth, self.labels = \
             load_batch_color_depth(
                 self.dataset, height=self.image_size,
-                width=self.image_size, batch_size=batch_size)
+                width=self.image_size, batch_size=batch_size, shuffle=shuffle)
         return self.dataset

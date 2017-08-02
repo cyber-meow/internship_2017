@@ -122,7 +122,7 @@ def load_batch_images(dataset,
     # Preprocess image for usage by Inception.
     image = inception_preprocessing.preprocess_image(
         image_raw, height, width, is_training=False)
-    image = tf.image.adjust_contrast(image, 10)
+    image = tf.image.per_image_standardization(image)
 
     # Batch it up.
     images, labels = tf.train.batch(
