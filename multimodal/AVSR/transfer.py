@@ -259,11 +259,21 @@ class TrainTransfer(TrainClassify):
         checkpoint_path_video = tf.train.latest_checkpoint(
             checkpoint_dir_video)
 
+        names = ['global_step', 'beta1_power', 'beta2_power']
+        variables_to_init = []
+        for var in tf.global_variables():
+            if (var.op.name in names or
+                    var.op.name.endswith('Adam') or
+                    var.op.name.endswith('Adam_1')):
+                print(var)
+                variables_to_init.append(var)
+        init_op = tf.variables_initializer(variables_to_init)
+
         # Since we only have A~T for initialization but audio trained on A~Z
         def restore(sess):
             tf.logging.info('Start restoring parameters.')
             tf.logging.info('Initializing some parameters.')
-            sess.run(self.init_op_1)
+            sess.run(init_op)
             tf.logging.info('Restoring parameters for audio preparation.')
             saver_prepare_audio.restore(sess, checkpoint_path_audio)
             tf.logging.info('Restoring parameters for video preparation.')
@@ -275,17 +285,7 @@ class TrainTransfer(TrainClassify):
         return restore
 
     def get_supervisor(self, log_dir, init_fn):
-        names = ['global_step', 'beta1_power', 'beta2_power']
-        variables_to_init = []
-        for var in tf.global_variables():
-            # if (var in [self.all_mfcc_reprs, self.all_video_reprs] or
-            if (var.op.name in names or
-                    var.op.name.endswith('Adam') or
-                    var.op.name.endswith('Adam_1')):
-                print(var)
-                variables_to_init.append(var)
-        self.init_op_1 = tf.variables_initializer(variables_to_init)
-        self.init_op_2 = tf.variables_initializer(
+        self.extra_init_op = tf.variables_initializer(
             [self.all_mfcc_reprs, self.all_video_reprs])
         return tf.train.Supervisor(
             logdir=log_dir, summary_op=None, init_fn=init_fn,
@@ -293,7 +293,7 @@ class TrainTransfer(TrainClassify):
 
     def extra_initialization(self, sess):
         tf.logging.info('Preparing pre-computed representations.')
-        sess.run(self.init_op_2, feed_dict={self.batch_stat: True})
+        sess.run(self.extra_init_op, feed_dict={self.batch_stat: True})
         tf.logging.info('Finish restoring and preparing values.')
         self.sv.saver.save(sess, self.sv.save_path,
                            global_step=self.sv.global_step)

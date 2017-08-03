@@ -6,8 +6,7 @@ import os
 
 import tensorflow as tf
 from data import dataset_utils
-from nets import inception_v4
-from nets_base import inception_preprocessing
+from nets_base import inception_v4, inception_preprocessing
 
 slim = tf.contrib.slim
 

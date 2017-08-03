@@ -15,8 +15,7 @@ def nets_arg_scope(weight_decay=0.0004,
                    batch_norm_epsilon=0.001,
                    is_training=True,
                    renorm=False,
-                   renorm_decay=0.9,
-                   fused=False):
+                   renorm_decay=0.9):
     """Defines the default arg scope for some net models.
 
     Args:
@@ -26,6 +25,7 @@ def nets_arg_scope(weight_decay=0.0004,
       batch_norm_epsilon: Small float added to variance to avoid dividing
         by zero in batch norm.
       is_training: The model is being trained or not
+      renorm, renorm_decay: For renormalization.
 
     Returns:
       An `arg_scope` to use for the inception models.
@@ -38,8 +38,6 @@ def nets_arg_scope(weight_decay=0.0004,
         # renormalization
         'renorm': renorm,
         'renorm_decay': renorm_decay,
-        # fused implementation
-        'fused': fused,
         # collection containing update_ops.
         'updates_collections': tf.GraphKeys.UPDATE_OPS,
     }

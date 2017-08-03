@@ -6,8 +6,8 @@ import os
 import time
 
 import tensorflow as tf
-from nets import inception_v4
 
+from nets_base import inception_v4
 from images.basics import TrainImages, EvaluateImages
 from classify.train import TrainClassify, TrainClassifyCNN
 from classify.evaluate import EvaluateClassify, EvaluateClassifyCNN

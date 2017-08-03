@@ -7,8 +7,8 @@ import tensorflow as tf
 slim = tf.contrib.slim
 
 
-def CNN_lips7(inputs,
-              final_endpoint='MaxPool_b_2x2x2',
+def CNN_lips8(inputs,
+              final_endpoint='Conv3d_f_3x4x2',
               scope=None,
               per_layer_dropout=False,
               dropout_keep_prob=0.8):
@@ -77,16 +77,26 @@ def CNN_lips7(inputs,
             if per_layer_dropout:
                 net = slim.dropout(net, dropout_keep_prob)
 
-            # 6 x 8 x 4 x 93
+            # 6 x 8 x 4 x 137
             print(net.get_shape())
             endpoint = 'MaxPool_b_2x2x2'
             net = slim.pool(net, [2, 2, 2], 'MAX', stride=2,
                             scope='MaxPool_b_2x2x2')
+            if final_endpoint == endpoint:
+                return net
+            if per_layer_dropout:
+                net = slim.dropout(net, dropout_keep_prob)
+
+            # 3 x 4 x 2 x 137
+            print(net.get_shape())
+            endpoint = 'Conv3d_f_3x4x2'
+            net = slim.convolution(net, 657, [3, 4, 2],
+                                   scope='Conv3d_f_3x4x2')
             print(net.get_shape())
             if final_endpoint == endpoint:
                 return net
 
-            # 3 x 4 x 2 x 93
+            # 1 x 1 x 1 x 657
             raise ValueError('Unknown final endpoint %s' % final_endpoint)
 
 

@@ -51,14 +51,14 @@ class TrainEmbedding(TrainColorDepth):
         depth_repr = slim.unit_norm(self.depth_repr, 1)
         pre_color_repr = slim.unit_norm(self.pre_color_repr, 1)
         pre_depth_repr = slim.unit_norm(self.pre_depth_repr, 1)
-        self.l2_loss = tf.losses.mean_squared_error(
-            self.color_repr, self.depth_repr)
-        # self.cos_loss = tf.losses.cosine_distance(
-        #     color_repr, depth_repr, 1)
+        self.cos_loss = -10 * tf.reduce_sum(color_repr*depth_repr)
+        tf.losses.add_loss(self.cos_loss)
         self.color_preserved_loss = self.preserved_distance_loss(
-            pre_color_repr, color_repr, 1)
+            pre_color_repr, color_repr, 2)
         self.depth_preserved_loss = self.preserved_distance_loss(
             pre_depth_repr, depth_repr, 0.1)
+        self.color_far_loss = self.far_loss(color_repr)
+        self.depth_far_loss = self.far_loss(depth_repr)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
 
@@ -72,13 +72,21 @@ class TrainEmbedding(TrainColorDepth):
         tf.losses.add_loss(distance_diff)
         return distance_diff
 
+    def far_loss(self, inputs):
+        inputs_rot = tf.concat([tf.expand_dims(inputs[-1], 0), inputs[:-1]], 0)
+        far_loss = tf.reduce_sum(inputs*inputs_rot)
+        tf.losses.add_loss(far_loss)
+        return far_loss
+
     def get_summary_op(self):
         self.get_batch_norm_summary()
-        tf.summary.scalar('losses/train/L2', self.l2_loss)
+        tf.summary.scalar('losses/train/cos', self.cos_loss)
         tf.summary.scalar('losses/train/color_preserved',
                           self.color_preserved_loss)
         tf.summary.scalar('losses/train/depth_preserved',
                           self.depth_preserved_loss)
+        tf.summary.scalar('losses/train/color_far', self.color_far_loss)
+        tf.summary.scalar('losses/train/depth_far', self.depth_far_loss)
         tf.summary.scalar('losses/train/total', self.total_loss)
         tf.summary.scalar('learning_rate', self.learning_rate)
         tf.summary.image('train/color', self.images_color)
@@ -87,12 +95,12 @@ class TrainEmbedding(TrainColorDepth):
         return self.summary_op
 
     def get_test_summary_op(self):
-        ls_l2 = tf.summary.scalar('losses/test/L2', self.l2_loss)
+        ls_cos = tf.summary.scalar('losses/test/cos', self.cos_loss)
         ls_tl = tf.summary.scalar('losses/test/total', self.total_loss)
         img_clr = tf.summary.image('test/color', self.images_color)
         img_dep = tf.summary.image('test/depth', self.images_depth)
         self.test_summary_op = tf.summary.merge(
-            [ls_l2, ls_tl, img_clr, img_dep])
+            [ls_cos, ls_tl, img_clr, img_dep])
         return self.test_summary_op
 
     def get_init_fn(self, checkpoint_dirs):
@@ -134,7 +142,7 @@ class TrainEmbedding(TrainColorDepth):
         self.sv.summary_computed(sess, summaries_test)
 
 
-class TrainEmbeddingHinge(TrainEmbedding):
+class TrainEmbedding2(TrainEmbedding):
 
     def get_total_loss(self):
         color_repr = slim.unit_norm(self.color_repr, 1)
@@ -142,6 +150,7 @@ class TrainEmbeddingHinge(TrainEmbedding):
         self.cos_loss = -tf.reduce_sum(color_repr*depth_repr)
         self.color_far_loss = self.far_loss(color_repr)
         self.depth_far_loss = self.far_loss(depth_repr)
+        tf.losses.add_loss(self.cos_loss)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
 
@@ -164,12 +173,12 @@ class TrainEmbeddingHinge(TrainEmbedding):
         return self.summary_op
 
     def get_test_summary_op(self):
-        ls_l2 = tf.summary.scalar('losses/test/cos', self.cos_loss)
+        ls_cos = tf.summary.scalar('losses/test/cos', self.cos_loss)
         ls_tl = tf.summary.scalar('losses/test/total', self.total_loss)
         img_clr = tf.summary.image('test/color', self.images_color)
         img_dep = tf.summary.image('test/depth', self.images_depth)
         self.test_summary_op = tf.summary.merge(
-            [ls_l2, ls_tl, img_clr, img_dep])
+            [ls_cos, ls_tl, img_clr, img_dep])
         return self.test_summary_op
 
 
@@ -201,10 +210,19 @@ class VisualizeCommonEmbedding(VisualizeColorDepth):
 
         self.repr_var = tf.Variable(
             tf.zeros_like(self.representations),
-            name='Representation')
+            name='Representation/All')
+        self.repr_var_color = tf.Variable(
+            tf.zeros_like(color_net), name='Representation/Color')
+        self.repr_var_depth = tf.Variable(
+            tf.zeros_like(depth_net), name='Representation/Depth')
 
-        self.assign = tf.assign(self.repr_var, self.representations)
-        self.saver_repr = tf.train.Saver([self.repr_var])
+        self.assign = tf.group(
+            tf.assign(self.repr_var, self.representations),
+            tf.assign(self.repr_var_color, color_net),
+            tf.assign(self.repr_var_depth, depth_net))
+
+        self.saver_repr = tf.train.Saver(
+            [self.repr_var, self.repr_var_color, self.repr_var_depth])
 
     def config_embedding(self, sess, log_dir):
 
@@ -218,12 +236,28 @@ class VisualizeCommonEmbedding(VisualizeColorDepth):
                 metadata_file.write('%d\tcolor[%d]\n' % (index, label))
             for index, label in enumerate(labels):
                 metadata_file.write(
-                    '%d\tdepth[%d]\n' % (index+len(labels), label))
+                    '%d\tdepth[%d]\n' % (index, label))
+
+        metadata_single = os.path.abspath(
+            os.path.join(log_dir, 'metadata_single.tsv'))
+        with open(metadata_single, 'w') as metadata_file:
+            metadata_file.write('index\tlabel\n')
+            for index, label in enumerate(labels):
+                metadata_file.write('%d\t[%d]\n' % (index, label))
 
         config = projector.ProjectorConfig()
 
         embedding = config.embeddings.add()
         embedding.tensor_name = self.repr_var.name
         embedding.metadata_path = metadata
+
+        embedding_color = config.embeddings.add()
+        embedding_color.tensor_name = self.repr_var_color.name
+        embedding_color.metadata_path = metadata_single
+
+        embedding_depth = config.embeddings.add()
+        embedding_depth.tensor_name = self.repr_var_depth.name
+        embedding_depth.metadata_path = metadata_single
+
         projector.visualize_embeddings(
             tf.summary.FileWriter(log_dir), config)

@@ -109,7 +109,7 @@ class VisualizeImages(Visualize):
         with open(metadata, 'w') as metadata_file:
             metadata_file.write('index\tlabel\n')
             for index, label in enumerate(labels):
-                metadata_file.write('%d\t%d\n' % (index, label))
+                metadata_file.write('%d\t[%d]\n' % (index, label))
 
         config = projector.ProjectorConfig()
 
