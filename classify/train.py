@@ -1,3 +1,19 @@
+"""Routines used to train a classifier
+
+The file contains two classes `TrainClassify` and `TrainClassifyCNN`.
+
+`TrainClassify` can be used for any network structure as long as
+we always use cross entropy loss. We evaluate prediction accuracy
+through the whole training process.
+
+To inherit from this class one should implement `get_data`,
+`decide_use_data`, `compute` and `comput_logits`.
+
+We use quite often CNN structures for classification. The class
+`TrainClassifyCNN` suppose in input there is only one modality
+and we feed this modality to a network to do classification.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
