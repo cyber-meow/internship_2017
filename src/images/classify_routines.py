@@ -1,3 +1,5 @@
+"""Train and evaluate image classifiers."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,18 +18,21 @@ slim = tf.contrib.slim
 
 
 class TrainClassifyImages(TrainImages, TrainClassify):
+    """Abstract class to train an image classifier."""
 
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
             self.images, self.dataset_train.num_classes, **kwargs)
 
     def get_summary_op(self):
+        """Also show some training input images on Tensorboard."""
         super(TrainClassifyImages, self).get_summary_op()
         tf.summary.image('train', self.images)
         self.summary_op = tf.summary.merge_all()
         return self.summary_op
 
     def get_test_summary_op(self):
+        """Also show some test input images on Tensorboard."""
         summary_op = super(TrainClassifyImages, self).get_test_summary_op()
         images_test_summary = tf.summary.image('test', self.images)
         self.test_summary_op = tf.summary.merge(
@@ -36,12 +41,21 @@ class TrainClassifyImages(TrainImages, TrainClassify):
 
 
 class EvaluateClassifyImages(EvaluateImages, EvaluateClassify):
+    """Abstract class to evaluate an image classifier."""
 
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
             self.images, self.dataset.num_classes, **kwargs)
 
     def last_step_log_info(self, sess, batch_size):
+        """Give particular information for the last batch.
+
+        For the last batch of input, we print ground truth labels
+        and predictions of images. These images (and relative
+        information) are only put on Tensorboard for visualization.
+        However, only the infomation of at most 20 images are
+        provided (if `batch_size` > 20 we take the first 20 images).
+        """
         start_time = time.time()
         global_step_count, accuracy_rate, ac_summary, labels, \
             predictions, images = sess.run([
@@ -83,11 +97,30 @@ class EvaluateClassifyImages(EvaluateImages, EvaluateClassify):
 
 
 class TrainClassifyInception(TrainClassifyImages):
+    """Train the InceptionV4 model.
+
+    Since the InceptionV4 network is quite huge and it takes very
+    much time to train it from scratch (from days to weeks depending
+    on used hardware), normally it's suggested to use a pre-trained
+    model for fine-tuning. Here we choose to fine tune the last layer
+    of the core inception and the logit layer by default. This
+    can be changed by giving the `trainable_scopes` argument.
+
+    I take directly the implementation of InceptionV4 on
+    the github directory:
+    https://github.com/tensorflow/models/tree/master/slim
+
+    You can also find the checkpoint of the model (download it and
+    put its directory as the `checkpoint_dir` argument) and more
+    details about the inception architecture on this page.
+    """
 
     @property
     def default_trainable_scopes(self):
         return ['InceptionV4/Mixed_7d', 'InceptionV4/Logits']
 
+    # An argument scope is already contained in the inception
+    # architecture so we must feed `is_training` with the correct value.
     def compute_logits(self, inputs, num_classes, **kwargs):
         logits, _ = inception_v4.inception_v4(
             inputs, num_classes=num_classes,
@@ -95,6 +128,8 @@ class TrainClassifyInception(TrainClassifyImages):
         return logits
 
     def get_init_fn(self, checkpoint_dirs):
+        """Restore the pre-trained model from the checkpoint."""
+
         checkpoint_exclude_scopes = [
             'InceptionV4/Logits', 'InceptionV4/AuxLogits']
         variables_to_restore = self.get_variables_to_restore(
@@ -116,6 +151,7 @@ def fine_tune_inception(tfrecord_dir,
                         number_of_steps=None,
                         image_size=299,
                         **kwargs):
+    """A convenient function to easily do fine-tuning for inception model."""
     fine_tune = TrainClassifyInception(image_size)
     for key in kwargs.copy():
         if hasattr(fine_tune, key):
@@ -127,6 +163,7 @@ def fine_tune_inception(tfrecord_dir,
 
 
 class EvaluateClassifyInception(EvaluateClassifyImages):
+    """Evaluate the trained InceptionV4 model."""
 
     def compute_logits(self, inputs, num_classes):
         logits, _ = inception_v4.inception_v4(
@@ -135,26 +172,76 @@ class EvaluateClassifyInception(EvaluateClassifyImages):
 
 
 class TrainClassifyImagesCNN(TrainClassifyCNN, TrainClassifyImages):
+    """Train a CNN to classify image.
+
+    If `self.CNN_structure` is `None` in fact we train only a perceptron.
+    Several CNN architectures can be found in the `CNN_structure.py` file.
+    """
     pass
 
 
 class EvaluateClassifyImagesCNN(EvaluateClassifyCNN, EvaluateClassifyImages):
+    """Evaluate a trained CNN that is used to classify image.
+
+    If `self.CNN_structure` is `None` in fact it's just a perceptron.
+    Several CNN structures can be found in the `CNN_structure.py` file.
+    """
     pass
 
 
 class TrainClassifyImagesCAE(TrainClassifyImages):
+    """Train a perceptron from some high-level features learned by a CAE.
+
+    Convolutional auto-encoders (CAE) are supposes to be able to
+    learn meaningful representation of (image) input in an unsupervised
+    manner. We first train a CAE on the data (see `CAE_routines.py`)
+    and then we take activation values of some hidden layer of the network
+    as a high-level representation of the image. This class only trains
+    a perceptron on this representation.
+
+    However, with the arguments `trainable_scopes` and
+    `use_default_trainable_scopes` one can decide to train more than
+    just the final perceptron part in a supervised way.
+
+    Several CAE architectures can be found in the `CAE_structure.py` file.
+    """
 
     def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
+        """Give the used CAE architecture and the representation layer.
+
+        Args:
+            CAE_structure: The CAE artictecture to compute the high-level
+                representation of image.
+            endpoint: Indicate the layer of the network that is used
+                as the high-level representation of image. It becomes
+                then the input of the perceptron for classifaction.
+            **kwargs: Other arguments used by the superclass.
+        """
         super(TrainClassifyImagesCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
 
     @property
     def default_trainable_scopes(self):
+        """Only train a perceptron from the image representation by default."""
         return ['Logits']
 
     def compute_logits(self, inputs, num_classes,
                        dropout_keep_prob=0.8, do_avg=False):
+        """Compute logits using perceptron from CAE representation.
+
+        Args:
+            inputs: The input(s) of the network.
+            num_classes: The number of classes to be classified.
+                This is also the number of neurons in the output layer.
+            dropout_keep_prob: Dropout is used just before the
+                last fully connected layer which computes logits.
+                This is the probability that each individual neuron
+                value is kept. Must be in the interval (0, 1].
+            do_avg: Whether to do an average pooling before the flatten
+                layer. This is used historically for test purpose and it
+                should better be `False`.
+        """
         net = self.CAE_structure(
             inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
@@ -169,6 +256,8 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
         return logits
 
     def get_init_fn(self, checkpoint_dirs):
+        """Restore the trained CAE model to compute high-level
+        image features."""
         assert len(checkpoint_dirs) == 1
         checkpoint_path = tf.train.latest_checkpoint(checkpoint_dirs[0])
         assert checkpoint_path is not None
@@ -178,13 +267,33 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
 
 
 class EvaluateClassifyImagesCAE(EvaluateClassifyImages):
+    """Evaluate the trained perceptron built on CAE representation.
+
+    This is the evaluatio part of `TrainClassifyImagesCAE`.
+    """
 
     def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
+        """Give the used CAE architecture and the representation layer.
+
+        Args:
+            CAE_structure: The CAE artictecture to compute the high-level
+                representation of image.
+            endpoint: Indicate the layer of the network that is used
+                as the high-level representation of image. It becomes
+                then the input of the perceptron for classifaction.
+        """
         super(EvaluateClassifyImagesCAE, self).__init__(**kwargs)
         self.CAE_structure = CAE_structure
         self.endpoint = endpoint
 
     def compute_logits(self, inputs, num_classes):
+        """Compute logits using perceptron from CAE representation.
+
+        Args:
+            inputs: The input(s) of the network.
+            num_classes: The number of classes to be classified.
+                This is also the number of neurons in the output layer.
+        """
         net = self.CAE_structure(
             inputs, final_endpoint=self.endpoint)
         net = slim.flatten(net, scope='PreLogitsFlatten')

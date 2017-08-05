@@ -33,7 +33,7 @@ class TrainAbstract(object):
     """The interface/abstract class of the whole training framework.
 
     Note here we just put some methods that should be defined for
-    training classes, for detailed implementation please refer to the
+    train classes. For detailed implementation please refer to the
     class `Train` and its subclasses. The docstrings of subclasses
     sometimes also contain more information.
     """

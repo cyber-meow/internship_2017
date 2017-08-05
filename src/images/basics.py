@@ -1,3 +1,11 @@
+"""Basic classes to deal with image input.
+
+We define `TrainImages`, `EvaluateImages` and `VisualizeImages`
+that inherits respectively from `Train`, `Evaluate` and
+`Visualize`. Note that `VisualizeImages` is different from the
+others. It's less general but it can be used directly.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,8 +24,19 @@ slim = tf.contrib.slim
 
 
 class TrainImages(Train):
+    """Subclass of `Train` that reads image data."""
 
     def __init__(self, image_size=299, channels=3, **kwargs):
+        """One should define some parameters for input images.
+
+        Args:
+            image_size: The image is of size image_size x image_size.
+                For historical reason the input image has always
+                the same height and width.
+            channels: The number of channels of image. 1 for a grayscale
+                image and 3 for a RGB image.
+            **kwargs: Other arguments used by the superclass.
+        """
         super(TrainImages, self).__init__(**kwargs)
         self.image_size = image_size
         self.channels = channels
@@ -45,8 +64,18 @@ class TrainImages(Train):
 
 
 class EvaluateImages(Evaluate):
+    """Subclass of `Evaluate` that reads image data."""
 
     def __init__(self, image_size=299, channels=3):
+        """One should define some parameters for input images.
+
+        Args:
+            image_size: The image is of size image_size x image_size.
+                For historical reason the input image has always
+                the same height and width.
+            channels: The number of channels of image. 1 for a grayscale
+                image and 3 for a RGB image.
+        """
         self.image_size = image_size
         self.channels = channels
 

@@ -1,3 +1,11 @@
+"""Routines used to evaluate a classifier
+
+The file contains two classes `EvaluateClassify` and `EvaluateClassifyCNN`.
+
+`EvaluateClassify` can be used for any network structure and prediction
+accuracy is evaluated. `EvaluateClassifyCNN` is used for a CNN classifcation.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -12,14 +20,46 @@ slim = tf.contrib.slim
 
 
 class EvaluateClassify(Evaluate):
+    """Implement routines for evaluating a classifier.
+
+    To inherit from this class one should implement `get_data`,
+    `compute` and `comput_logits`.
+
+    See `EvaluateClassifyImagesCNN` for an example.
+    """
 
     @abc.abstractmethod
     def compute(self, **kwargs):
-        """Feed proper inputs to the method compute_logits"""
+        """Feed proper inputs to the method `compute_logits`.
+
+        N.B. The returned value of `compute_logits` must be stored
+        in the attribute `self.logits`.
+
+        Args:
+            **kwargs: Arbitrary arguments. Normally most of them are
+                directly fed to `compute_logits`.
+        """
         pass
 
     @abc.abstractmethod
-    def compute_logits(self, inputs):
+    def compute_logits(self, inputs, num_classes, **kwargs):
+        """Compute logits of the model.
+
+        This should be the most important part of a classifier.
+        Logits are unscaled log probabilities and they're mapped
+        to real probabilities by applying a softmax function.
+        For example to implement a perceptron we use simply a
+        fully connected layer.
+
+        Args:
+            inputs: The input(s) of the network/algorithm.
+            num_classes: The number of classes to be classified.
+                This is also the number of neurons in the output layer.
+            **kwargs: Other arguments.
+
+        Returns:
+            Computed logits of the model.
+        """
         pass
 
     def compute_log_data(self):
@@ -41,12 +81,37 @@ class EvaluateClassify(Evaluate):
 
 
 class EvaluateClassifyCNN(EvaluateClassify):
+    """Class that is used to evaluate any CNN architectures
+
+    To inherit from this class one should implement `get_data`
+    and `compute`.
+
+    See `EvaluateClassifyImagesCNN` for an example.
+    """
 
     def __init__(self, CNN_structure, **kwargs):
+        """Declare the architecture that is used by the class instance.
+
+        Args:
+            CNN_structure: The architecture that is used to compute
+                the layer just before logits. If given as `None` no
+                particular computations are done and we train therefore
+                a single-layer perception.
+            **kwargs: Other arguments used by the superclass.
+        """
         super(EvaluateClassifyCNN, self).__init__(**kwargs)
         self.CNN_structure = CNN_structure
 
     def compute_logits(self, inputs, num_classes, endpoint=None):
+        """Compute logits using some CNN architecture.
+
+        Args:
+            inputs: The input(s) of the network.
+            num_classes: The number of classes to be classified.
+                This is also the number of neurons in the output layer.
+            endpoint: The endpoint of the network. If `None` use the
+                default endpoint of each network.
+        """
         if self.CNN_structure is not None:
             if endpoint is not None:
                 net = self.CNN_structure(inputs, final_endpoint=endpoint)
