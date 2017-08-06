@@ -38,6 +38,47 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Convolutional auto-encoder}{3}{subsection.6.2}}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.} [0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }}{3}{figure.caption.5}}
 \newlabel{fig:CAE5}{{5}{3}{\textbf {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.}\\[0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }{figure.caption.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Image restoration using convolutional auto-encoder} [0.1em] Left) Clean Image. [0.1em] Middle) Noisy image [input]. [0.1em] Right) Restored image [output].\relax }}{4}{figure.caption.6}}
-\newlabel{fig:image_restoration}{{6}{4}{\textbf {Image restoration using convolutional auto-encoder}\\[0.1em] Left) Clean Image.\\[0.1em] Middle) Noisy image [input].\\[0.1em] Right) Restored image [output].\relax }{figure.caption.6}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Image restoration using convolutional auto-encoder.} [0.1em] Left) Clean Image. [0.1em] Middle) Noisy image [input]. [0.1em] Right) Restored image [output].\relax }}{4}{figure.caption.6}}
+\newlabel{fig:image_restoration}{{6}{4}{\textbf {Image restoration using convolutional auto-encoder.}\\[0.1em] Left) Clean Image.\\[0.1em] Middle) Noisy image [input].\\[0.1em] Right) Restored image [output].\relax }{figure.caption.6}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {7}Experiences and Results: Multimodal Cases}{4}{section.7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Learning shared representation}{4}{subsection.7.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textbf  {The bimodal convolutional auto-encoder model that is used to learn shared multimodal representation.} [0.1em] We simply take the CAE architecture that is introduced earlier (\autoref  {fig:CAE5}) for each modaliy but force them to have a shared middle layer by adding the corresponding activation values. We then try to reconstruct the two images separately through two disjoint paths.\relax }}{4}{figure.caption.7}}
+\newlabel{fig:FAE5}{{7}{4}{\textbf {The bimodal convolutional auto-encoder model that is used to learn shared multimodal representation.}\\[0.1em] We simply take the CAE architecture that is introduced earlier (\autoref {fig:CAE5}) for each modaliy but force them to have a shared middle layer by adding the corresponding activation values. We then try to reconstruct the two images separately through two disjoint paths.\relax }{figure.caption.7}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textbf  {Restore color and depth images from incomplete input information.} [0.1em] Top) Only the color image is given. [0.1em] Middle) Only the depth image is given. [0.1em] Botttom) Both modalities are given but with little information (10\% of pixels).\relax }}{5}{figure.caption.8}}
+\newlabel{fig:color_depth_restoration}{{8}{5}{\textbf {Restore color and depth images from incomplete input information.}\\[0.1em] Top) Only the color image is given.\\[0.1em] Middle) Only the depth image is given.\\[0.1em] Botttom) Both modalities are given but with little information (10\% of pixels).\relax }{figure.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Transfer learning}{5}{subsection.7.2}}
+\bibcite{M. Asadi-Aghbolaghi 2017}{{1}{}{{}}{{}}}
+\bibcite{T. Baltrusaitis 2017}{{2}{}{{}}{{}}}
+\bibcite{C. Bregler 1994}{{3}{}{{}}{{}}}
+\bibcite{L. Deng 2013}{{4}{}{{}}{{}}}
+\bibcite{A. Droniou 2014}{{5}{}{{}}{{}}}
+\bibcite{A. Frome 2013}{{6}{}{{}}{{}}}
+\bibcite{G. Hinton 2012}{{7}{}{{}}{{}}}
+\bibcite{S. Ioffe 2015}{{8}{}{{}}{{}}}
+\bibcite{A. K. Katsuaggelos 2015}{{9}{}{{}}{{}}}
+\bibcite{A. Krizhevsky 2012}{{10}{}{{}}{{}}}
+\bibcite{J. Masci 2011}{{11}{}{{}}{{}}}
+\bibcite{I. Matthews 2002}{{12}{}{{}}{{}}}
+\bibcite{A. Memo 2015}{{13}{}{{}}{{}}}
+\bibcite{A. Memo 2017}{{14}{}{{}}{{}}}
+\bibcite{S. Mitra 2007}{{15}{}{{}}{{}}}
+\bibcite{P. Molchanov 2015}{{16}{}{{}}{{}}}
+\bibcite{S. Moon 2015}{{17}{}{{}}{{}}}
+\bibcite{J. Nagi 2011}{{18}{}{{}}{{}}}
+\bibcite{N. Neverova 2014}{{19}{}{{}}{{}}}
+\bibcite{J. Ngiam 2011}{{20}{}{{}}{{}}}
+\bibcite{K. Noda 2014}{{21}{}{{}}{{}}}
+\bibcite{E. Petahan 1988}{{22}{}{{}}{{}}}
+\bibcite{L. Pigou 2014}{{23}{}{{}}{{}}}
+\bibcite{G. Potamianos 2004}{{24}{}{{}}{{}}}
+\bibcite{N. Pugeault 2011}{{25}{}{{}}{{}}}
+\bibcite{R. Socher 2013}{{26}{}{{}}{{}}}
+\bibcite{N. Srivastava 2014}{{27}{}{{}}{{}}}
+\bibcite{T. Starner 1998}{{28}{}{{}}{{}}}
+\bibcite{J. Sung 2015}{{29}{}{{}}{{}}}
+\bibcite{C. Szegedy 2016}{{30}{}{{}}{{}}}
+\bibcite{V. Turchenko 2017}{{31}{}{{}}{{}}}
+\bibcite{J. Weston 2010}{{32}{}{{}}{{}}}
+\bibcite{Di Wu 2016}{{33}{}{{}}{{}}}
+\bibcite{B. P. Yuhas 1989}{{34}{}{{}}{{}}}
+\providecommand\NAT@force@numbers{}\NAT@force@numbers
