@@ -1,0 +1,99 @@
+
+\documentclass[12pt, a4paper]{article}
+
+
+%%%%%%%%%% Import Packages %%%%%%%%%
+
+\usepackage[margin=2cm]{geometry} % 2cm margins
+\usepackage{amsmath,amsthm,amssymb} % AMS math environment
+\usepackage{bm}         % bold in math mode
+\usepackage{fontspec}   % font setting
+\usepackage{type1cm}    % fontsize setting
+\usepackage{titlesec}   % section, subsection ... font setting
+\usepackage{titling}    % title setting
+\usepackage{fancyhdr}   % header and footer
+\usepackage{enumerate}  % improving enumerate
+\usepackage{stmaryrd}   % some math fonts
+\usepackage[square, comma, numbers, sort&compress]{natbib} % bibliography
+\usepackage[usenames, dvipsnames]{color} % to use colors
+\usepackage{hyperref}   % advanced reference
+
+%%%%%%%%%%% For figures %%%%%%%%%%
+\usepackage{graphicx}    % insert figures
+\usepackage{float}
+
+%%%%%%%%%% Table and caption packages %%%%%%%%%%%
+\usepackage{booktabs} % toprule, bottomrule ...
+\usepackage{tabu}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{caption3}
+\usepackage{subcaption}
+
+%%%%%%%%%% Chinese Environment %%%%%%%%%%
+\usepackage[AutoFakeBold, CheckSingle, CJKmath]{xeCJK}  % xelatex Chinese
+\usepackage{CJKulem}	% Chinese character decoration
+
+
+%%%%%%%%%% Page settings %%%%%%%%%% 
+\setlength{\headheight}{15pt}  % with titling
+\setlength{\droptitle}{-1.5cm} % white space before the title
+\parindent=24pt % indent spacing
+\parskip=0.8em  % spacing between two paragraphs
+
+
+%%%%%%%%%% Math display spacing (gather, equation, ...) %%%%%%%%%%
+\makeatletter
+\g@addto@macro\normalsize{%
+  \setlength{\abovedisplayskip}{-8pt}
+  \setlength{\belowdisplayskip}{4pt}
+  \setlength{\abovedisplayshortskip}{-8pt}
+  \setlength{\belowdisplayshortskip}{4pt}
+}
+
+
+%%%%%%%%%% Figure caption %%%%%%%%%%
+\captionsetup[figure]{%
+ 	font = small,
+	name = \textbf{Figure},
+	justification = justified, % caption as normal paragraph
+    labelsep = colon, % Figure: ...
+	skip = 1.1em} % space between caption and image
+\captionsetup[sub]{font = small, belowskip = 2pt}
+\setlength{\belowcaptionskip}{-8pt}
+
+%%%%%%%%%% Figure position %%%%%%%%%%
+\graphicspath{%
+{../figures/},
+}
+
+
+%%%%%%%%%% Table settings %%%%%%%%%%
+\captionsetup[table]{%
+  parskip = 20pt,
+  format = hang,
+  font = small,
+  name = \textsc{Table},
+  justification = justified,
+  skip = \medskipamount,
+  singlelinecheck = false
+}
+\renewcommand{\arraystretch}{1.2}
+\tabcolsep = 10pt
+
+
+%%%%%%%%%% Reference settings %%%%%%%%%%
+\hypersetup{%
+unicode=true, 
+bookmarksdepth=-1, 
+pdfborder={0 0 0}, 
+colorlinks=true, 
+linkcolor=RoyalBlue,
+citecolor=blue
+}
+
+
+\begin{document}
+\input{Content}
+\end{document}

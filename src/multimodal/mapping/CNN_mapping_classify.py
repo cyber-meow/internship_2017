@@ -1,18 +1,23 @@
-"""Classify color images using the mapping"""
+"""Classify color images using the mapping.
+
+This was written near the beginning of my internship and since I didn't
+do further test on it, the code hasn't been modified for a long time and
+I'm not sure if it can still be runned now. Just ignore it.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from nets import inception_v4
+from net_base import inception_v4
 
-from classify.evaluate import EvaluateClassify
+from images.classify_routines import EvaluateClassifyImages
 
 slim = tf.contrib.slim
 
 
-class EvaluateClassifyMappingInception(EvaluateClassify):
+class EvaluateClassifyMappingInception(EvaluateClassifyImages):
 
     @staticmethod
     def inception_feature(net):
@@ -64,7 +69,3 @@ class EvaluateClassifyMappingInception(EvaluateClassify):
 
         saver_mapping.restore(sess, checkpoint_path_mapping)
         saver_classify.restore(sess, checkpoint_path_classify)
-
-
-evaluate_classify_mapping_inception = \
-    EvaluateClassifyMappingInception().evaluate

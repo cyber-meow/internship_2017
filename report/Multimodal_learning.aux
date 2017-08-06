@@ -1,0 +1,43 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand*\HyPL@Entry[1]{}
+\HyPL@Entry{0<</S/D>>}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{1}{section.2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Presentation of Basic Network Architectures}{1}{section.3}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Datasets and Preprocessing}{1}{section.4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Creative Senz3D}{1}{subsection.4.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces \textbf  {Example images in the Creative Senz3D dataset.} [0.1em] Left Two) Color images. [0.1em] Right Two) Corresponding depth images. [0.1em] All of the images are of size $480 \times 640$ and contain the the entire upper body of the subject.\relax }}{1}{figure.caption.1}}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:senz3d_exs}{{1}{1}{\textbf {Example images in the Creative Senz3D dataset.}\\[0.1em] Left Two) Color images.\\[0.1em] Right Two) Corresponding depth images.\\[0.1em] All of the images are of size $480 \times 640$ and contain the the entire upper body of the subject.\relax }{figure.caption.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}ASL Finger Spelling}{2}{subsection.4.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces \textbf  {Example images in the ASL Finger Spelling dataset (after preprocessing).} [0.1em] Left Two) Grayscale intensity images. [0.1em] Middle Two) Depth maps after adjusting contrast. [0.1em] Right Two) Depth maps after Z-normalization. [0.1em] Images of this dataset have variable sizes, and they're all resized to $83 \times 83$ before being fed to the network. Generally only the hand region is contained in image.\relax }}{2}{figure.caption.2}}
+\newlabel{fig:fingerspelling_exs}{{2}{2}{\textbf {Example images in the ASL Finger Spelling dataset (after preprocessing).}\\[0.1em] Left Two) Grayscale intensity images.\\[0.1em] Middle Two) Depth maps after adjusting contrast.\\[0.1em] Right Two) Depth maps after Z-normalization.\\[0.1em] Images of this dataset have variable sizes, and they're all resized to $83 \times 83$ before being fed to the network. Generally only the hand region is contained in image.\relax }{figure.caption.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}AVletters}{2}{subsection.4.3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Example visual input for the AVletters dataset (left to right, top to bottom).} [0.1em] Pre-extracted lip regions of $60 \times 80$ pixels are provided. Each image sequence is resampled to be of length twelve in order to give an input of fixed size to the network.\relax }}{2}{figure.caption.3}}
+\newlabel{fig:avletters_exs}{{3}{2}{\textbf {Example visual input for the AVletters dataset (left to right, top to bottom).}\\[0.1em] Pre-extracted lip regions of $60 \times 80$ pixels are provided. Each image sequence is resampled to be of length twelve in order to give an input of fixed size to the network.\relax }{figure.caption.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Experimental Setup}{3}{section.5}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Experiences and Results: Unimodal Cases}{3}{section.6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Classification}{3}{subsection.6.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {CNN architecture used for the Finger Spelling dataset.}  [0.1em] The input of the nework is a one-channel image of size $83 \times 83$. It contains ten hidden layers. S stands for `SAME' padding and V stands for `VALID' padding (see text).\relax }}{3}{figure.caption.4}}
+\newlabel{fig:CNN10}{{4}{3}{\textbf {CNN architecture used for the Finger Spelling dataset.} \\[0.1em] The input of the nework is a one-channel image of size $83 \times 83$. It contains ten hidden layers. S stands for `SAME' padding and V stands for `VALID' padding (see text).\relax }{figure.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Convolutional auto-encoder}{3}{subsection.6.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.} [0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }}{3}{figure.caption.5}}
+\newlabel{fig:CAE5}{{5}{3}{\textbf {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.}\\[0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Image restoration using convolutional auto-encoder} [0.1em] Left) Clean Image. [0.1em] Middle) Noisy image [input]. [0.1em] Right) Restored image [output].\relax }}{4}{figure.caption.6}}
+\newlabel{fig:image_restoration}{{6}{4}{\textbf {Image restoration using convolutional auto-encoder}\\[0.1em] Left) Clean Image.\\[0.1em] Middle) Noisy image [input].\\[0.1em] Right) Restored image [output].\relax }{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Experiences and Results: Multimodal Cases}{4}{section.7}}

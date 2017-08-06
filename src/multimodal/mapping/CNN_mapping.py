@@ -1,4 +1,9 @@
-"""Try to find a mapping from color to depth image representation"""
+"""Try to find a mapping from color to depth image representation
+
+This was written near the beginning of my internship and since I didn't
+do further test on it, it isn't integrated in the whole training framework
+and is separated apart from the other codes. Just ignore it.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -10,7 +15,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-from nets import inception_v4
+from nets_base import inception_v4
 
 from data.color_depth import get_split_color_depth, load_batch_color_depth
 from nets_base.arg_scope import nets_arg_scope

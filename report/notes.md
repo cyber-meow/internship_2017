@@ -7,13 +7,13 @@ architecture can be used for inputs of different sizes.
 ## Figure captions
 
 The CNN architecture used for FingerSpelling dataset. Its input is
-a one-channel image of sized $83 \times 83$. The network contains ten
+a one-channel image of size $83 \times 83$. The network contains ten
 hidden layers. S stands for 'SAME' padding and V stands for 'VALID'
 padding (see text).
 
 The convolutional auto-encoder architecture with three convolutional layers
 and three tranposed convolutional layer. Activation values of the middle
-layen are taken as high-level features of the input image.
+layer are taken as high-level features of the input image.
 Inputs of the network can be of different sizes. We only use valid paddings
 here.
 
