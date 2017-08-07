@@ -21,13 +21,14 @@ Many datasets were explored during my internship. The three main datasets
 being used are given in details  below. Two of them are for gesture
 recognition:
 Creative Senz3D \cite{A. Memo 2015, A. Memo 2017} and ASL Finger Spelling
-\cite{N. Pugeault 2011}, and one is for AVSR: Avletters
+\cite{N. Pugeault 2011}, and one is for AVSR: AVLetters
 \cite{I. Matthews 2002}.
 
 \subsection{Creative Senz3D}
 
 The dataset contains gestures perfomed by 4 different people, each
-performing 11 different static gestures repeated 30 times each.
+performing 11 different static gestures repeated 30 times each,
+for a total of 1320 samples.
 For each sample, color, depth and confidence frames are available.
 I only used the color and depth frames of this dataset. The original
 size of each image is $480 \times 640$ and they're resized to
@@ -58,14 +59,15 @@ depth maps).
 \subsection{ASL Finger Spelling}
 
 The dataset is composed of more than 60000 images in each modality
-(RGB and depth images are given).
+(RGB and depth images are provided).
 Five subjects are asked to perform the 24 static signs in
 the American Sign Language (ASL) alphabet (excluding j and z which involve
 motion) a certain number of times, captured with similar lighting
 and background.
 
 Images of this dataset are of variable sizes. The data preprocessing
-includes resizing each image to $83 \times 83$ pixels, and adjusting
+includes resizing each image to $83 \times 83$ pixels,
+converting to grayscale and adjusting
 contrast of depth maps. Only very late in my internship I added the
 Z-normalization (normalize to zero mean and unit of variance)
 as a preprocessing step and the only result that was largely changed
@@ -103,7 +105,25 @@ is presented in \ref{subsection:CAE}.
   \label{fig:fingerspelling_exs}
 \end{figure}
 
-\subsection{AVletters}
+\subsection{AVLetters}
+
+The dataset comprises video and audio recordings of 10 speakers
+uttering the letters A to Z, three times each.
+We count therefore 780 samples in total. For video data, image sequences
+of pre-extracted lip regions are provided.
+Each single image if of size $60 \times 80$.
+For audio data, only the mel-frequency cepstrum coefficients (MFCCs)
+are given, and each audio frame is represented by 26 mfccs.
+The lack of raw audio data is a strong constraint on what we're able to do
+on this dataset.
+
+Since all utterances don't have the same time duration, I used
+fourier resamping to force every video input to be of length 12 and
+every audio input to be of length 24. Video frames are Z-normalized.
+Several data augmentation techniques
+are also considered, including random brightness adjusting, random contrast
+adjusting and random cropping (but at least 80\% of the original image
+is kept).
 
 \begin{figure}[H]
   \centering
@@ -160,8 +180,8 @@ image increases significantly the classification difficulty.
 
 \textbf{Subject Dependent.}
 In a subject dependant setting, images are separated randomly into
-training set (3/4) and validation set (1/4). Therefore, during the
-validation phase, the classifier doesn't need to deal with data from an
+training set (3/4) and test set (1/4). Therefore, during the
+testing phase, the classifier doesn't need to deal with data from an
 individual that it has never seen before.
 In this case, for RGB images, all of the classifiers are able to
 have a classification accuracy that is closed to 100\%. This holds true
@@ -172,9 +192,9 @@ architectures that were tested.
 
 \textbf{Subject Independant.}
 On the contrary, the classifier faces individuals never seen before
-during validation in a subject independant setting. 
+during testing in a subject independant setting. 
 In my case, the training set consists of images coming from the
-first three individuals while the validation set contains images of
+first three individuals while the test set contains images of
 the final subject.
 With the various architectures (including single-layer perceptron
 and CNNs varying from three to ten hidden layers)
@@ -191,13 +211,13 @@ makes the classification task much easier. By using the CNN architecture
 shown in \autoref{fig:CNN10}, we can achieve a classification accuracy
 of respectively 80\% and 70\% for intensity and depth images (Table 1)
 in an subject-independant setting (four subjects for training and one
-subject for validation). We may not need that many layers in the CNN
+subject for testing). We may not need that many layers in the CNN
 architecture, but further tests were not carried out since it's not
 the essential point of my internship.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{architectures/CNN10}\\[-1.5em]
+  \includegraphics[width=\linewidth]{architectures/CNN10}
   \caption{%
     \textbf{CNN architecture used for the Finger Spelling  dataset.}
       \\[0.1em]
@@ -215,7 +235,7 @@ Notice that 3d CNNs are employed to deal with video inputs.
 Considering the small number of available data, a speaker-dependant
 setting was used, but it didn't save me from the problem of overfitting.
 The classification accuracy is of 100\% for training data but only
-of 60\% or 55\% for validation data depending on the input modality
+of 60\% or 55\% for testing data depending on the input modality
 (audio then video).
 
 Curiously, for audio data, I get exactly the same classification
@@ -226,13 +246,13 @@ This is not the case when I test with another audio dataset
 it wasn't used for main experiences).
 For video input, the use of data augmentation techniques only decrease
 the learning speed for the training part but doesn't improve the performace
-for validation.
+for testing.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{architectures/CAE5}\\[-2.5em]
+  \includegraphics[width=\linewidth]{architectures/CAE5}
   \caption{%
     \textbf{Convolutional auto-encoder architecture with 
       three convolutional layers and three tranposed convolutional
@@ -268,7 +288,7 @@ for validation.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{architectures/FAE5}\\[-2.5em]
+  \includegraphics[width=\linewidth]{architectures/FAE5}
   \caption{%
     \textbf{The bimodal convolutional auto-encoder model that is
       used to learn shared multimodal representation.}\\[0.1em]
