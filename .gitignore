@@ -89,3 +89,6 @@ ENV/
 .ropeproject
 
 *.swp
+*.aux
+*.out
+notes.md
