@@ -174,8 +174,8 @@ class EvaluateClassifyInception(EvaluateClassifyImages):
 class TrainClassifyImagesCNN(TrainClassifyCNN, TrainClassifyImages):
     """Train a CNN to classify image.
 
-    If `self.CNN_structure` is `None` in fact we train only a perceptron.
-    Several CNN architectures can be found in the `CNN_structure.py` file.
+    If `self.CNN_architecture` is `None` in fact we train only a perceptron.
+    Several CNN architectures can be found in the `CNN_architecture.py` file.
     """
     pass
 
@@ -183,8 +183,8 @@ class TrainClassifyImagesCNN(TrainClassifyCNN, TrainClassifyImages):
 class EvaluateClassifyImagesCNN(EvaluateClassifyCNN, EvaluateClassifyImages):
     """Evaluate a trained CNN that is used to classify image.
 
-    If `self.CNN_structure` is `None` in fact it's just a perceptron.
-    Several CNN structures can be found in the `CNN_structure.py` file.
+    If `self.CNN_architecture` is `None` in fact it's just a perceptron.
+    Several CNN architectures can be found in the `CNN_architecture.py` file.
     """
     pass
 
@@ -203,14 +203,14 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
     `use_default_trainable_scopes` one can decide to train more than
     just the final perceptron part in a supervised way.
 
-    Several CAE architectures can be found in the `CAE_structure.py` file.
+    Several CAE architectures can be found in the `CAE_architecture.py` file.
     """
 
-    def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
+    def __init__(self, CAE_architecture, endpoint='Middle', **kwargs):
         """Give the used CAE architecture and the representation layer.
 
         Args:
-            CAE_structure: The CAE artictecture to compute the high-level
+            CAE_architecture: The CAE artictecture to compute the high-level
                 representation of image.
             endpoint: Indicate the layer of the network that is used
                 as the high-level representation of image. It becomes
@@ -218,7 +218,7 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
             **kwargs: Other arguments used by the superclass.
         """
         super(TrainClassifyImagesCAE, self).__init__(**kwargs)
-        self.CAE_structure = CAE_structure
+        self.CAE_architecture = CAE_architecture
         self.endpoint = endpoint
 
     @property
@@ -242,7 +242,7 @@ class TrainClassifyImagesCAE(TrainClassifyImages):
                 layer. This is used historically for test purpose and it
                 should better be `False`.
         """
-        net = self.CAE_structure(
+        net = self.CAE_architecture(
             inputs, dropout_keep_prob=1, final_endpoint=self.endpoint)
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         if do_avg:
@@ -272,18 +272,18 @@ class EvaluateClassifyImagesCAE(EvaluateClassifyImages):
     This is the evaluatio part of `TrainClassifyImagesCAE`.
     """
 
-    def __init__(self, CAE_structure, endpoint='Middle', **kwargs):
+    def __init__(self, CAE_architecture, endpoint='Middle', **kwargs):
         """Give the used CAE architecture and the representation layer.
 
         Args:
-            CAE_structure: The CAE artictecture to compute the high-level
+            CAE_architecture: The CAE artictecture to compute the high-level
                 representation of image.
             endpoint: Indicate the layer of the network that is used
                 as the high-level representation of image. It becomes
                 then the input of the perceptron for classifaction.
         """
         super(EvaluateClassifyImagesCAE, self).__init__(**kwargs)
-        self.CAE_structure = CAE_structure
+        self.CAE_architecture = CAE_architecture
         self.endpoint = endpoint
 
     def compute_logits(self, inputs, num_classes):
@@ -294,7 +294,7 @@ class EvaluateClassifyImagesCAE(EvaluateClassifyImages):
             num_classes: The number of classes to be classified.
                 This is also the number of neurons in the output layer.
         """
-        net = self.CAE_structure(
+        net = self.CAE_architecture(
             inputs, final_endpoint=self.endpoint)
         net = slim.flatten(net, scope='PreLogitsFlatten')
         self.logits = slim.fully_connected(

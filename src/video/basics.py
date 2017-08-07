@@ -47,8 +47,8 @@ class EvaluateVideo(Evaluate):
 
 class VisualizeVideo(Visualize):
 
-    def __init__(self, structure, num_frames=24):
-        self.structure = structure
+    def __init__(self, architecture, num_frames=24):
+        self.architecture = architecture
 
     def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         self.dataset = get_split_lips(split_name, tfrecord_dir)
@@ -60,12 +60,12 @@ class VisualizeVideo(Visualize):
 
     def compute(self, endpoint=None, use_delta=False):
 
-        if self.structure is None:
+        if self.architecture is None:
             self.representations = self.videos
         elif endpoint is None:
-            self.representations = self.structure(self.videos)
+            self.representations = self.architecture(self.videos)
         else:
-            self.representations = self.structure(
+            self.representations = self.architecture(
                 self.videos, final_endpoint=endpoint)
         self.representations = slim.flatten(
             self.representations, scope='Flatten')

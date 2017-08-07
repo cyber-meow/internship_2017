@@ -609,13 +609,13 @@ class Train(TrainAbstract):
 
 # Only for convenience
 def train(train_class,
-          used_structure,
+          used_architecture,
           tfrecord_dir,
           checkpoint_dirs,
           log_dir,
           number_of_steps=None,
           **kwargs):
-    train_instance = train_class(used_structure)
+    train_instance = train_class(used_architecture)
     for key in kwargs.copy():
         if hasattr(train_instance, key):
             setattr(train_instance, key, kwargs[key])

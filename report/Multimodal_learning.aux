@@ -15,6 +15,9 @@
 \global\let\hyper@last\relax 
 \gdef\HyperFirstAtBeginDocument#1{#1}
 \providecommand*\HyPL@Entry[1]{}
+\citation{A. Memo 2015,A. Memo 2017}
+\citation{N. Pugeault 2011}
+\citation{I. Matthews 2002}
 \HyPL@Entry{0<</S/D>>}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}}
 \@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{1}{section.2}}
@@ -30,23 +33,29 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}AVletters}{2}{subsection.4.3}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces \textbf  {Example visual input for the AVletters dataset (left to right, top to bottom).} [0.1em] Pre-extracted lip regions of $60 \times 80$ pixels are provided. Each image sequence is resampled to be of length twelve in order to give an input of fixed size to the network.\relax }}{2}{figure.caption.3}}
 \newlabel{fig:avletters_exs}{{3}{2}{\textbf {Example visual input for the AVletters dataset (left to right, top to bottom).}\\[0.1em] Pre-extracted lip regions of $60 \times 80$ pixels are provided. Each image sequence is resampled to be of length twelve in order to give an input of fixed size to the network.\relax }{figure.caption.3}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Experimental Setup}{3}{section.5}}
-\@writefile{toc}{\contentsline {section}{\numberline {6}Experiences and Results: Unimodal Cases}{3}{section.6}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Classification}{3}{subsection.6.1}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Experimental Setup}{2}{section.5}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}Experiences and Results: Unimodal Cases}{2}{section.6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Classification}{2}{subsection.6.1}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.1.1}Creative Senz3d}{3}{subsubsection.6.1.1}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.1.2}ASL Finger Spelling}{3}{subsubsection.6.1.2}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {CNN architecture used for the Finger Spelling dataset.}  [0.1em] The input of the nework is a one-channel image of size $83 \times 83$. It contains ten hidden layers. S stands for `SAME' padding and V stands for `VALID' padding (see text).\relax }}{3}{figure.caption.4}}
 \newlabel{fig:CNN10}{{4}{3}{\textbf {CNN architecture used for the Finger Spelling dataset.} \\[0.1em] The input of the nework is a one-channel image of size $83 \times 83$. It contains ten hidden layers. S stands for `SAME' padding and V stands for `VALID' padding (see text).\relax }{figure.caption.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Convolutional auto-encoder}{3}{subsection.6.2}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.} [0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }}{3}{figure.caption.5}}
-\newlabel{fig:CAE5}{{5}{3}{\textbf {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.}\\[0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }{figure.caption.5}{}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {6.1.3}AVletters}{4}{subsubsection.6.1.3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Convolutional auto-encoder}{4}{subsection.6.2}}
+\newlabel{subsection:CAE}{{6.2}{4}{Convolutional auto-encoder}{subsection.6.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.} [0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }}{4}{figure.caption.5}}
+\newlabel{fig:CAE5}{{5}{4}{\textbf {Convolutional auto-encoder architecture with three convolutional layers and three tranposed convolutional layer.}\\[0.1em] Activation values of the middle layer are taken as high-level features of the input image. Inputs of the network can be of different sizes. We only use valid paddings here.\relax }{figure.caption.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Image restoration using convolutional auto-encoder.} [0.1em] Left) Clean Image. [0.1em] Middle) Noisy image [input]. [0.1em] Right) Restored image [output].\relax }}{4}{figure.caption.6}}
 \newlabel{fig:image_restoration}{{6}{4}{\textbf {Image restoration using convolutional auto-encoder.}\\[0.1em] Left) Clean Image.\\[0.1em] Middle) Noisy image [input].\\[0.1em] Right) Restored image [output].\relax }{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Experiences and Results: Multimodal Cases}{4}{section.7}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Learning shared representation}{4}{subsection.7.1}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textbf  {The bimodal convolutional auto-encoder model that is used to learn shared multimodal representation.} [0.1em] We simply take the CAE architecture that is introduced earlier (\autoref  {fig:CAE5}) for each modaliy but force them to have a shared middle layer by adding the corresponding activation values. We then try to reconstruct the two images separately through two disjoint paths.\relax }}{4}{figure.caption.7}}
-\newlabel{fig:FAE5}{{7}{4}{\textbf {The bimodal convolutional auto-encoder model that is used to learn shared multimodal representation.}\\[0.1em] We simply take the CAE architecture that is introduced earlier (\autoref {fig:CAE5}) for each modaliy but force them to have a shared middle layer by adding the corresponding activation values. We then try to reconstruct the two images separately through two disjoint paths.\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {7}Experiences and Results: Multimodal Cases}{5}{section.7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Learning shared representation}{5}{subsection.7.1}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textbf  {The bimodal convolutional auto-encoder model that is used to learn shared multimodal representation.} [0.1em] We simply take the CAE architecture that is introduced earlier (\autoref  {fig:CAE5}) for each modaliy but force them to have a shared middle layer by adding the corresponding activation values. We then try to reconstruct the two images separately through two disjoint paths.\relax }}{5}{figure.caption.7}}
+\newlabel{fig:FAE5}{{7}{5}{\textbf {The bimodal convolutional auto-encoder model that is used to learn shared multimodal representation.}\\[0.1em] We simply take the CAE architecture that is introduced earlier (\autoref {fig:CAE5}) for each modaliy but force them to have a shared middle layer by adding the corresponding activation values. We then try to reconstruct the two images separately through two disjoint paths.\relax }{figure.caption.7}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textbf  {Restore color and depth images from incomplete input information.} [0.1em] Top) Only the color image is given. [0.1em] Middle) Only the depth image is given. [0.1em] Botttom) Both modalities are given but with little information (10\% of pixels).\relax }}{5}{figure.caption.8}}
 \newlabel{fig:color_depth_restoration}{{8}{5}{\textbf {Restore color and depth images from incomplete input information.}\\[0.1em] Top) Only the color image is given.\\[0.1em] Middle) Only the depth image is given.\\[0.1em] Botttom) Both modalities are given but with little information (10\% of pixels).\relax }{figure.caption.8}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Transfer learning}{5}{subsection.7.2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Transfer learning}{6}{subsection.7.2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces \textbf  {Illustration of the transfer learning approach applied in audio and lip-reading speech recognition tasks.} [0.1em] We first learn two separated model for audio and visual inputs (in my cases two CNNs) and try to fine-tune the video network with transferred audio data. \relax }}{6}{figure.caption.9}}
+\newlabel{fig:AVSR_transfer}{{9}{6}{\textbf {Illustration of the transfer learning approach applied in audio and lip-reading speech recognition tasks.}\\[0.1em] We first learn two separated model for audio and visual inputs (in my cases two CNNs) and try to fine-tune the video network with transferred audio data. \relax }{figure.caption.9}{}}
 \bibcite{M. Asadi-Aghbolaghi 2017}{{1}{}{{}}{{}}}
 \bibcite{T. Baltrusaitis 2017}{{2}{}{{}}{{}}}
 \bibcite{C. Bregler 1994}{{3}{}{{}}{{}}}
@@ -55,30 +64,31 @@
 \bibcite{A. Frome 2013}{{6}{}{{}}{{}}}
 \bibcite{G. Hinton 2012}{{7}{}{{}}{{}}}
 \bibcite{S. Ioffe 2015}{{8}{}{{}}{{}}}
-\bibcite{A. K. Katsuaggelos 2015}{{9}{}{{}}{{}}}
-\bibcite{A. Krizhevsky 2012}{{10}{}{{}}{{}}}
-\bibcite{J. Masci 2011}{{11}{}{{}}{{}}}
-\bibcite{I. Matthews 2002}{{12}{}{{}}{{}}}
-\bibcite{A. Memo 2015}{{13}{}{{}}{{}}}
-\bibcite{A. Memo 2017}{{14}{}{{}}{{}}}
-\bibcite{S. Mitra 2007}{{15}{}{{}}{{}}}
-\bibcite{P. Molchanov 2015}{{16}{}{{}}{{}}}
-\bibcite{S. Moon 2015}{{17}{}{{}}{{}}}
-\bibcite{J. Nagi 2011}{{18}{}{{}}{{}}}
-\bibcite{N. Neverova 2014}{{19}{}{{}}{{}}}
-\bibcite{J. Ngiam 2011}{{20}{}{{}}{{}}}
-\bibcite{K. Noda 2014}{{21}{}{{}}{{}}}
-\bibcite{E. Petahan 1988}{{22}{}{{}}{{}}}
-\bibcite{L. Pigou 2014}{{23}{}{{}}{{}}}
-\bibcite{G. Potamianos 2004}{{24}{}{{}}{{}}}
-\bibcite{N. Pugeault 2011}{{25}{}{{}}{{}}}
-\bibcite{R. Socher 2013}{{26}{}{{}}{{}}}
-\bibcite{N. Srivastava 2014}{{27}{}{{}}{{}}}
-\bibcite{T. Starner 1998}{{28}{}{{}}{{}}}
-\bibcite{J. Sung 2015}{{29}{}{{}}{{}}}
-\bibcite{C. Szegedy 2016}{{30}{}{{}}{{}}}
-\bibcite{V. Turchenko 2017}{{31}{}{{}}{{}}}
-\bibcite{J. Weston 2010}{{32}{}{{}}{{}}}
-\bibcite{Di Wu 2016}{{33}{}{{}}{{}}}
-\bibcite{B. P. Yuhas 1989}{{34}{}{{}}{{}}}
+\bibcite{S. Ji 2013}{{9}{}{{}}{{}}}
+\bibcite{A. K. Katsuaggelos 2015}{{10}{}{{}}{{}}}
+\bibcite{A. Krizhevsky 2012}{{11}{}{{}}{{}}}
+\bibcite{J. Masci 2011}{{12}{}{{}}{{}}}
+\bibcite{I. Matthews 2002}{{13}{}{{}}{{}}}
+\bibcite{A. Memo 2015}{{14}{}{{}}{{}}}
+\bibcite{A. Memo 2017}{{15}{}{{}}{{}}}
+\bibcite{S. Mitra 2007}{{16}{}{{}}{{}}}
+\bibcite{P. Molchanov 2015}{{17}{}{{}}{{}}}
+\bibcite{S. Moon 2015}{{18}{}{{}}{{}}}
+\bibcite{J. Nagi 2011}{{19}{}{{}}{{}}}
+\bibcite{N. Neverova 2014}{{20}{}{{}}{{}}}
+\bibcite{J. Ngiam 2011}{{21}{}{{}}{{}}}
+\bibcite{K. Noda 2014}{{22}{}{{}}{{}}}
+\bibcite{E. Petahan 1988}{{23}{}{{}}{{}}}
+\bibcite{L. Pigou 2014}{{24}{}{{}}{{}}}
+\bibcite{G. Potamianos 2004}{{25}{}{{}}{{}}}
+\bibcite{N. Pugeault 2011}{{26}{}{{}}{{}}}
+\bibcite{R. Socher 2013}{{27}{}{{}}{{}}}
+\bibcite{N. Srivastava 2014}{{28}{}{{}}{{}}}
+\bibcite{T. Starner 1998}{{29}{}{{}}{{}}}
+\bibcite{J. Sung 2015}{{30}{}{{}}{{}}}
+\bibcite{C. Szegedy 2016}{{31}{}{{}}{{}}}
+\bibcite{V. Turchenko 2017}{{32}{}{{}}{{}}}
+\bibcite{J. Weston 2010}{{33}{}{{}}{{}}}
+\bibcite{Di Wu 2016}{{34}{}{{}}{{}}}
+\bibcite{B. P. Yuhas 1989}{{35}{}{{}}{{}}}
 \providecommand\NAT@force@numbers{}\NAT@force@numbers

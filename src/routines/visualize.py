@@ -57,12 +57,12 @@ class Visualize(object):
 
 
 def visualize(visualize_class,
-              used_structure,
+              used_architecture,
               tfrecord_dir,
               checkpoint_dirs,
               log_dir,
               **kwargs):
-    visualize_instance = visualize_class(used_structure)
+    visualize_instance = visualize_class(used_architecture)
     for key in kwargs.copy():
         if hasattr(visualize_instance, key):
             setattr(visualize_instance, key, kwargs[key])

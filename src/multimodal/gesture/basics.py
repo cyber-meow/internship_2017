@@ -81,9 +81,9 @@ class EvaluateColorDepth(Evaluate):
 
 class VisualizeColorDepth(Visualize):
 
-    def __init__(self, structure, image_size=299,
+    def __init__(self, architecture, image_size=299,
                  color_channels=3, depth_channels=3):
-        self.structure = structure
+        self.architecture = architecture
         self.image_size = image_size
         self.color_channels = color_channels
         self.depth_channels = depth_channels

@@ -11,23 +11,23 @@ from data import dataset_utils
 slim = tf.contrib.slim
 
 
-_FILE_PATTERN = 'lips_%s_*.tfrecord'
+_FILE_PATTERN = 'montalbano_%s_*.tfrecord'
 
 _ITEMS_TO_DESCRIPTIONS = {
-    'lips': 'The images for the video of lipreading',
+    'color': 'Intensity videos.',
+    'depth': 'Depth videos.',
     'label': 'A single integer representing the label',
 }
 
 
-def get_split_lips(split_name,
-                   tfrecord_dir,
-                   file_pattern=None,
-                   reader=None,
-                   num_frames=12):
-    """Gets a dataset tuple with instructions for reading lip movement videos.
+def get_split_montalbano(split_name,
+                         tfrecord_dir,
+                         file_pattern=None,
+                         reader=None):
+    """Gets a dataset tuple with instructions for reading gesture videos.
 
     Args:
-      split_name: A train/validation split name.
+      split_name: A split name.
       tfrecord_dir: The base directory of the dataset sources.
       file_pattern: The file pattern to use when matching the dataset sources.
         It is assumed that the pattern contains a '%s' string so that the
@@ -40,10 +40,6 @@ def get_split_lips(split_name,
     Raises:
       ValueError: if `split_name` is not a valid train/validation split.
     """
-    if split_name not in ['train', 'validation']:
-        raise ValueError(
-            'The split_name %s is not recognized.' % (split_name)
-            + 'Please input either train or validation as the split_name')
 
     if not file_pattern:
         file_pattern = _FILE_PATTERN
@@ -64,14 +60,19 @@ def get_split_lips(split_name,
 
     # Create the keys_to_features dictionary for the decoder
     keys_to_features = {
-        'video/data': tf.FixedLenFeature((60, 80, num_frames), tf.float32),
+        'video/color/data': tf.VarLenFeature(tf.float32),
+        'video/color/shape': tf.FixedLenFeature([4], tf.int64),
+        'video/depth/data': tf.VarLenFeature(tf.float32),
+        'video/depth/shape': tf.FixedLenFeature([4], tf.int64),
         'video/label': tf.FixedLenFeature(
           (), tf.int64, default_value=tf.zeros((), dtype=tf.int64)),
     }
 
     items_to_handlers = {
-        'video': slim.tfexample_decoder.Tensor(
-            'video/data', shape=(60, 80, num_frames, 1)),
+        'color': slim.tfexample_decoder.Tensor(
+            'video/color/data', shape_key='video/color/shape'),
+        'depth': slim.tfexample_decoder.Tensor(
+            'video/depth/data', shape_key='video/depth/shape'),
         'label': slim.tfexample_decoder.Tensor('video/label'),
     }
 
@@ -95,12 +96,11 @@ def get_split_lips(split_name,
         labels_to_names=labels_to_names)
 
 
-def load_batch_lips(dataset,
-                    batch_size=32,
-                    common_queue_capacity=800,
-                    common_queue_min=400,
-                    shuffle=True,
-                    is_training=True):
+def load_batch_montalbano(dataset,
+                          batch_size=32,
+                          common_queue_capacity=800,
+                          common_queue_min=400,
+                          shuffle=True):
     """Loads a single batch of data.
 
     Args:
@@ -110,39 +110,40 @@ def load_batch_lips(dataset,
       shuffle: Whether to shuffle or not
 
     Returns:
-      mfccs: A Tensor of size [batch_size, feature_len, time_frames, 1]
+      color_videos: A Tensor of size
+        [batch_size, width, height, time frames, channels]
+      depth_videos: A Tensor of size
+        [batch_size, width, height, time frames, channels]
       labels: A Tensor of size [batch_size], whose values range between
         0 and dataset.num_classes.
     """
     data_provider = slim.dataset_data_provider.DatasetDataProvider(
         dataset, common_queue_capacity=common_queue_capacity,
         common_queue_min=common_queue_min, shuffle=shuffle)
-    video, label = data_provider.get(['video', 'label'])
+    color_video, depth_video, label = \
+        data_provider.get(['color', 'depth', 'label'])
 
-    if is_training:
+    transformed_color_images = []
 
-        transformed_images = []
+    for i in range(color_video.get_shape()[2]):
+        color_image = color_video[:, :, i, :]
+        color_image = tf.image.per_image_standardization(color_image)
+        transformed_color_images.append(tf.expand_dims(color_image, 2))
+    color_video = tf.concat(transformed_color_images, 2)
 
-        delta = tf.random_uniform((), -1, 1)
-        contrast_factor = tf.random_uniform((), 0.2, 1.8)
-        bbox_begin, bbox_end, _ = tf.image.sample_distorted_bounding_box(
-            [60, 80, 1], [[[0, 0, 1, 1]]], area_range=[0.8, 1])
+    transformed_depth_images = []
 
-        for i in range(video.get_shape()[2]):
-            image = video[:, :, i, :]
-            image = tf.image.adjust_brightness(image, delta)
-            image = tf.image.adjust_contrast(image, contrast_factor)
-            image = tf.slice(image, bbox_begin, bbox_end)
-            image.set_shape([None, None, 1])
-            image = tf.image.resize_images(image, [60, 80])
-            transformed_images.append(tf.expand_dims(image, 2))
-        video = tf.concat(transformed_images, 2)
+    for i in range(depth_video.get_shape()[2]):
+        depth_image = depth_video[:, :, i, :]
+        depth_image = tf.image.per_image_standardization(depth_image)
+        transformed_depth_images.append(tf.expand_dims(depth_image, 2))
+    depth_video = tf.concat(transformed_depth_images, 2)
 
     # Batch it up.
-    videos, labels = tf.train.batch(
-        [video, label],
+    color_videos, depth_videos, labels = tf.train.batch(
+        [color_video, depth_video, label],
         batch_size=batch_size,
         num_threads=1,
         capacity=2*batch_size)
 
-    return videos, labels
+    return color_videos, depth_videos, labels

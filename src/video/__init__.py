@@ -4,4 +4,4 @@ from __future__ import print_function
 
 from video.basics import *
 from video.classify_routines import *
-from video.CNN_structure import *
+from video.CNN_architecture import *

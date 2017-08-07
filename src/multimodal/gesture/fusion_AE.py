@@ -23,9 +23,9 @@ class TrainFusionAE(TrainColorDepth):
         """Not include pre-trained part for each modality"""
         return ['Fusion', 'Seperation']
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(TrainFusionAE, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute(self, **kwargs):
         self.reconstructions_color, self.reconstructions_depth = \
@@ -79,9 +79,16 @@ class TrainFusionAE(TrainColorDepth):
             self.images_depth = depth_inputs
 
         if dropout_input:
-            color_keep_prob = depth_keep_prob = tf.constant(1, tf.float32)
+            color_keep_prob = tf.cond(
+                tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
+                lambda: tf.constant(0, tf.float32),
+                lambda: tf.constant(1, tf.float32))
+            depth_keep_prob = tf.cond(
+                tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
+                lambda: tf.constant(0, tf.float32),
+                lambda: tf.constant(1, tf.float32))
 
-        reconstructions_color, reconstructions_depth = self.structure(
+        reconstructions_color, reconstructions_depth = self.architecture(
             self.images_color, self.images_depth,
             color_keep_prob=color_keep_prob, depth_keep_prob=depth_keep_prob)
         return reconstructions_color, reconstructions_depth
@@ -150,9 +157,9 @@ class TrainFusionAE(TrainColorDepth):
 
 class EvaluateFusionAE(EvaluateColorDepth):
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(EvaluateFusionAE, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute(self, **kwargs):
         self.reconstructions_color, self.reconstructions_depth = \
@@ -206,12 +213,19 @@ class EvaluateFusionAE(EvaluateColorDepth):
             self.images_depth = depth_inputs
 
         if self.dropout_input:
-            color_keep_prob = depth_keep_prob = tf.constant(1, tf.float32)
+            color_keep_prob = tf.cond(
+                tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
+                lambda: tf.constant(0, tf.float32),
+                lambda: tf.constant(1, tf.float32))
+            depth_keep_prob = tf.cond(
+                tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
+                lambda: tf.constant(0, tf.float32),
+                lambda: tf.constant(1, tf.float32))
 
         reconstructions_color, reconstructions_depth = \
-            self.structure(self.images_color, self.images_depth,
-                           color_keep_prob=color_keep_prob,
-                           depth_keep_prob=depth_keep_prob)
+            self.architecture(self.images_color, self.images_depth,
+                              color_keep_prob=color_keep_prob,
+                              depth_keep_prob=depth_keep_prob)
         return reconstructions_color, reconstructions_depth
 
     def compute_log_data(self):
@@ -238,9 +252,9 @@ class EvaluateFusionAE(EvaluateColorDepth):
 
 class EvaluateFusionAESingle(EvaluateImages):
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(EvaluateFusionAESingle, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute(self, **kwargs):
         self.reconstructions_color, self.reconstructions_depth = \
@@ -251,12 +265,12 @@ class EvaluateFusionAESingle(EvaluateImages):
 
         if modality == 'color':
             reconstructions_color, reconstructions_depth = \
-                self.structure(inputs, tf.zeros_like(inputs),
-                               color_keep_prob=tf.constant(1, tf.float32))
+                self.architecture(inputs, tf.zeros_like(inputs),
+                                  color_keep_prob=tf.constant(1, tf.float32))
         elif modality == 'depth':
             reconstructions_color, reconstructions_depth = \
-                self.structure(tf.zeros_like(inputs), inputs,
-                               depth_keep_prob=tf.constant(1, tf.float32))
+                self.architecture(tf.zeros_like(inputs), inputs,
+                                  depth_keep_prob=tf.constant(1, tf.float32))
 
         return reconstructions_color, reconstructions_depth
 
@@ -284,19 +298,19 @@ class VisualizeColorOrDepth(VisualizeColorDepth):
 
         if endpoint is None:
             with tf.variable_scope('Repr'):
-                self.representations_color = self.structure(
+                self.representations_color = self.architecture(
                     self.images_color, tf.zeros_like(self.images_depth))
             with tf.variable_scope('Repr', reuse=True):
-                self.representations_depth = self.structure(
+                self.representations_depth = self.architecture(
                     tf.zeros_like(self.images_color), self.images_depth)
         else:
             with tf.variable_scope('Repr'):
-                self.representations_color = self.structure(
+                self.representations_color = self.architecture(
                     self.images_color, tf.zeros_like(self.images_depth),
                     final_endpoint=endpoint,
                     color_keep_prob=tf.constant(1, tf.float32))
             with tf.variable_scope('Repr', reuse=True):
-                self.representations_depth = self.structure(
+                self.representations_depth = self.architecture(
                     tf.zeros_like(self.images_color), self.images_depth,
                     final_endpoint=endpoint,
                     depth_keep_prob=tf.constant(1, tf.float32))
@@ -364,10 +378,10 @@ class VisualizeColorAndDepth(VisualizeColorDepth, VisualizeImages):
     def compute(self, endpoint='Middle'):
 
         if endpoint is None:
-            self.representations = self.structure(
+            self.representations = self.architecture(
                 self.images_color, self.images_depth)
         else:
-            self.representations = self.structure(
+            self.representations = self.architecture(
                 self.images_color, self.images_depth,
                 final_endpoint=endpoint,
                 color_keep_prob=tf.constant(1, tf.float32),

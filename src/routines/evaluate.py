@@ -226,13 +226,13 @@ class Evaluate(EvaluateAbstract):
 
 
 def evaluate(evaluate_class,
-             used_structure,
+             used_architecture,
              tfrecord_dir,
              checkpoint_dirs,
              log_dir,
              number_of_steps=None,
              **kwargs):
-    evaluate_instance = evaluate_class(used_structure)
+    evaluate_instance = evaluate_class(used_architecture)
     for key in kwargs.copy():
         if hasattr(evaluate_instance, key):
             setattr(evaluate_instance, key, kwargs[key])

@@ -2,7 +2,7 @@
 
 The file contains two classes `EvaluateClassify` and `EvaluateClassifyCNN`.
 
-`EvaluateClassify` can be used for any network structure and prediction
+`EvaluateClassify` can be used for any network architecture and prediction
 accuracy is evaluated. `EvaluateClassifyCNN` is used for a CNN classifcation.
 """
 
@@ -89,18 +89,18 @@ class EvaluateClassifyCNN(EvaluateClassify):
     See `EvaluateClassifyImagesCNN` for an example.
     """
 
-    def __init__(self, CNN_structure, **kwargs):
+    def __init__(self, CNN_architecture, **kwargs):
         """Declare the architecture that is used by the class instance.
 
         Args:
-            CNN_structure: The architecture that is used to compute
+            CNN_architecture: The architecture that is used to compute
                 the layer just before logits. If given as `None` no
                 particular computations are done and we train therefore
                 a single-layer perception.
             **kwargs: Other arguments used by the superclass.
         """
         super(EvaluateClassifyCNN, self).__init__(**kwargs)
-        self.CNN_structure = CNN_structure
+        self.CNN_architecture = CNN_architecture
 
     def compute_logits(self, inputs, num_classes, endpoint=None):
         """Compute logits using some CNN architecture.
@@ -112,11 +112,11 @@ class EvaluateClassifyCNN(EvaluateClassify):
             endpoint: The endpoint of the network. If `None` use the
                 default endpoint of each network.
         """
-        if self.CNN_structure is not None:
+        if self.CNN_architecture is not None:
             if endpoint is not None:
-                net = self.CNN_structure(inputs, final_endpoint=endpoint)
+                net = self.CNN_architecture(inputs, final_endpoint=endpoint)
             else:
-                net = self.CNN_structure(inputs)
+                net = self.CNN_architecture(inputs)
         else:
             net = inputs
         net = slim.flatten(net, scope='PreLogitsFlatten')

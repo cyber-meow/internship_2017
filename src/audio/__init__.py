@@ -4,4 +4,4 @@ from __future__ import print_function
 
 from audio.basics import *
 from audio.classify_routines import *
-from audio.CNN_structure import *
+from audio.CNN_architecture import *

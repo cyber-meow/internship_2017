@@ -8,10 +8,10 @@ from classify.train import TrainClassify
 from data.mfcc_lips import load_batch_mfcc_lips, get_split_mfcc_lips
 
 from audio.classify_routines import TrainClassifyAudio, EvaluateClassifyAudio
-from audio.CNN_structure import CNN_mfcc6
+from audio.CNN_architecture import CNN_mfcc6
 
 from video.classify_routines import TrainClassifyVideo, EvaluateClassifyVideo
-from video.CNN_structure import CNN_lips5
+from video.CNN_architecture import CNN_lips5
 
 slim = tf.contrib.slim
 
@@ -82,16 +82,16 @@ class TrainTransfer(TrainClassify):
     def default_trainable_scopes(self):
         return ['Main']
 
-    def __init__(self, audio_structure='', video_structure='', **kwargs):
+    def __init__(self, audio_architecture='', video_architecture='', **kwargs):
         super(TrainTransfer, self).__init__(**kwargs)
-        if audio_structure == '':
-            self.audio_structure = CNN_mfcc6
+        if audio_architecture == '':
+            self.audio_architecture = CNN_mfcc6
         else:
-            self.audio_structure = audio_structure
-        if video_structure == '':
-            self.video_structure = CNN_lips5
+            self.audio_architecture = audio_architecture
+        if video_architecture == '':
+            self.video_architecture = CNN_lips5
         else:
-            self.video_structure = video_structure
+            self.video_architecture = video_architecture
 
     def get_data(self, tfrecord_dir, batch_size):
 
@@ -129,12 +129,12 @@ class TrainTransfer(TrainClassify):
 
         with tf.variable_scope('Prepare/Audio'):
             self.all_mfcc_reprs = tf.Variable(tf.reshape(
-                self.audio_structure(
+                self.audio_architecture(
                     self.all_mfccs, final_endpoint=audio_midpoint),
                 [num_samples, -1]), trainable=False, name='mfcc_reprs')
 
         with tf.variable_scope('Prepare/Video'):
-            self.all_video_reprs = tf.Variable(self.video_structure(
+            self.all_video_reprs = tf.Variable(self.video_architecture(
                 self.all_videos, final_endpoint=video_midpoint),
                 trainable=False, name='video_reprs')
 
@@ -168,7 +168,7 @@ class TrainTransfer(TrainClassify):
                                   dropout_keep_prob=0.8,
                                   entry_point='inputs', reuse=None):
         with tf.variable_scope('Main', [inputs], reuse=reuse):
-            net = self.video_structure(inputs, entry_point=entry_point)
+            net = self.video_architecture(inputs, entry_point=entry_point)
             net = slim.dropout(net, dropout_keep_prob,
                                scope='PreLogitsDropout')
             net = slim.flatten(net, scope='PreLogitsFlatten')
@@ -182,7 +182,7 @@ class TrainTransfer(TrainClassify):
                                   dropout_keep_prob=0.8, K=10):
 
         with tf.variable_scope('Audio', [inputs]):
-            audio_reprs = self.audio_structure(
+            audio_reprs = self.audio_architecture(
                 inputs, final_endpoint=audio_midpoint)
         final_video_reprs = []
 

@@ -20,9 +20,9 @@ class TrainCAE(TrainImages):
 
     initial_learning_rate = 0.01
 
-    def __init__(self, CAE_structure, **kwargs):
+    def __init__(self, CAE_architecture, **kwargs):
         super(TrainCAE, self).__init__(**kwargs)
-        self.CAE_structure = CAE_structure
+        self.CAE_architecture = CAE_architecture
 
     def compute(self, dropout_position='fc', dropout_keep_prob=0.7):
 
@@ -40,14 +40,13 @@ class TrainCAE(TrainImages):
             self.images, dropout_keep_prob=dropout_keep_prob)
 
     def compute_reconstruction(self, inputs, dropout_keep_prob=0.7):
-        reconstructions = self.CAE_structure(
+        reconstructions = self.CAE_architecture(
             self.images, dropout_keep_prob=dropout_keep_prob)
         return reconstructions
 
     def get_total_loss(self):
         self.reconstruction_loss = tf.losses.mean_squared_error(
             self.reconstructions, self.images_original)
-        tf.losses.add_loss(self.no_zero_loss)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
 
@@ -87,9 +86,9 @@ class TrainInceptionCAE(TrainCAE):
 
 class EvaluateCAE(EvaluateImages):
 
-    def __init__(self, CAE_structure, **kwargs):
+    def __init__(self, CAE_architecture, **kwargs):
         super(EvaluateCAE, self).__init__(**kwargs)
-        self.CAE_structure = CAE_structure
+        self.CAE_architecture = CAE_architecture
 
     def compute(self, do_dropout=False, dropout_keep_prob=0.7):
 
@@ -103,7 +102,7 @@ class EvaluateCAE(EvaluateImages):
             self.compute_reconstruction(self.images)
 
     def compute_reconstruction(self, inputs):
-        reconstructions = self.CAE_structure(self.images)
+        reconstructions = self.CAE_architecture(self.images)
         return reconstructions
 
     def compute_log_data(self):
@@ -129,7 +128,7 @@ class EvaluateCAE(EvaluateImages):
             self.fw.add_summary(summary, global_step=global_step_count)
 
 
-def reconstruct(image_path, train_dir, CAE_structure,
+def reconstruct(image_path, train_dir, CAE_architecture,
                 log_dir=None, image_size=299, channels=3):
 
     with tf.Graph().as_default():
@@ -149,7 +148,7 @@ def reconstruct(image_path, train_dir, CAE_structure,
         processed_images = tf.expand_dims(processed_image, 0)
 
         with slim.arg_scope(nets_arg_scope(is_training=False)):
-            reconstructions, _ = CAE_structure(processed_images)
+            reconstructions, _ = CAE_architecture(processed_images)
         reconstruction = tf.squeeze(reconstructions)
 
         tf.summary.image('input', processed_images)

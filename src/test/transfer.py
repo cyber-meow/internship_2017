@@ -51,7 +51,8 @@ class TransferTest(object):
             batch_size=None, split_name=split_name)
 
     def train_transfer(self, num_steps):
-        TrainTransfer(audio_structure=CNN_mfcc6, video_structure=CNN_lips5,
+        TrainTransfer(audio_architecture=CNN_mfcc6,
+                      video_architecture=CNN_lips5,
                       initial_learning_rate=8e-4, lr_decay_rate=0.96).train(
             self.tfrecord_dir, [self.log_dir_audio, self.log_dir_video_AT],
             self.log_dir_transfer, num_steps, K=6, use_audio_prob=0.9)

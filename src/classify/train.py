@@ -2,14 +2,14 @@
 
 The file contains two classes `TrainClassify` and `TrainClassifyCNN`.
 
-`TrainClassify` can be used for any network structure as long as
+`TrainClassify` can be used for any network architecture as long as
 we always use cross entropy loss. Prediction accuracy is evaluated
 through the whole training process.
 
 To inherit from this class one should implement `get_data`,
 `decide_use_data`, `compute` and `comput_logits`.
 
-CNN structures are quite often employed for classification. The class
+CNN architectures are quite often employed for classification. The class
 `TrainClassifyCNN` suppose in input there is only one modality
 and we feed this modality to a (CNN) network to do classification.
 """
@@ -147,18 +147,18 @@ class TrainClassifyCNN(TrainClassify):
     See `TrainClassifyImagesCNN` for an example.
     """
 
-    def __init__(self, CNN_structure, **kwargs):
+    def __init__(self, CNN_architecture, **kwargs):
         """Declare the architecture that is used by the class instance.
 
         Args:
-            CNN_structure: The architecture that is used to compute
+            CNN_architecture: The architecture that is used to compute
                 the layer just before logits. If given as `None` no
                 particular computations are done and we train therefore
                 a single-layer perception.
             **kwargs: Other arguments used by the superclass.
         """
         super(TrainClassifyCNN, self).__init__(**kwargs)
-        self.CNN_structure = CNN_structure
+        self.CNN_architecture = CNN_architecture
 
     def compute_logits(self, inputs, num_classes,
                        dropout_keep_prob=0.8, endpoint=None,
@@ -179,23 +179,24 @@ class TrainClassifyCNN(TrainClassify):
                 of the network. This was just for test purpose and it
                 should better be left as `None`.
         """
-        if self.CNN_structure is not None:
+        if self.CNN_architecture is not None:
             if endpoint is not None:
                 if per_layer_dropout is not None:
-                    net = self.CNN_structure(
+                    net = self.CNN_architecture(
                         inputs, final_endpoint=endpoint,
                         per_layer_dropout=per_layer_dropout,
                         dropout_keep_prob=dropout_keep_prob)
                 else:
-                    net = self.CNN_structure(inputs, final_endpoint=endpoint)
+                    net = self.CNN_architecture(
+                        inputs, final_endpoint=endpoint)
             else:
                 if per_layer_dropout is not None:
-                    net = self.CNN_structure(
+                    net = self.CNN_architecture(
                         inputs,
                         per_layer_dropout=per_layer_dropout,
                         dropout_keep_prob=dropout_keep_prob)
                 else:
-                    net = self.CNN_structure(inputs)
+                    net = self.CNN_architecture(inputs)
         else:
             net = inputs
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')

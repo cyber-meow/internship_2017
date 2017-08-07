@@ -17,7 +17,24 @@ Speech Recognition\vspace{-0.5em}}
 
 \section{Datasets and Preprocessing}
 
+Many datasets were explored during my internship. The three main datasets
+being used are given in details  below. Two of them are for gesture
+recognition:
+Creative Senz3D \cite{A. Memo 2015, A. Memo 2017} and ASL Finger Spelling
+\cite{N. Pugeault 2011}, and one is for AVSR: Avletters
+\cite{I. Matthews 2002}.
+
 \subsection{Creative Senz3D}
+
+The dataset contains gestures perfomed by 4 different people, each
+performing 11 different static gestures repeated 30 times each.
+For each sample, color, depth and confidence frames are available.
+I only used the color and depth frames of this dataset. The original
+size of each image is $480 \times 640$ and they're resized to
+$299 \times 299$ pixels before being fed to the network. No other
+preprocessing are done. For both color and depth images I use the three
+color channels (even though a priori only one channel is needed for
+depth maps).
 
 \begin{figure}[H]
   \centering
@@ -39,6 +56,20 @@ Speech Recognition\vspace{-0.5em}}
 \end{figure}
 
 \subsection{ASL Finger Spelling}
+
+The dataset is composed of more than 60000 images in each modality
+(RGB and depth images are given).
+Five subjects are asked to perform the 24 static signs in
+the American Sign Language (ASL) alphabet (excluding j and z which involve
+motion) a certain number of times, captured with similar lighting
+and background.
+
+Images of this dataset are of variable sizes. The data preprocessing
+includes resizing each image to $83 \times 83$ pixels, and adjusting
+contrast of depth maps. Only very late in my internship I added the
+Z-normalization (normalize to zero mean and unit of variance)
+as a preprocessing step and the only result that was largely changed
+is presented in \ref{subsection:CAE}.
 
 \begin{figure}[H]
   \centering
@@ -115,6 +146,55 @@ Speech Recognition\vspace{-0.5em}}
 
 \subsection{Classification}
 
+With every new dataset, I began with training a classifier on it in a
+totoally supervised manner.
+This gave me an insight into its data quality, the preprocessing
+effectiveness and ensured that further experiments could be conducted.
+CNN is then one of the most suitable architecture for this purpose.
+
+\subsubsection{Creative Senz3d}
+
+No satisfying results were acquired. It may be due to to a lack of data
+quantity, variety, and the fact that the head is also contained in the
+image increases significantly the classification difficulty.
+
+\textbf{Subject Dependent.}
+In a subject dependant setting, images are separated randomly into
+training set (3/4) and validation set (1/4). Therefore, during the
+validation phase, the classifier doesn't need to deal with data from an
+individual that it has never seen before.
+In this case, for RGB images, all of the classifiers are able to
+have a classification accuracy that is closed to 100\%. This holds true
+even for a perceptron.
+On the other hand, for depth images, the classification accuracy is
+between 60\% and 70\% using a perceptron and near 90\% for other CNN
+architectures that were tested.
+
+\textbf{Subject Independant.}
+On the contrary, the classifier faces individuals never seen before
+during validation in a subject independant setting. 
+In my case, the training set consists of images coming from the
+first three individuals while the validation set contains images of
+the final subject.
+With the various architectures (including single-layer perceptron
+and CNNs varying from three to ten hidden layers)
+that I implemented, none of them is able to generalize the learned model
+to the new individual.
+The pre-trained InceptionV4 architecture achieves a prediction accuracy
+of 30\% for color images and 20\% for depth images (better than chance).
+
+\subsubsection{ASL Finger Spelling}
+
+The large number of data contained in this dataset and the relatively
+simple image content (single hand instead of the entire upper body)
+makes the classification task much easier. By using the CNN architecture
+shown in \autoref{fig:CNN10}, we can achieve a classification accuracy
+of respectively 80\% and 70\% for intensity and depth images (Table 1)
+in an subject-independant setting (four subjects for training and one
+subject for validation). We may not need that many layers in the CNN
+architecture, but further tests were not carried out since it's not
+the essential point of my internship.
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{architectures/CNN10}\\[-1.5em]
@@ -127,7 +207,28 @@ Speech Recognition\vspace{-0.5em}}
   \label{fig:CNN10}
 \end{figure}
 
-\subsection{Convolutional auto-encoder}
+\subsubsection{AVletters}
+
+One can refer to \autoref{fig:AVSR_transfer} for the main CNN architectures
+that are used in this dataset. 
+Notice that 3d CNNs are employed to deal with video inputs.
+Considering the small number of available data, a speaker-dependant
+setting was used, but it didn't save me from the problem of overfitting.
+The classification accuracy is of 100\% for training data but only
+of 60\% or 55\% for validation data depending on the input modality
+(audio then video).
+
+Curiously, for audio data, I get exactly the same classification
+performance regardless of the used architecture (perceptron or CNNs)
+or the fact that if deltas and delta-deltas are also given in input.
+This is not the case when I test with another audio dataset
+(not mentioned in the Datasets and Preprocessing section beacause
+it wasn't used for main experiences).
+For video input, the use of data augmentation techniques only decrease
+the learning speed for the training part but doesn't improve the performace
+for validation.
+
+\subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
 \begin{figure}[H]
   \centering
@@ -185,15 +286,27 @@ Speech Recognition\vspace{-0.5em}}
   \caption{%
     \textbf{Restore color and depth images from incomplete input
       information.}\\[0.1em]
-      Top) Only the color image is given.\\[0.1em]
-      Middle) Only the depth image is given.\\[0.1em]
-      Botttom) Both modalities are given but with little information
-        (10\% of pixels).}
+    Top) Only the color image is given.\\[0.1em]
+    Middle) Only the depth image is given.\\[0.1em]
+    Botttom) Both modalities are given but with little information
+      (10\% of pixels).}
   \label{fig:color_depth_restoration}
 \end{figure}
 
 \subsection{Transfer learning}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\linewidth]{architectures/AVSR_transfer}\\[-1em]
+  \caption{%
+    \textbf{Illustration of the transfer learning approach applied in
+      audio and lip-reading speech recognition tasks.}\\[0.1em]
+    We first learn two separated model for audio and visual inputs
+      (in my cases two CNNs) and try to fine-tune the video network
+      with transferred audio data.
+    }
+  \label{fig:AVSR_transfer}
+\end{figure}
 
 \newpage
 
@@ -240,6 +353,11 @@ Speech Recognition\vspace{-0.5em}}
   S. Ioffe and C. Szegedy. Batch normalization, accelerating deep network
   training by reducing internal covaraiate shift. In \textit{CoRR},
   vol. abs/1502.03167, 2015.
+
+\bibitem{S. Ji 2013}
+  S. Ji, W. Xu, M Tang and K. Yu. 3D Convolutional Neural Networks
+  for Human Action Recognition. In \textit{IEEE Transactions on Pattern
+  Analysis and Machine Intelligence}, vol. 35, 2013.
 
 \bibitem{A. K. Katsuaggelos 2015}
   A. K. Katsaggelos, S. Bahaadini and R. Molina. Audiovisual fusion:

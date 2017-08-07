@@ -93,8 +93,8 @@ class EvaluateImages(Evaluate):
 class VisualizeImages(Visualize):
     """Mainly for visualizing the representations learned by CAEs"""
 
-    def __init__(self, structure, image_size=299, channels=3):
-        self.structure = structure
+    def __init__(self, architecture, image_size=299, channels=3):
+        self.architecture = architecture
         self.image_size = image_size
         self.channels = channels
 
@@ -110,12 +110,12 @@ class VisualizeImages(Visualize):
 
     def compute(self, endpoint='Middle', do_avg=False):
 
-        if self.structure is None:
+        if self.architecture is None:
             self.representations = self.images
         elif endpoint is None:
-            self.representations = self.structure(self.images)
+            self.representations = self.architecture(self.images)
         else:
-            self.representations = self.structure(
+            self.representations = self.architecture(
                 self.images, final_endpoint=endpoint)
         if do_avg:
             self.representations = slim.avg_pool2d(

@@ -11,7 +11,7 @@ import random
 
 import tensorflow as tf
 
-from datasets import dataset_utils
+from data import dataset_utils
 
 
 class ImageReader(object):

@@ -83,8 +83,8 @@ def delta(coefs, N=2):
 
 class VisualizeAudio(Visualize):
 
-    def __init__(self, structure, num_frames=24):
-        self.structure = structure
+    def __init__(self, architecture, num_frames=24):
+        self.architecture = architecture
         self.num_frames = num_frames
 
     def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
@@ -104,12 +104,12 @@ class VisualizeAudio(Visualize):
             self.mfccs = tf.concat(
                 [self.mfccs, mfcc_deltas, delta_deltas], axis=3)
 
-        if self.structure is None:
+        if self.architecture is None:
             self.representations = self.mfccs
         elif endpoint is None:
-            self.representations = self.structure(self.mfccs)
+            self.representations = self.architecture(self.mfccs)
         else:
-            self.representations = self.structure(
+            self.representations = self.architecture(
                 self.mfccs, final_endpoint=endpoint)
         self.representations = slim.flatten(
             self.representations, scope='Flatten')

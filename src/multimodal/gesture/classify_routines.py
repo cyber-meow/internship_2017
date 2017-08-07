@@ -21,20 +21,20 @@ class TrainClassifyCommonRepr(TrainClassifyImages):
     def default_trainable_scopes(self):
         return ['Logits']
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(TrainClassifyCommonRepr, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute_logits(self, inputs, num_classes,
                        modality='color', dropout_keep_prob=0.8):
         assert modality in ['color', 'depth']
         if modality == 'color':
-            net = self.structure(
+            net = self.architecture(
                 inputs, tf.zeros_like(inputs),
                 final_endpoint='Middle',
                 color_keep_prob=tf.constant(1, tf.float32))
         elif modality == 'depth':
-            net = self.structure(
+            net = self.architecture(
                 tf.zeros_like(inputs), inputs,
                 final_endpoint='Middle',
                 color_keep_prob=tf.constant(0, tf.float32))
@@ -55,19 +55,19 @@ class TrainClassifyCommonRepr(TrainClassifyImages):
 
 class EvaluateClassifyCommonRepr(EvaluateClassifyImages):
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(EvaluateClassifyCommonRepr, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute_logits(self, inputs, num_classes, modality='color'):
         assert modality in ['color', 'depth']
         if modality == 'color':
-            net = self.structure(
+            net = self.architecture(
                 inputs, tf.zeros_like(inputs),
                 final_endpoint='Middle',
                 color_keep_prob=tf.constant(1, tf.float32))
         elif modality == 'depth':
-            net = self.structure(
+            net = self.architecture(
                 tf.zeros_like(inputs), inputs,
                 final_endpoint='Middle',
                 color_keep_prob=tf.constant(0, tf.float32))
@@ -84,9 +84,9 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
     an trainables_scopes='Logits'
     """
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(TrainClassifyFusion, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
@@ -95,11 +95,11 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
 
     def compute_logits(self, color_inputs, depth_inputs, num_classes,
                        dropout_keep_prob=0.8, endpoint=None):
-        """Use endpoint='Middle' for CAE structures"""
+        """Use endpoint='Middle' for CAE architectures"""
         if endpoint is None:
-            net = self.structure(color_inputs, depth_inputs)
+            net = self.architecture(color_inputs, depth_inputs)
         else:
-            net = self.structure(
+            net = self.architecture(
                 color_inputs, depth_inputs, final_endpoint=endpoint)
         net = slim.dropout(net, dropout_keep_prob, scope='PreLogitsDropout')
         net = slim.flatten(net, scope='PrelogitsFlatten')
@@ -133,9 +133,9 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
 
 class EvaluateClassifyFusion(EvaluateColorDepth, EvaluateClassify):
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(EvaluateClassifyFusion, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute(self, **kwargs):
         self.logits = self.compute_logits(
@@ -145,9 +145,9 @@ class EvaluateClassifyFusion(EvaluateColorDepth, EvaluateClassify):
     def compute_logits(self, color_inputs, depth_inputs,
                        num_classes, endpoint=None):
         if endpoint is None:
-            net = self.structure(color_inputs, depth_inputs)
+            net = self.architecture(color_inputs, depth_inputs)
         else:
-            net = self.structure(
+            net = self.architecture(
                 color_inputs, depth_inputs, final_endpoint=endpoint)
         net = slim.flatten(net, scope='PrelogitsFlatten')
         logits = slim.fully_connected(
@@ -161,9 +161,9 @@ class TrainClassifyEmbedding(TrainClassifyImages):
     def default_trainable_scopes(self):
         return ['Logits']
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(TrainClassifyEmbedding, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute_logits(self, inputs, num_classes, endpoint='Middle',
                        modality='color', feature_length=512,
@@ -172,7 +172,7 @@ class TrainClassifyEmbedding(TrainClassifyImages):
         scope_name = 'Color' if modality == 'color' else 'Depth'
 
         with tf.variable_scope(scope_name):
-            net = self.structure(
+            net = self.architecture(
                 inputs, final_endpoint=endpoint)
             net = slim.flatten(net)
         with tf.variable_scope('Embedding'):
@@ -196,9 +196,9 @@ class TrainClassifyEmbedding(TrainClassifyImages):
 
 class EvaluateClassifyEmbedding(EvaluateClassifyImages):
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(EvaluateClassifyEmbedding, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute_logits(self, inputs, num_classes,
                        endpoint='Middle', modality='color',
@@ -208,7 +208,7 @@ class EvaluateClassifyEmbedding(EvaluateClassifyImages):
         scope_name = 'Color' if modality == 'color' else 'Depth'
 
         with tf.variable_scope(scope_name):
-            net = self.structure(
+            net = self.architecture(
                 inputs, final_endpoint=endpoint)
             net = slim.flatten(net)
         with tf.variable_scope('Embedding'):

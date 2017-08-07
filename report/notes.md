@@ -4,6 +4,12 @@ Since the convolution operation can be done regardless of the input size
 as long as the input is bigger than the kernel, naturally a same
 architecture can be used for inputs of different sizes.
 
+consists of 
+Video recordings of some subjects uttering letters
+
+Unless stated otherwise, the prediction accuracies mentioned hereinafter
+are evaluated on the validation dataset
+
 ## Figure captions
 
 The CNN architecture used for FingerSpelling dataset. Its input is

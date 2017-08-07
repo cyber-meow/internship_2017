@@ -9,7 +9,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from nets import inception_v4
+from nets_base import inception_v4
 
 slim = tf.contrib.slim
 

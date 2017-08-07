@@ -1,4 +1,4 @@
-"""Implement some modality fusion structures"""
+"""Implement some modality fusion architectures"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -6,8 +6,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from images.CAE_structure import CAE_6layers
-from images.CNN_structure import CNN_9layers, CNN_10layers
+from images.CAE_architecture import CAE_6layers
+from images.CNN_architecture import CNN_9layers, CNN_10layers
 
 slim = tf.contrib.slim
 
@@ -72,6 +72,13 @@ def fusionAE_6layers(color_inputs, depth_inputs,
             depth_net = slim.conv2d(
                 depth_net, in_channels*29, [3, 3],
                 scope='Fusion/Depth/ConvTrans2d_c_3x3')
+
+        color_net = tf.cond(
+            tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
+            lambda: color_net * 2, lambda: color_net)
+        depth_net = tf.cond(
+            tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
+            lambda: depth_net * 2, lambda: depth_net)
 
         # 24 x 24 x 24
         endpoint = 'Middle'

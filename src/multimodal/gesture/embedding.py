@@ -18,9 +18,9 @@ class TrainEmbedding(TrainColorDepth):
     def default_trainable_scopes(self):
         return ['Embedding']
 
-    def __init__(self, structure, **kwargs):
+    def __init__(self, architecture, **kwargs):
         super(TrainEmbedding, self).__init__(**kwargs)
-        self.structure = structure
+        self.architecture = architecture
 
     def compute(self, **kwargs):
         self.color_repr, self.depth_repr = self.compute_embedding(
@@ -30,10 +30,10 @@ class TrainEmbedding(TrainColorDepth):
                           feature_length=512,
                           color_endpoint='Middle', depth_endpoint='Middle'):
         with tf.variable_scope('Color'):
-            color_net = self.structure(
+            color_net = self.architecture(
                 color_inputs, final_endpoint=color_endpoint)
         with tf.variable_scope('Depth'):
-            depth_net = self.structure(
+            depth_net = self.architecture(
                 depth_inputs, final_endpoint=depth_endpoint)
         color_net = slim.flatten(color_net)
         self.pre_color_repr = color_net
@@ -188,10 +188,10 @@ class VisualizeCommonEmbedding(VisualizeColorDepth):
                 color_endpoint='Middle', depth_endpoint='Middle'):
 
         with tf.variable_scope('Color'):
-            color_net = self.structure(
+            color_net = self.architecture(
                 self.images_color, final_endpoint=color_endpoint)
         with tf.variable_scope('Depth'):
-            depth_net = self.structure(
+            depth_net = self.architecture(
                 self.images_depth, final_endpoint=depth_endpoint)
         color_net = slim.flatten(color_net)
         depth_net = slim.flatten(depth_net)
