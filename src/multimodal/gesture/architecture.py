@@ -24,7 +24,8 @@ def deconvolve_3layer(inputs, channels, scope=None):
                 net, channels*13, [3, 3], scope='ConvTrans2d_b_3x3')
             # 99 x 99 x 39 / 27 x 27 x 13
             net = slim.conv2d_transpose(
-                net, channels, [5, 5], stride=3, scope='ConvTrans2d_c_5x5')
+                net, channels, [5, 5], stride=3,
+                activation_fn=None, scope='ConvTrans2d_c_5x5')
             return net
 
 

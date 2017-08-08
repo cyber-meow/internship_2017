@@ -34,7 +34,8 @@ def CAE_shadow(inputs,
             net = slim.dropout(net, keep_prob=dropout_keep_prob,
                                scope='Dropout')
             net = slim.conv2d_transpose(
-                net, inputs.get_shape()[3], [3, 3], scope='ConvTrans2d_3x3')
+                net, inputs.get_shape()[3], [3, 3],
+                activation_fn=None, scope='ConvTrans2d_3x3')
             # endpoints['Final'] = net
             if final_endpoint == 'Final':
                 return net
@@ -97,7 +98,7 @@ def CAE_6layers(inputs,
             endpoint = 'Final'
             net = slim.conv2d_transpose(
                 net, in_channels, [5, 5], stride=3,
-                scope='ConvTrans2d_c_5x5')
+                activation_fn=None, scope='ConvTrans2d_c_5x5')
             print(net.get_shape())
             # endpoints[endpoint] = net
             if final_endpoint == endpoint:
@@ -173,7 +174,8 @@ def CAE_12layers(inputs,
             # 41 x 41 x 3
             endpoint = 'Final'
             net = slim.conv2d_transpose(
-                net, in_channels, [3, 3], scope='ConvTrans2d_f_3x3')
+                net, in_channels, [3, 3],
+                activation_fn=None, scope='ConvTrans2d_f_3x3')
             # endpoints[endpoint] = net
             if final_endpoint == endpoint:
                 return net
@@ -219,7 +221,8 @@ def CAE_inception(inputs,
                 net, 32, [3, 3], scope='ConvTrans_f_3x3')
             # 149 x 149 x 32
             net = slim.conv2d_transpose(
-                net, 3, [3, 3], stride=2, scope='ConvTrans_g_3x3')
+                net, 3, [3, 3], stride=2,
+                activation_fn=None, scope='ConvTrans_g_3x3')
 
             endpoints['Final'] = net
             if final_endpoint == 'Final':

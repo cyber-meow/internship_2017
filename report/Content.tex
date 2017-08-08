@@ -15,6 +15,48 @@ Speech Recognition\vspace{-0.5em}}
 
 \section{Presentation of Basic Network Architectures}
 
+\subsection{Conolutional Neural Networks}
+
+Convolutional Neural Networks (CNNs) are an early family of deep learning
+architectures inspired from the human vision system \cite{Y. LeCun 1998}.
+Generally we have convolutional layers alternating with pooling
+(subsamping) layers, but fully connected layers can also be introduced.
+CNNs have been shown to achieve state-of-the-art performance in
+image processing tasks such as image classification
+\cite{A. Krizhevsky 2012} and object detection \cite{Y. LeCun 2010}.
+However they can be equally applied in other fields like speech recogntion
+\cite{L. Deng 2013}.
+
+\subsection{Auto-encoder}
+
+Auto-encoders are networks that are trained to minimize the reconstruction
+error by back-propagating it from the output layer to hidden layers.
+In the simplest model with one hidden layer, an auto-encoder takes an
+input $\mathbf{x} \in \mathbb{R}^d$ and maps it to the latent
+representation $\mathbf{h} \in \mathbb{R}^{d'}$ given by
+$\mathbf{h} = \sigma(W\mathbf{x}+\mathbf{b})$ where $W$
+is a weight matrix, $\mathbf{b}$ is a bias vector and $\sigma$ is an
+activation function. Then the network tries to reconstruct the input
+by a reverse mapping $\mathbf{x'} = \sigma(W'\mathbf{h}+\mathbf{b'})$.
+
+To prevent the auto-encoder from learning the identity function as
+a trivial solution, several regularization techniques have been proposed.
+The bottleneck approach forces dimensionality reduction by having
+fewer neurons in hidden layers than in the input layer. For example,
+in the above case, we must have $d'<d$. Sparse auto-encoders impose sparsity
+on hidden units \cite{A. Makhzani 2014}.
+Denoising auto-encoders, which play an important role in my internship,
+try to recontruct the clean input from its corrupted version
+\cite{P. Vincent 2008, Y. Bengio 2012}. Binomial noise
+(switching pixels on or off) adding
+to input or hidden layers are used in my case.
+
+Intuitively, auto-encoders are useful for data reconstruction.
+Nevertheless, the true interest lies in fact in its capcity to learn
+a representation (encoding) for a set of data in a purely unsupervised
+fashion \cite{P. Vincent 2010}. Recently, auto-encoders are also
+more and more often used as a generative model \cite{Y. Bengio 2013}.
+
 \section{Datasets and Preprocessing}
 
 Many datasets were explored during my internship. The three main datasets
@@ -162,6 +204,38 @@ is kept).
 
 \section{Experimental Setup}
 
+To train a classifier I employed the cross entropy cost function and to
+train an auto-encoder the L2 distance between the input and output vector
+was used as the loss. For the sake of preventing overfitting, L2
+regularization \cite{Y. Bengio 2012} was applied to all the weights of
+network with a regularization coefficient of $0.0004$.
+The Adam algorithm \cite{D. Kingma 2014}
+was then introduced for minimizing the loss function.
+An exponential decay was further used for the stepsize $\alpha$ of this
+algorithm with an initial stepsize $\alpha_0$ varying from 0.01 to 0.0001
+depending on experience. The decaying rate $\gamma$
+was generally close to 0.8 and
+the decay takes place every 100 training steps.
+
+Inputs of the network are normally fed as mini-batches of size 24
+(smaller and bigger batch sizes were also experimented).
+Batch normalization \cite{S. Ioffe 2015} were introduced after every
+convolutional and transposed convoluitonal layer. Therefore, the real
+operations used to compute neural activations are more complicated
+then what are described above. These settings aren't necessarily optimal
+(use a bigger weight regularization coefficient or maybe one had better
+use a constant learning rate with Adam optimizer) but I didn't have time
+to do more tests on it.
+
+Here are some more details of the network architectures: ReLu
+(Rectified Linear Unit) activation were added to all the hidden layers
+\cite{A. Krizhevsky 2012} while no activation function was used for
+the output layer.
+For classification model dropout \cite{N. Srivastava 2014}
+was always applied to the second to last layer during training.
+The output of the classification layer was mapped to the probabilities
+that one data example belongs to each class by the softmax function.
+
 \section{Experiences and Results: Unimodal Cases}
 
 \subsection{Classification}
@@ -250,6 +324,18 @@ for testing.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
+Several different CAE architectures were tested in my internship.
+Here I present the one with five hidden layers, therefore it contains
+three convolutional layers and three transposed convolutional layers
+as shown in \autoref{fig:CAE5}. The end-to-end training instead of
+a greedy layer-wise approach was used.
+
+The proposed architecture was then trained on the two gesture recognition
+datasets. First of all, I'm interested in the denoising capcity of
+the auto-encoder. An example is shown in \autoref{fig:image_restoration}.
+The auto-encoder is effectively able to reconstruct the clean image in
+a way.
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{architectures/CAE5}
@@ -313,6 +399,27 @@ for testing.
   \label{fig:color_depth_restoration}
 \end{figure}
 
+\begin{table}
+  \tabcolsep = 9pt
+  \begin{tabular*}{\linewidth}{>{\bf}llccccc}
+    \toprule
+    && Raw & CAE features & Shared & CAE architecture & CNN\\
+    \midrule
+    \multirow{2}{*}{Intensity} &
+    train & 69.47 \% & 78.39 \% & 81.07 \% & 92.34 \% & 99.69 \% \\
+    & test & 32.64 \% & 50.72 \% & 50.92 \% & 67.23 \% & 79.73 \% \\
+    \midrule
+    \multirow{2}{*}{Depth} &
+    train & 48.17 \% & 38.65 \% & 73.07 \% & 90.4 \% & 97.24 \% \\
+    & test & 30.95 \% & 26.39 \% & 43.50 \% & 58.69 \% & 66.84 \% \\
+    \midrule
+    \multirow{2}{*}{Depth (Z-n)} &
+    train & 63.64 \% & 72.37 \% & 72.01 \% &  \% & 97.24 \% \\
+    & test & 29.93 \% & 40.03 \% & 40.27 \% &  \% & 64.46 \% \\
+    \bottomrule
+  \end{tabular*}
+\end{table}
+
 \subsection{Transfer learning}
 
 \begin{figure}[H]
@@ -327,189 +434,3 @@ for testing.
     }
   \label{fig:AVSR_transfer}
 \end{figure}
-
-\newpage
-
-\begin{thebibliography}{99}
-
-\bibitem{M. Asadi-Aghbolaghi 2017}
-  17. M. Asadi-Aghbolaghi, A. Clapés, M. Bellantonio, H. J. Escalante, 
-  V. Ponce-López, X. Baró, I. Guyon, S. Kasaei, and S. Escalera. 
-  A Survey on Deep Learning Based Approaches for Action and Gesture 
-  Recognition in Image Sequences. 
-  In \textit{Automatic Face \& Gesture Recognition (FG 2017) 2017 12th IEEE
-  International Conference}, 2017.
-
-\bibitem{T. Baltrusaitis 2017}
-  T. Baltrusaitis, C. Ahuja and L-P. Morency. Multimodal Machine Learning:
-  A Survey and Taxonomy. In \textit{CoRR}, vol. abs/1705.09406, 2017.
-
-\bibitem{C. Bregler 1994}
-  C. Bregler and Y. Konig. "Eigenlips" for robust speech recognition.
-  In \textit{ICASSP}, 1994.
-
-\bibitem{L. Deng 2013}
-  L. Deng, G. Hinto and B. Kinsbury. New types of deep neural network
-  learning for speech recognition and related applications: An overview.
-  In \textit{ICASSP}, 2013.
-
-\bibitem{A. Droniou 2014}
-  A. Droniou, S. Ivaldi, and O. Sigaud. A deep unsupervised network
-  for multimodal perception, representation and classification. In
-  \textit{Robotics and Autonomous System}, 2014.
-
-\bibitem{A. Frome 2013}
-  A. Frome, G. S. Corrado, J. Shlens, S. Bengio, J. Dean,
-  T. Mikolov, et al. Devise: A deep visual-semantic embedding model. 
-  In \textit{NIPS}, 2013.
-
-\bibitem{G. Hinton 2012}
-  G. Hinton, L. Deng, D. Yu, G. Dahl, A. Mohamed, N. Jaitly, A. Senior, V.
-  Vanhoucke, P. Nguyen, T. Sainath and B. Kingsbury. Deep neural networks
-  for acoustic modeling in speech recognition.
-  In \textit{IEEE Signal Processing Mag} Vol. 29, 2012.
-
-\bibitem{S. Ioffe 2015}
-  S. Ioffe and C. Szegedy. Batch normalization, accelerating deep network
-  training by reducing internal covaraiate shift. In \textit{CoRR},
-  vol. abs/1502.03167, 2015.
-
-\bibitem{S. Ji 2013}
-  S. Ji, W. Xu, M Tang and K. Yu. 3D Convolutional Neural Networks
-  for Human Action Recognition. In \textit{IEEE Transactions on Pattern
-  Analysis and Machine Intelligence}, vol. 35, 2013.
-
-\bibitem{A. K. Katsuaggelos 2015}
-  A. K. Katsaggelos, S. Bahaadini and R. Molina. Audiovisual fusion:
-  Challenges and new approaches. In \textit{Proceedings of the IEEE},
-  vol. 103, 2015.
-
-\bibitem{A. Krizhevsky 2012}
-  A. Krizhevsky, I. Sutskever, and G. E. Hinton.  ImageNet Classification
-  with Deep Convolutional Neural Networks. In \textit{NIPS}, 2012.
-
-\bibitem{J. Masci 2011}
-  J. Masci, U. Meier, D. C. ̧san, and J. Schmidhuber.
-  Stacked convolutional auto-encoders for hierarchical feature extraction.
-  In \textit{Artificial Neural Networks and Machine Learning–ICANN}, 2011.
-
-\bibitem{I. Matthews 2002}
-  I. Matthews, T. F. Cootes, J. A. Bangham and S. Cox. Extraction of visual
-  features for lipreading. In \textit{PAMI}, 2002.
-
-\bibitem{A. Memo 2015}
-  A. Memo, L. Minto and P. Zanuttigh.  Exploiting Silhouette Descriptors and
-  Synthetic Data for Hand Gesture Recognition. In \textit{STAG: Smart
-    Tools \& Apps for Graphics}, 2015.
-
-\bibitem{A. Memo 2017}
-  A. Memo and P. Zanuttigh. Head-mounted gesture controlled interface
-  for human-computer interaction. In \textit{Multimedia Tools and
-  Applications}, 2017.
-
-\bibitem{S. Mitra 2007}
-  S. Mitra and T. Acharya. Gesture recognition: A survey. 
-  In \textit{IEEE Systems, Man, and Cybernetics}, 37:311–324, 2007. 
-
-\bibitem{P. Molchanov 2015}
-  P. Molchanov, S. Gupta, K. Kim, and J. Kautz. Hand gesture recognition 
-  with 3D convolutional neural networks. In \textit{CVPRW}, 2015.
-
-\bibitem{S. Moon 2015}
-  S. Moon, S. Kim and H. Wang. Multimodal transfer deep learning with
-    applications in audio-visual recognition. In \textit{NIPS MMML
-    Workshop}, 2015.
-
-\bibitem{J. Nagi 2011}
-  J. Nagi, F. Ducatelle, G. Di Caro, D. Ciresan, U. Meier, A. Giusti,
-  F. Nagi, J. Schmidhuber, and L. Gambardella.
-  Max-pooling convolutional neural networks for vision-based hand 
-  gesture recognition.
-  In \textit{Proceedings of the IEEE International Conference on
-  Signal and Image Processing Applications}, 2011.
-
-\bibitem{N. Neverova 2014}
-  N. Neverova, C. Wolf, G. W. Taylor, and F. Nebout.  Multiscale deep
-  learning for gesture detection and localization. In \textit{ECCVW}, 2014.
-
-\bibitem{J. Ngiam 2011}
-  J. Ngiam, A. Khosla, M. Kim, J. Nam, and A. Y. Ng. 
-  Multimodal deep learning. In:
-  In \textit{International Conference on Machine Learning}.  28. 
-  Bellevue, Washington, USA, 2011.
-
-\bibitem{K. Noda 2014}
-  K. Noda, Y. Yamaguchi, K. Nakadai, H. G. Okuno and T. Ogata. Audio-visual
-  speech recognition using deep learning.  In \textit{Applied Intelligence,
-  vol. 42, no. 4, pp. 722–737, 2014.}
-
-\bibitem{E. Petahan 1988}
-  E. Petahan, B. Bischoff, D. Bodoff, and N. M. Brooke. An Improved
-  Automatic Lipreading System to enhance Speech Recognition.
-  In \textit{ACM SIGCHI}, 1988.
-
-\bibitem{L. Pigou 2014}
- L. Pigou, S. Dieleman, P. J. Kindermans, and B. Schrauwen.
-  Sign language recognition using convolutional neural networks. In
-  \textit{Workshop at the European Conference on Computer Vision},
-  pages 572--578, 2014.
-
-\bibitem{G. Potamianos 2004}
-  G. Potamianos, C. Neti, J. Luettin and  I. Matthews. Audio-visual
-  automatic speech recognition: An overview. In \textit{Issues in Visual
-  and Audio-Visual Speech Processing, MIT Press}, 2004.
-
-\bibitem{N. Pugeault 2011}
-  N. Pugeault, and R. Bowden. Spelling It Out: Real-Time ASL
-  Fingerspelling Recognition. In \textit{Proceedings of the 1st IEEE
-  Workshop on Consumer Depth Cameras for Computer Vision}, 2011.
-
-\bibitem{R. Socher 2013}
-  R. Socher, M. Ganjoo, H. Sridhar, O.Bastani, C. D. Manning, and
-  A. Y. Ng. Zero-shot learning through cross-modal transfer.
-  In \textit{International Conference on Learning Representations (ICLR)},
-  Scottsdale, Arizona, USA, 2013.
-
-\bibitem{N. Srivastava 2014}
-  N. Srivastava, G. Hinton, A. Krizhevsky, I. Sutskever and R. Salakhutdinov.
-  Dropout: A simple way to prevent neural networks from overfitting. In
-  \textit{Journal of Machine Learning Research}, vol. 15, 2014.
-
-\bibitem{T. Starner 1998}
-  T. Starner, A. Pentland, and J. Weaver. Real-time american sign language
-  recognition using desk and wearable computer based video. 
-  In \textit{PAMI}, 20(12):1371–1375, 1998.
-
-\bibitem{J. Sung 2015}
-  J. Sung, I. Lenz, and A. Saxena. Deep multimodal embedding:
-  Manipulating novel objects with point-clouds, language and trajectories.
-  In \textit{CoRR}, vol. abs/1509.07831, 2015.
-
-\bibitem{C. Szegedy 2016}
-  C. Szegedy, S. Ioffe, V, Vanhoucke. Inception-v4, inception-ResNet and the
-  impact of residual connections on learning. In \textit{CoRR},
-  vol. abs/1602.07261, 2016.
-
-\bibitem{V. Turchenko 2017}
-  V. Turchenko, E. Chalmers and A. Luczak. A deep convolutional auto-encoder
-  with pooling - unpooling layers in Caffe. In \textit{CoRR},
-  vol. abs/1701.04949, 2017.
-
-\bibitem{J. Weston 2010}
-  J. Weston, S. Bengio, and N. Usunier. 
-  Large scale image annotation: learning to rank with joint word-image
-  embeddings. In \textit{Machine Learning}, 81(1):21--35, 2010.
-
-\bibitem{Di Wu 2016}
-  Di Wu, Lionel Pigou, Pieter-Jan Kindermans, Nam Do-Hoang Le, Ling Shao,
-  Joni Dambre, and Jean-Marc Odobez. 
-  Deep Dynamic Neural Networks for Multimodal Gesture Segmentation and
-  Recognition. In \textit{Pattern Analysis and Machine Intelligence
-  IEEE Transactions}, vol. 38, 2016.
-
-\bibitem{B. P. Yuhas 1989}
-  B. P. Yuhas, M. H. Goldstein, and T. J. Sejnowski. Integration of acoustic
-  and visual speech signals using neuralnetworks. in \textit{IEEE Comm.
-  Magazine}, pp. 65--71, 1989.
-
-\end{thebibliography}
