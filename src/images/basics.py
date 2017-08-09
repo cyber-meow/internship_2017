@@ -91,9 +91,25 @@ class EvaluateImages(Evaluate):
 
 
 class VisualizeImages(Visualize):
-    """Mainly for visualizing the representations learned by CAEs"""
+    """Subclass of `Visualize` to visualize image concerning information.
+
+    It's mainly for visualizing the representations learned by CAEs
+    (so the default endpoint of `compute` is 'Middle'.
+
+    However, it can be equally used to visualize raw data distribution
+    or rerpresentations learned by CNNs."""
 
     def __init__(self, architecture, image_size=299, channels=3):
+        """Defeine parameters for input images and the used architecture.
+
+        Args:
+            architecture: The architecture to compute representations.
+            image_size: The image is of size image_size x image_size.
+                For historical reason the input image has always
+                the same height and width.
+            channels: The number of channels of image. 1 for a grayscale
+                image and 3 for a RGB image.
+        """
         self.architecture = architecture
         self.image_size = image_size
         self.channels = channels
@@ -109,7 +125,15 @@ class VisualizeImages(Visualize):
         return self.dataset
 
     def compute(self, endpoint='Middle', do_avg=False):
+        """Compute the representation, save it in a variable and define the
+        saver to save this variable.
 
+        Args:
+            endpoint: The endpoint passed to `self.architecture`. Use `None`
+                if no endpoint argument should be given.
+            do_avg: Whether to do average pooling to compute the
+                representation, just ignore this argument.
+        """
         if self.architecture is None:
             self.representations = self.images
         elif endpoint is None:
@@ -130,7 +154,14 @@ class VisualizeImages(Visualize):
         self.saver_repr = tf.train.Saver([self.repr_var])
 
     def config_embedding(self, sess, log_dir):
+        """Configurations for embedding visualization.
 
+        After running the necessary `Tensor` operations (assigning the
+        computed values to a variable for saving), we save this variable
+        to checkpoint, write metadata, and configures the embedding by
+        linking it to the variable and the metafile. Several embeddings
+        can be defined in the same time.
+        """
         _, labels = sess.run([self.assign, self.labels])
         self.saver_repr.save(sess, os.path.join(log_dir, 'repr.ckpt'))
 

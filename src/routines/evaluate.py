@@ -41,13 +41,14 @@ class EvaluateAbstract(object):
         pass
 
     @abc.abstractmethod
-    def get_data(self, split_name, tfrecord_dir, batch_size):
+    def get_data(self, split_name, tfrecord_dir, batch_size, shuffle):
         """Read data from some directory and load them in batches.
 
         Args:
             tfrecord_dir: The directory where the tfrecords of the
                 dataset are stored.
             batch_size: The number of elements contained in each batch.
+            shuffle: Whether to shuffle input data or not.
         """
         pass
 
@@ -145,7 +146,7 @@ class Evaluate(EvaluateAbstract):
             use_batch_norm: Passes to `self.used_arg_scope` to decide
                 whether to use batch normalization.
             batch_stat: Whether to use batch statistics or moving
-                mean/variance.
+                mean/variance for batch normalization.
             **kwargs: Arguments pass to the `self.compute`.
         """
         if log_dir is not None and not tf.gfile.Exists(log_dir):

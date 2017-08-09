@@ -168,13 +168,13 @@ def convert_dataset(split_name, filenames, class_names_to_ids,
     sys.stdout.flush()
 
 
-def convert(dataset_dir,
-            tfrecord_dir,
-            keywords=None,
-            subjects=True,
-            sep='user',
-            num_val_clss=2,
-            num_shards=5):
+def convert_images(dataset_dir,
+                   tfrecord_dir,
+                   keywords=None,
+                   subjects=True,
+                   sep='user',
+                   num_val_clss=2,
+                   num_shards=5):
     """Runs the conversion operation.
 
     Args:

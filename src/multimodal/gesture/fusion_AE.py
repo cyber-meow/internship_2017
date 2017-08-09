@@ -147,12 +147,13 @@ class TrainFusionAE(TrainColorDepth):
             sess, self.train_op, self.sv.global_step, self.summary_op)
         self.sv.summary_computed(sess, summaries)
 
-    def used_arg_scope(self, use_batch_norm, renorm):
+    def used_arg_scope(self, use_batch_norm, renorm, weight_decay):
         return nets_arg_scope(is_training=self.training,
                               use_batch_norm=use_batch_norm,
                               renorm=renorm,
                               batch_norm_decay=0.99,
-                              renorm_decay=0.99)
+                              renorm_decay=0.99,
+                              weight_decay=weight_decay)
 
 
 class EvaluateFusionAE(EvaluateColorDepth):

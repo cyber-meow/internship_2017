@@ -95,13 +95,14 @@ class TrainAbstract(object):
         pass
 
     @abc.abstractmethod
-    def used_arg_scope(self, use_batch_norm, renorm):
+    def used_arg_scope(self, use_batch_norm, renorm, weigh_decay):
         """The slim argument scope that is used for main computations.
 
         Args:
             use_batch_norm: Whether to do batch normalization or not.
             renorm: Whether to do batch renormalization or not. I've in
                 fact never used it.
+            weigh_decay: The weight regularization coefficient.
 
         Returns:
             An argument scope to be used for model computations.
@@ -281,6 +282,7 @@ class Train(TrainAbstract):
               use_default_trainable_scopes=True,
               use_batch_norm=True,
               renorm=False,
+              weight_decay=0.0004,
               test_use_batch=False,
               **kwargs):
         """Train the model.
@@ -313,6 +315,7 @@ class Train(TrainAbstract):
                 the weights found in the model.
             use_batch_norm, renorm: Passed to `self.used_arg_scope` to decide
                 whether to use batch normalization/renormalization.
+            weight_decay: The weight regularization coefficeint.
             test_use_batch: Decide whether to use batch statistics or
                 moving ones for batch normalization during tests.
             **kwargs: Arguments pass to the `self.compute`.
@@ -348,7 +351,8 @@ class Train(TrainAbstract):
 
             # Create the model, use the default arg scope to configure the
             # batch norm parameters
-            with slim.arg_scope(self.used_arg_scope(use_batch_norm, renorm)):
+            with slim.arg_scope(self.used_arg_scope(
+                    use_batch_norm, renorm, weight_decay)):
                 self.compute(**kwargs)
 
             # Specify the loss function
@@ -453,7 +457,7 @@ class Train(TrainAbstract):
             global_step_count, self.loss, time_elapsed)
         return tensor_values
 
-    def used_arg_scope(self, use_batch_norm, renorm):
+    def used_arg_scope(self, use_batch_norm, renorm, weight_decay):
         """The slim argument scope that is used for main computations.
 
         In my experiences normally it includes batch normalization, proper
@@ -471,6 +475,7 @@ class Train(TrainAbstract):
             use_batch_norm: Whether to do batch normalization or not.
             renorm: Whether to do batch renormalization or not. I've in
                 fact never used it.
+            weigh_decay: The weight regularization coefficient.
 
         Returns:
             An argument scope to be used for model computations.
@@ -478,7 +483,8 @@ class Train(TrainAbstract):
         return nets_arg_scope(
             is_training=self.batch_stat,
             use_batch_norm=use_batch_norm,
-            renorm=renorm)
+            renorm=renorm,
+            weight_decay=weight_decay)
 
     def get_learning_rate(self):
         """Use an exponentially decaying learning rate"""

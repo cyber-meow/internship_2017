@@ -15,7 +15,7 @@ Speech Recognition\vspace{-0.5em}}
 
 \section{Presentation of Basic Network Architectures}
 
-\subsection{Conolutional Neural Networks}
+\subsection{Convolutional Neural Networks}
 
 Convolutional Neural Networks (CNNs) are an early family of deep learning
 architectures inspired from the human vision system \cite{Y. LeCun 1998}.
@@ -109,38 +109,28 @@ and background.
 
 Images of this dataset are of variable sizes. The data preprocessing
 includes resizing each image to $83 \times 83$ pixels,
-converting to grayscale and adjusting
-contrast of depth maps. Only very late in my internship I added the
-Z-normalization (normalize to zero mean and unit of variance)
-as a preprocessing step and the only result that was largely changed
-is presented in \ref{subsection:CAE}.
+converting to grayscale and Z-normalization (normailzing to zero mean
+and unit of variance).
 
 \begin{figure}[H]
   \centering
   \hfill
-  \includegraphics[width=0.15\linewidth]{%
-    dataset/fingerspelling5/exs/or/g1}
+  \includegraphics[width=0.23\linewidth]{%
+    dataset/fingerspelling5/exs/st/g1}
   \hfill
-  \includegraphics[width=0.15\linewidth]{%
-    dataset/fingerspelling5/exs/or/g2}
+  \includegraphics[width=0.23\linewidth]{%
+    dataset/fingerspelling5/exs/st/g2}
   \hfill
-  \includegraphics[width=0.15\linewidth]{%
-    dataset/fingerspelling5/exs/or/d3}
-  \hfill
-  \includegraphics[width=0.15\linewidth]{%
-    dataset/fingerspelling5/exs/or/d4}
-  \hfill
-  \includegraphics[width=0.15\linewidth]{%
+  \includegraphics[width=0.23\linewidth]{%
     dataset/fingerspelling5/exs/st/d1}
   \hfill
-  \includegraphics[width=0.15\linewidth]{%
+  \includegraphics[width=0.23\linewidth]{%
     dataset/fingerspelling5/exs/st/d2}
   \caption{%
     \textbf{Example images in the ASL Finger Spelling dataset
       (after preprocessing).}\\[0.1em]
     Left Two) Grayscale intensity images.\\[0.1em]
-    Middle Two) Depth maps after adjusting contrast.\\[0.1em]
-    Right Two) Depth maps after Z-normalization.\\[0.1em]
+    Right Two) The corresponding depth maps.\\[0.1em]
     Images of this dataset have variable sizes, and they're all resized to
       $83 \times 83$ before being fed to the network. Generally only the
       hand region is contained in image.}
@@ -208,7 +198,7 @@ To train a classifier I employed the cross entropy cost function and to
 train an auto-encoder the L2 distance between the input and output vector
 was used as the loss. For the sake of preventing overfitting, L2
 regularization \cite{Y. Bengio 2012} was applied to all the weights of
-network with a regularization coefficient of $0.0004$.
+network with a regularization coefficient $\eta$.
 The Adam algorithm \cite{D. Kingma 2014}
 was then introduced for minimizing the loss function.
 An exponential decay was further used for the stepsize $\alpha$ of this
@@ -222,10 +212,9 @@ Inputs of the network are normally fed as mini-batches of size 24
 Batch normalization \cite{S. Ioffe 2015} were introduced after every
 convolutional and transposed convoluitonal layer. Therefore, the real
 operations used to compute neural activations are more complicated
-then what are described above. These settings aren't necessarily optimal
-(use a bigger weight regularization coefficient or maybe one had better
-use a constant learning rate with Adam optimizer) but I didn't have time
-to do more tests on it.
+then what are described above. The used settings and parameter
+values aren't necessarily optimal since I wasn't able to test all the
+possible combinations.
 
 Here are some more details of the network architectures: ReLu
 (Rectified Linear Unit) activation were added to all the hidden layers
@@ -307,20 +296,37 @@ One can refer to \autoref{fig:AVSR_transfer} for the main CNN architectures
 that are used in this dataset. 
 Notice that 3d CNNs are employed to deal with video inputs.
 Considering the small number of available data, a speaker-dependant
-setting was used, but it didn't save me from the problem of overfitting.
+setting was used.
+was 0.1 which allows us to achieve a classification accuracy of near 80\%.
+Since 
+
 The classification accuracy is of 100\% for training data but only
 of 60\% or 55\% for testing data depending on the input modality
 (audio then video).
-
-Curiously, for audio data, I get exactly the same classification
-performance regardless of the used architecture (perceptron or CNNs)
-or the fact that if deltas and delta-deltas are also given in input.
-This is not the case when I test with another audio dataset
-(not mentioned in the Datasets and Preprocessing section beacause
-it wasn't used for main experiences).
 For video input, the use of data augmentation techniques only decrease
 the learning speed for the training part but doesn't improve the performace
 for testing.
+
+\subsubsection{Overfitting}
+
+Overfitting was observed for almost all the classification
+experiments, and it was particularly severe for
+CNNs with many layers.
+In fact, CNN architectures can usually classify
+perfectly the training data, but experience a drop of performance
+when evaluating on test set.
+
+It's well known that by reducing the number of hidden layers and
+increasing the weight regularization coefficient $\eta$ we may
+be able to cure this problem.
+For exmample, when $\eta$ was augmented from $0.0004$ to $0.1$,
+the classification accuracy for the audio input of the AVLetters
+dataset increased by about 10\%.
+By using fewer hidden layers in the 3d CNN architecture overfitting
+was also alleviated when deaing with the video input of this same dataset.
+However, these techniques don't always work
+and more often I got a poorer performance during training without
+an improvement of performance for test.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
@@ -353,13 +359,13 @@ a way.
   \centering
   \hfill
   \includegraphics[width=0.28\linewidth]{%
-    dataset/fingerspelling5/gray/gray4}
+    dataset/fingerspelling5/gray/gray5}
   \hfill
   \includegraphics[width=0.28\linewidth]{%
-    dataset/fingerspelling5/gray/gray_dropout4}
+    dataset/fingerspelling5/gray/gray_dropout5}
   \hfill
   \includegraphics[width=0.28\linewidth]{%
-    dataset/fingerspelling5/gray/gray_reconstruction4}
+    dataset/fingerspelling5/gray/gray_reconstruction5}
   \caption{%
     \textbf{Image restoration using convolutional auto-encoder.}\\[0.1em]
       Left) Clean Image.\\[0.1em]
@@ -406,16 +412,12 @@ a way.
     && Raw & CAE features & Shared & CAE architecture & CNN\\
     \midrule
     \multirow{2}{*}{Intensity} &
-    train & 69.47 \% & 78.39 \% & 81.07 \% & 92.34 \% & 99.69 \% \\
-    & test & 32.64 \% & 50.72 \% & 50.92 \% & 67.23 \% & 79.73 \% \\
-    \midrule
-    \multirow{2}{*}{Depth} &
-    train & 48.17 \% & 38.65 \% & 73.07 \% & 90.4 \% & 97.24 \% \\
-    & test & 30.95 \% & 26.39 \% & 43.50 \% & 58.69 \% & 66.84 \% \\
+    train & 69.47 \% & 78.87 \% & 85.85 \% & 91.29 \% & 99.69 \% \\
+    & test & 32.64 \% & 50.24 \% & 53.38 \% & 65.44 \% & 79.73 \% \\
     \midrule
     \multirow{2}{*}{Depth (Z-n)} &
-    train & 63.64 \% & 72.37 \% & 72.01 \% &  \% & 97.24 \% \\
-    & test & 29.93 \% & 40.03 \% & 40.27 \% &  \% & 64.46 \% \\
+    train & 63.64 \% & 79.61 \% & 81.83 \% & 88.80 \% & 97.24 \% \\
+    & test & 29.93 \% & 41.64 \% & 42.85 \% & 55.62 \% & 64.46 \% \\
     \bottomrule
   \end{tabular*}
 \end{table}

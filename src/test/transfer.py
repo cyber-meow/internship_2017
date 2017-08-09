@@ -10,12 +10,12 @@ from multimodal.AVSR import EvaluateClassifyAudioAVSR
 from multimodal.AVSR import TrainClassifyVideoAVSR
 from multimodal.AVSR import EvaluateClassifyVideoAVSR
 from multimodal.AVSR import TrainClassifyVideoAVSRAT
-from mutiimodal.AVSR import TrainTransfer, EvaluateTransfer
+from multimodal.AVSR import TrainTransfer, EvaluateTransfer
 
 
 class TransferTest(object):
 
-    tfrecord_dir = '../dataset/avletters/tfrecords/mfcc_lips_transfer2'
+    tfrecord_dir = '../dataset/avletters/tfrecords/mfcc_lips_transfer'
     log_dir_audio = 'test/log/tranfer/audio'
     log_dir_video_AT = 'test/log/transfer/video_AT'
     log_dir_video_all = 'test/log/tranfer/video_all'
@@ -23,7 +23,8 @@ class TransferTest(object):
 
     def train_audio(self, num_steps):
         TrainClassifyAudioAVSR(CNN_mfcc6).train(
-            self.tfrecord_dir, None, self.log_dir_audio, num_steps)
+            self.tfrecord_dir, None, self.log_dir_audio, num_steps,
+            weight_decay=0.1)
 
     def evaluate_audio(self, split_name):
         EvaluateClassifyAudioAVSR(CNN_mfcc6).evaluate(
@@ -53,9 +54,9 @@ class TransferTest(object):
     def train_transfer(self, num_steps):
         TrainTransfer(audio_architecture=CNN_mfcc6,
                       video_architecture=CNN_lips5,
-                      initial_learning_rate=8e-4, lr_decay_rate=0.96).train(
+                      initial_learning_rate=1e-3, lr_decay_rate=0.8).train(
             self.tfrecord_dir, [self.log_dir_audio, self.log_dir_video_AT],
-            self.log_dir_transfer, num_steps, K=6, use_audio_prob=0.9)
+            self.log_dir_transfer, num_steps, K=12, use_audio_prob=0.8)
 
     def evaluate_transfer(self, split_name):
         EvaluateTransfer(CNN_lips5).evaluate(

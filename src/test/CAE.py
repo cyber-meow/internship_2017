@@ -1,8 +1,8 @@
 """
-Test convolutional auto-encoders on fingerspelling5 dataset
+Test convolutional auto-encoders on fingerspelling5 dataset.
 
-Use grayscale images (one channel) and resize to 83x83
-These functions are also used for the pre-training stage of the fusion part
+Use grayscale images (one channel) and resize to 83x83.
+These functions are also used for the pre-training stage of the fusion part.
 """
 
 from __future__ import absolute_import
@@ -44,14 +44,15 @@ visualize_dirs = {
 def train_CAE(modality='color'):
     TrainCAE(CAE_6layers, image_size=83, channels=1).train(
         tfrecord_dirs[modality], None, log_dirs_CAE[modality],
-        dropout_position='input', number_of_epochs=1, save_model_steps=500)
+        dropout_position='input', number_of_epochs=1,
+        save_model_steps=500, dropout_keep_prob=0.5)
 
 
 def evaluate_CAE(split_name='validation', modality='color'):
     EvaluateCAE(CAE_6layers, image_size=83, channels=1).evaluate(
         tfrecord_dirs[modality], log_dirs_CAE[modality],
         log_dirs_eva[modality], split_name=split_name,
-        do_dropout=True, batch_size=50)
+        do_dropout=True, batch_size=50, dropout_keep_prob=0.5)
 
 
 def train_classify_CAE(modality='color'):
