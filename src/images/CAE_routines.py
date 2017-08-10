@@ -1,3 +1,9 @@
+"""Train CAEs for representatin learning.
+
+For use examples see `test/CAE.py`.
+CAE architectures can be found in `CAE_architecture.py`.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -17,15 +23,22 @@ slim = tf.contrib.slim
 
 
 class TrainCAE(TrainImages):
-
-    initial_learning_rate = 0.01
+    """Train a CAE to reconstruct images."""
 
     def __init__(self, CAE_architecture, **kwargs):
         super(TrainCAE, self).__init__(**kwargs)
         self.CAE_architecture = CAE_architecture
 
     def compute(self, dropout_position='fc', dropout_keep_prob=0.7):
+        """Reconstruction of the image.
 
+        Args:
+            dropout_position: Whether to add noise (dropout) in input
+                or the middle layer. Either 'input' or 'fc'.
+            dropout_keep_prob: The probability that each individual
+                neuron value is kept when applying dropout.
+                Must be in the interval (0, 1].
+        """
         images_corrupted = slim.dropout(
             self.images, keep_prob=dropout_keep_prob, scope='Input/Dropout')
 
@@ -45,12 +58,14 @@ class TrainCAE(TrainImages):
         return reconstructions
 
     def get_total_loss(self):
+        """Use L2 distance between clean image and reconstruction."""
         self.reconstruction_loss = tf.losses.mean_squared_error(
             self.reconstructions, self.images_original)
         self.total_loss = tf.losses.get_total_loss()
         return self.total_loss
 
     def get_summary_op(self):
+        """Show clean, noisy, and reconstructed images."""
         self.get_batch_norm_summary()
         tf.summary.scalar(
             'losses/reconstruction', self.reconstruction_loss)
@@ -68,6 +83,7 @@ class TrainCAE(TrainImages):
 
 
 class TrainInceptionCAE(TrainCAE):
+    """Train an inception-based CAE model."""
 
     def get_init_fn(self, checkpoint_dirs):
         assert len(checkpoint_dirs) == 1
@@ -85,13 +101,25 @@ class TrainInceptionCAE(TrainCAE):
 
 
 class EvaluateCAE(EvaluateImages):
+    """Evaluate a trained CAE.
+
+    In fact just run the CAE once on all the images.
+    """
 
     def __init__(self, CAE_architecture, **kwargs):
         super(EvaluateCAE, self).__init__(**kwargs)
         self.CAE_architecture = CAE_architecture
 
     def compute(self, do_dropout=False, dropout_keep_prob=0.7):
+        """Reconstruction of the image.
 
+        Args:
+            do_dropout: Whether to do dropout or not. If so, dropout is
+                applied in input.
+            dropout_keep_prob: The probability that each individual
+                neuron value is kept when applying dropout.
+                Must be in the interval (0, 1].
+        """
         images_corrupted = tf.nn.dropout(
             self.images, keep_prob=dropout_keep_prob, name='Input/Dropout')
 
@@ -102,10 +130,12 @@ class EvaluateCAE(EvaluateImages):
             self.compute_reconstruction(self.images)
 
     def compute_reconstruction(self, inputs):
-        reconstructions = self.CAE_architecture(self.images)
+        reconstructions = self.CAE_architecture(
+            self.images, dropout_keep_prob=1)
         return reconstructions
 
     def compute_log_data(self):
+        """Show clean, noisy, and reconstructed images."""
         self.reconstruction_loss = \
             tf.losses.mean_squared_error(self.reconstructions, self.images)
         self.total_loss = tf.losses.get_total_loss()
@@ -130,7 +160,7 @@ class EvaluateCAE(EvaluateImages):
 
 def reconstruct(image_path, train_dir, CAE_architecture,
                 log_dir=None, image_size=299, channels=3):
-
+    """Reconstruct a single image."""
     with tf.Graph().as_default():
 
         image_string = tf.gfile.FastGFile(image_path, 'r').read()

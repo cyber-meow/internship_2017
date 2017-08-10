@@ -1,5 +1,4 @@
-"""
-Test convolutional auto-encoders on fingerspelling5 dataset.
+"""Test convolutional auto-encoders on fingerspelling5 dataset.
 
 Use grayscale images (one channel) and resize to 83x83.
 These functions are also used for the pre-training stage of the fusion part.

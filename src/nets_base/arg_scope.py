@@ -1,4 +1,4 @@
-"""Common arg_scope used by many nets"""
+"""Common `arg_scope` used by many nets"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -19,16 +19,18 @@ def nets_arg_scope(weight_decay=0.0004,
     """Defines the default arg scope for some net models.
 
     Args:
-      weight_decay: The weight decay to use for regularizing the model.
-      use_batch_norm: "If `True`, batch_norm is applied after each convolution.
-      batch_norm_decay: Decay for batch norm moving average.
-      batch_norm_epsilon: Small float added to variance to avoid dividing
-        by zero in batch norm.
-      is_training: The model is being trained or not
-      renorm, renorm_decay: For renormalization.
+        weight_decay: The weight decay to use for regularizing the model.
+        use_batch_norm: If `True`, batch normalization is applied after
+            each convolution and transposed convolution.
+        batch_norm_decay: Decay for batch norm moving average.
+        batch_norm_epsilon: Small float added to variance to avoid
+            dividing by zero in batch norm.
+        is_training: The model is being trained or not
+            (for dropout and batch normalization).
+        renorm, renorm_decay: For renormalization.
 
     Returns:
-      An `arg_scope` to use for the inception models.
+        An `arg_scope` to use for the models.
   """
     batch_norm_params = {
         # Decay for the moving averages.

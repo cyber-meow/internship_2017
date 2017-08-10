@@ -1,5 +1,4 @@
-"""
-Apply basic image classify functions on the senz3d dataset.
+"""Apply basic image classify functions on the senz3d dataset.
 
 Three different classifiers are linear classifiers, hand-coded CNN
 and inceptionV4.

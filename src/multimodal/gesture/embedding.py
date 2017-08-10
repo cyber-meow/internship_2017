@@ -1,3 +1,13 @@
+"""Train and visulize a common embedding.
+
+We map linearly the represntations from two different modalities
+(color/depth) in a common space and try to minimize some loss function.
+For example, the distance between pairs of points representing
+corresponding color and depth images. Nonetheless, the problem is in
+fact more difficult and I wasn't able to find a good loss function
+that allows me to learn a good embedding.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -29,6 +39,14 @@ class TrainEmbedding(TrainColorDepth):
     def compute_embedding(self, color_inputs, depth_inputs,
                           feature_length=512,
                           color_endpoint='Middle', depth_endpoint='Middle'):
+        """Map color and depth representations to a common embedding space.
+
+        Args:
+            color_inputs, depth_inputs: `Tensors` for inputs.
+            feature_length: The dimension of the embedding space.
+            color_endpoint, depth_endpoint: used by `self.architecture`
+                to compute representation.
+        """
         with tf.variable_scope('Color'):
             color_net = self.architecture(
                 color_inputs, final_endpoint=color_endpoint)
@@ -47,6 +65,13 @@ class TrainEmbedding(TrainColorDepth):
             return color_net, depth_net
 
     def get_total_loss(self):
+        """Define some loss function.
+
+        Use cos distance between pairs of corresponding images, but
+        also try to get embedding vectors uniformly distributed
+        by penalizing points of the same modality that are too close.
+        Finally also try to preserve cos distances between different pairs.
+        """
         color_repr = slim.unit_norm(self.color_repr, 1)
         depth_repr = slim.unit_norm(self.depth_repr, 1)
         pre_color_repr = slim.unit_norm(self.pre_color_repr, 1)
@@ -143,8 +168,11 @@ class TrainEmbedding(TrainColorDepth):
 
 
 class TrainEmbedding2(TrainEmbedding):
+    """Like `TrainEmbedding` but with a different loss function."""
 
     def get_total_loss(self):
+        """Loss function of `TrainEmbedding` without the distance
+        preserving part."""
         color_repr = slim.unit_norm(self.color_repr, 1)
         depth_repr = slim.unit_norm(self.depth_repr, 1)
         self.cos_loss = -tf.reduce_sum(color_repr*depth_repr)
@@ -183,6 +211,7 @@ class TrainEmbedding2(TrainEmbedding):
 
 
 class VisualizeCommonEmbedding(VisualizeColorDepth):
+    """Visualize the learned embeddding space for color and depth images."""
 
     def compute(self, feature_length=512, unit_normalization=True,
                 color_endpoint='Middle', depth_endpoint='Middle'):

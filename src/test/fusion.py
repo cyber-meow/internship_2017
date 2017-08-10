@@ -1,3 +1,11 @@
+"""Run the fusion experiment on the fingerspelling5 dataset.
+
+All of the runned experiments are not included here, but one can refer
+to this file to see what are the classses to use and how the methods
+are called. By varying a little the arguments we can replicate the
+results described in the report.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

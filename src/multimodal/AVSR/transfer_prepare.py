@@ -1,3 +1,5 @@
+"""Test things before coding `transfer.py`. This file can be ignored."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -20,7 +22,7 @@ class StoringValuesTest(Evaluate):
             self.dataset, shuffle=True,
             batch_size=self.dataset.num_samples)
 
-        # The tfrecords are then only read once (during initialization)
+        # The tfrecords are then only read once (during initialization).
         self.all_mfccs = tf.Variable(self.all_mfccs, trainable=False)
         self.all_labels = tf.Variable(self.all_labels, trainable=False)
 

@@ -1,3 +1,10 @@
+"""Basic classes to deal with audio input (mfcc features).
+
+The argument `use_delta` determines if we use also mfcc-deltasand
+delta-deltas in input. If so then the input is a `Tensor` of size
+[batch_size, feature_len, num_frames, 3].
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -63,8 +70,16 @@ class EvaluateAudio(Evaluate):
 
 
 def delta(coefs, N=2):
-    """
-    delta: A tensor of shape [batch, feature_len, num_frames, 1]
+    """Compute delta (first-order difference) of the input.
+
+    Args:
+        coefs: The input to compute delta. For example, from
+            mfcc we compute mfcc-delta and from mfcc-delta
+            we compute delta-delta.
+        N: Parameters for computation.
+
+    Returns
+        delta: A tensor of shape [batch, feature_len, num_frames, 1]
     """
     res = tf.zeros_like(coefs)
     for n in range(1, N+1):

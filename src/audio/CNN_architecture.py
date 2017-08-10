@@ -1,3 +1,5 @@
+"""Implement some CNN architectures for audio used dring my internship."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,7 +12,9 @@ slim = tf.contrib.slim
 def CNN_mfcc6(inputs,
               final_endpoint='Conv2d_e_3x3',
               scope=None):
-    """Suppose that the input is of size 26 x 24"""
+    """Suppose that the input is of size 26 x 24.
+    This is the architecture used for the transfer learning task.
+    """
 
     with tf.variable_scope(scope, 'CNN', [inputs]):
         with slim.arg_scope([slim.conv2d, slim.max_pool2d],

@@ -1,3 +1,9 @@
+"""Train, evaluate and visualize models for the shared
+representation learning experiment.
+
+See `test/fusion.py` for example use.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -17,10 +23,11 @@ slim = tf.contrib.slim
 
 
 class TrainFusionAE(TrainColorDepth):
+    """Train a bimodal auto-encoder for color and depth images."""
 
     @property
     def default_trainable_scopes(self):
-        """Not include pre-trained part for each modality"""
+        """Not include pre-trained part for each modality."""
         return ['Fusion', 'Seperation']
 
     def __init__(self, architecture, **kwargs):
@@ -35,14 +42,31 @@ class TrainFusionAE(TrainColorDepth):
     def compute_reconstruction(self, color_inputs, depth_inputs,
                                dropout_position='input', threshold=0.15,
                                color_keep_prob=None):
+        """Reconstruct images of both modality.
 
+        Args:
+            color_inputs, depth_inputs: `Tensors` for inputs.
+            dropout_postition: Where to apply dropout, 'input' or 'fc'.
+            threshold: If the probability is smaller than threshold
+                it's taken as zero. Similarly if the probability is
+                larger than 1-threshold it's taken as 1.
+            color_keep_prob: Give the probability that a pixel of color
+                image is kept when applying dropout. If it's left as
+                `None` random values will be used for different batches.
+                During training we always have 'probability color pixel
+                is kept' + 'probability depth pixe is kept' = 1.
+        """
         self.images_color_original = color_inputs
         self.images_depth_original = depth_inputs
 
         if color_keep_prob is None:
+            # Use `tf.random` to gauranty different value for different step.
             color_keep_prob = tf.random_uniform([])
         else:
             color_keep_prob = tf.constant(color_keep_prob, tf.float32)
+
+        # Use `threshold` to have more often the case where only one
+        # modality is given.
         color_keep_prob = tf.cond(
             color_keep_prob < tf.constant(threshold, tf.float32),
             lambda: tf.constant(0, tf.float32), lambda: color_keep_prob)
@@ -51,7 +75,7 @@ class TrainFusionAE(TrainColorDepth):
             lambda: tf.constant(1, tf.float32), lambda: color_keep_prob)
         depth_keep_prob = tf.constant(1, dtype=tf.float32) - color_keep_prob
 
-        # Note that if dropout probability = 1 we get NAN everywhere
+        # Note that if dropout probability = 1 we get NAN everywhere.
         images_color_corrupted = tf.nn.dropout(
             color_inputs, keep_prob=color_keep_prob,
             name='Color/Input/Dropout')
@@ -79,6 +103,10 @@ class TrainFusionAE(TrainColorDepth):
             self.images_depth = depth_inputs
 
         if dropout_input:
+            # If input is zero we should let the network know for
+            # doing renormalization.
+            # Otherwise since the dropout is already done in input
+            # no more dropout is needed in hidden layers.
             color_keep_prob = tf.cond(
                 tf.equal(color_keep_prob, tf.constant(0, tf.float32)),
                 lambda: tf.constant(0, tf.float32),
@@ -118,7 +146,7 @@ class TrainFusionAE(TrainColorDepth):
         self.summary_op = tf.summary.merge_all()
 
     def get_init_fn(self, checkpoint_dirs):
-
+        """Restore from pretrained CAE models from both modalities."""
         checkpoint_dir_color, checkpoint_dir_depth = checkpoint_dirs
         variables_color = {}
         variables_depth = {}
@@ -157,6 +185,18 @@ class TrainFusionAE(TrainColorDepth):
 
 
 class EvaluateFusionAE(EvaluateColorDepth):
+    """Evaluate a bimodal auto-encoder for color and depth images.
+
+    It's better to call `evaluate` with `batch_stat`=`True`.
+    In this case we use batch statics and dropout in hidden layers
+    can be applied. This is because when training the bimodal CAE,
+    random dropout probabilities produce inputs from very different
+    distribution (imagine the case with only color input and only
+    depth input). The moving statics are therefore not appropriate
+    when we want to use the model directly.
+    (Otherwise one may need to compute moving average and variance
+    for every dropout probability.)
+    """
 
     def __init__(self, architecture, **kwargs):
         super(EvaluateFusionAE, self).__init__(**kwargs)
@@ -173,6 +213,22 @@ class EvaluateFusionAE(EvaluateColorDepth):
                                color_keep_prob=0.5,
                                depth_keep_prob=None,
                                dropout_position='input'):
+        """Reconstruct images of both modality.
+
+        Args:
+            color_inputs, depth_inputs: `Tensors` for inputs.
+            color_keep_prob: Give the probability that a pixel of color
+                image is kept when applying dropout. If it's `None` we
+                use 1-`depth_keep_prob`. If both are `None` random values
+                for different batches are used with the condition
+                color_keep_prob + depth_keep_prob = 1.
+            depth_keep_prob: Give the probability that a pixel of depth
+                image is kept when applying dropout. If it's `None` we
+                use 1-`color_keep_prob`. If both are `None` random values
+                for different batches are used with the condition
+                color_keep_prob + depth_keep_prob = 1.
+            dropout_postition: Where to apply dropout, 'input' or 'fc'.
+        """
         if color_keep_prob is None:
             if depth_keep_prob is None:
                 color_keep_prob = tf.random_uniform([])
@@ -252,7 +308,24 @@ class EvaluateFusionAE(EvaluateColorDepth):
 
 
 class EvaluateFusionAESingle(EvaluateImages):
+    """Evaluate a bimodal auto-encoder for only one modality.
 
+    This can in fact be replaced directly by `EvaluateFusionAE`
+    by using proper values of `color_keep_prob` and `depth_keep_prob`.
+    The only difference is that this class uses tfrecords
+    of a single modality while `EvaluateFusionAE` uses necessarily
+    tfrecords that contain both modalities.
+
+    It's better to call `evaluate` with `batch_stat`=`True`.
+    In this case we use batch statics and dropout in hidden layers
+    can be applied. This is because when training the bimodal CAE,
+    random dropout probabilities produce inputs from very different
+    distribution (imagine the case with only color input and only
+    depth input). The moving statics are therefore not appropriate
+    when we want to use the model directly.
+    (Otherwise one may need to compute moving average and variance
+    for every dropout probability.)
+    """
     def __init__(self, architecture, **kwargs):
         super(EvaluateFusionAESingle, self).__init__(**kwargs)
         self.architecture = architecture
@@ -262,6 +335,14 @@ class EvaluateFusionAESingle(EvaluateImages):
             self.compute_reconstruction(self.images, **kwargs)
 
     def compute_reconstruction(self, inputs, modality='color'):
+        """Reconstruct color and depth images from a single modality.
+
+        Args:
+            inputs: A `Tensor` representing color or depth images.
+            modality: Indicate the modality of the input,
+                'color' or 'depth'. We feed zeros in the input
+                of another modality to the network.
+        """
         assert modality in ['color', 'depth']
 
         if modality == 'color':
@@ -294,6 +375,12 @@ class EvaluateFusionAESingle(EvaluateImages):
 
 
 class VisualizeColorOrDepth(VisualizeColorDepth):
+    """Visualize the middle layer of the bimodal CAE.
+
+    In this class in input we feed either only color images or only
+    depth images. Consequently there are two embeddings, one for
+    color input and one for depth input.
+    """
 
     def compute(self, endpoint='Middle'):
 
@@ -375,6 +462,11 @@ class VisualizeColorOrDepth(VisualizeColorDepth):
 
 
 class VisualizeColorAndDepth(VisualizeColorDepth, VisualizeImages):
+    """Visualize the middle layer of the bimodal CAE.
+
+    In this class in input we feed both color and depth images with
+    all the information.
+    """
 
     def compute(self, endpoint='Middle'):
 

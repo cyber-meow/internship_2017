@@ -1,3 +1,10 @@
+"""Train and evaluate audio classifiers.
+
+The argument `use_delta` determines if we use also mfcc-deltasand
+delta-deltas in input. If so then the input is a `Tensor` of size
+[batch_size, feature_len, num_frames, 3].
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

@@ -1,4 +1,4 @@
-"""Implement some modality fusion architectures"""
+"""Implement some modality fusion architectures."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -33,6 +33,13 @@ def fusionAE_6layers(color_inputs, depth_inputs,
                      final_endpoint='Final',
                      scope=None,
                      color_keep_prob=None, depth_keep_prob=None):
+    """The main bimodal CAE architecture used in my internship.
+
+    `color_keep_prob` and `depth_keep_prob` control the dropout
+    probability of the hidden layer. If one is zero renormalization
+    is done so the values feeding to the middle layer from the
+    other modality becomes two times bigger.
+    """
     if color_keep_prob is None:
         if depth_keep_prob is None:
             color_keep_prob = tf.random_uniform([])
@@ -74,6 +81,7 @@ def fusionAE_6layers(color_inputs, depth_inputs,
                 depth_net, in_channels*29, [3, 3],
                 scope='Fusion/Depth/ConvTrans2d_c_3x3')
 
+        # Renormalization to have constant energy.
         color_net = tf.cond(
             tf.equal(depth_keep_prob, tf.constant(0, tf.float32)),
             lambda: color_net * 2, lambda: color_net)
@@ -101,6 +109,9 @@ def fusionAE_6layers(color_inputs, depth_inputs,
 
 
 def fusion_CNN_11layers(color_inputs, depth_inputs, scope=None):
+    """Merge the two networks at the 8th hidden layer, this may
+    be a little late for two modalities that are quite similar."""
+
     with tf.variable_scope(scope, 'FusionCNN'):
         # 299 x 299 x 3
         color_net = CNN_9layers(
@@ -128,6 +139,9 @@ def fusion_CNN_11layers(color_inputs, depth_inputs, scope=None):
 
 
 def fusion_CNN_10layers(color_inputs, depth_inputs, scope=None):
+    """Merge the two networks at the 7th hidden layer, this may
+    be a little late for two modalities that are quite similar."""
+
     with tf.variable_scope(scope, 'FusionCNN'):
         # 83 x 83 x 1
         color_net = CNN_10layers(

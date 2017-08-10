@@ -1,3 +1,5 @@
+"""Implement some CNN architectures for images used dring my internship."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -10,7 +12,7 @@ slim = tf.contrib.slim
 def CNN_9layers(inputs,
                 final_endpoint='AvgPool_a_2x2',
                 scope=None):
-    """This function is used for an input size of 299 x 299"""
+    """This architecture is used for an input size of 299 x 299."""
 
     in_channels = inputs.get_shape()[3]
 
@@ -97,7 +99,7 @@ def CNN_9layers(inputs,
 def CNN_10layers(inputs,
                  final_endpoint='Conv2d_h_3x3',
                  scope=None):
-    """This function is used for an input size of 83 x 83"""
+    """This architecture is used for an input size of 83 x 83"""
 
     in_channels = inputs.get_shape()[3]
 

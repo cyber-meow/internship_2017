@@ -1,3 +1,5 @@
+"""Implement some 3d CNN architectures for video used dring my internship."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -12,6 +14,7 @@ def CNN_lips8(inputs,
               scope=None,
               per_layer_dropout=False,
               dropout_keep_prob=0.8):
+    """The input video size is 80 x 60 x 12."""
 
     with tf.variable_scope(scope, 'CNN', [inputs]):
         with slim.arg_scope([slim.convolution, slim.pool],
@@ -106,6 +109,9 @@ def CNN_lips5(inputs,
               scope=None,
               per_layer_dropout=False,
               dropout_keep_prob=0.8):
+    """The input video size is 80 x 60 x 12.
+    This is the architecture used for the transfer learning task.
+    """
 
     with tf.variable_scope(scope, 'CNN', [inputs]):
         with slim.arg_scope([slim.convolution, slim.pool],

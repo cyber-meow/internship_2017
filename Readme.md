@@ -130,3 +130,25 @@ visualization classes inheriting from `Visualization` defined in
 `routines/visualization.py`. In the `images` directory we find the definition
 of convolution auto-encoder architectures and the routines that are used to train
 and evaluate them. Refer to `test/CAE.py` for an example of their uses.
+
+### Multimodal experiments
+
+In the directory `multimodal` one can find the codes for all the multimodal
+experiments that are described in my report.
+The directory `multimodal/gesture` contains mainly the shared reprsentation
+learning experiment. The files `multimodal/gesture/fusion_AE.py` and
+`multimodal/gesture/classify_routines.py` implement classes to train and
+evaluate these models. The file `test/fusion.py` allows us to easily
+replicating the experiment by varing function arguments.
+`multimodal/gesture/embedding.py` is an exception and is used for training
+and visualizing a common embedding from the two modalities, but better
+loss function needs to be found to get it work.
+The codes used for the AVSR knowledge transfer experiment are in
+`mutlimodal/AVSR/transfer.py`.
+
+### nets\_base
+
+The file `arg_scope` defines a common argument scopes used by all the models.
+Other files are taken directly from
+tensorflow/models/[slim](https://github.com/tensorflow/models/tree/master/slim)
+and are not modified.

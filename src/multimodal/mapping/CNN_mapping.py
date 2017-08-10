@@ -23,11 +23,7 @@ from nets_base.arg_scope import nets_arg_scope
 slim = tf.contrib.slim
 
 
-# Don't put / at the end of directory name
-
 def get_init_fn(checkpoints_dir_color, checkpoints_dir_depth):
-    """Returns a function run by the chief worker to
-       warm-start the training."""
 
     variables_color = {}
     variables_depth = {}

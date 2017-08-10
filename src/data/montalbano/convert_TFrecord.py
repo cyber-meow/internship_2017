@@ -8,7 +8,7 @@ I read the segmentation annotation data from .mat files and segment
 the color and depth videos according to this.
 I also resize and resample the videos to have smaller size for latter use.
 
-However, the dataset is too large (~20G) for this script to work.
+However, the dataset is too large (~40G) for this script to work.
 On one hand it's very slow (it takes several hours) and on the other hand
 python will run out of memory. Therefore to do the conversion we may
 need to do it in several times separately.

@@ -1,6 +1,5 @@
-"""
-This file contains some convolutional auto-encoders that are
-used during the experiences (mainly CAE_6layers)
+"""This file contains some convolutional auto-encoders that are
+used during the experiences (mainly CAE_6layers).
 """
 
 from __future__ import absolute_import
@@ -47,10 +46,6 @@ def CAE_6layers(inputs,
                 final_endpoint='Final',
                 dropout_keep_prob=0.5,
                 scope=None):
-    """
-    For the original strucutre that was used during experience, we use
-    32, 48, and then 64 filters regardless of the number of input channels
-    """
     # endpoints = {}
     in_channels = inputs.get_shape()[3]
 
@@ -187,7 +182,7 @@ def CAE_inception(inputs,
                   final_endpoint='Final',
                   dropout_keep_prob=0.5,
                   scope=None):
-    """Try to implement an auto-encoder base on inception"""
+    """Try to implement an inception-based auto-encoder."""
 
     net, endpoints = inception_v4.inception_v4_base(
         inputs, final_endpoint='Mixed_5a')

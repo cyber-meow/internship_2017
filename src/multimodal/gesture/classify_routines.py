@@ -1,4 +1,7 @@
-"""Classify images using intern representations"""
+"""Classify images using shared representation.
+
+See `test/fusion.py` for example use.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -16,9 +19,18 @@ slim = tf.contrib.slim
 
 
 class TrainClassifyCommonRepr(TrainClassifyImages):
+    """Train a classifier of single-modality images using the shared
+    representation.
+
+    In input we take only images of one modality, but we feed it to
+    the bimodal CAE with zeros in another modality and build a
+    perceptron on the shared representation (the middle layer)
+    that we get. We train only this perceptron.
+    """
 
     @property
     def default_trainable_scopes(self):
+        """Only train the perceptron."""
         return ['Logits']
 
     def __init__(self, architecture, **kwargs):
@@ -78,10 +90,15 @@ class EvaluateClassifyCommonRepr(EvaluateClassifyImages):
 
 
 class TrainClassifyFusion(TrainColorDepth, TrainClassify):
-    """
-    To train a lineair classifier from a common representation
-    that is learned by an auto-encoder, use endpoint='Middle'
-    an trainables_scopes='Logits'
+    """Train a classifier that use both modalities.
+
+    To train a lineair classifier from a shared representation
+    that is learned by a bimodal CAE, use `endpoint`='Middle'
+    an `trainables_scopes`='Logits'.
+
+    To train a CNN that takes in input the two modalities,
+    use `endpoint`=`None` and `trainable_scopes`=`None`
+    (default settings).
     """
 
     def __init__(self, architecture, **kwargs):
@@ -95,7 +112,7 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
 
     def compute_logits(self, color_inputs, depth_inputs, num_classes,
                        dropout_keep_prob=0.8, endpoint=None):
-        """Use endpoint='Middle' for CAE architectures"""
+        """Use endpoint='Middle' for CAE architectures."""
         if endpoint is None:
             net = self.architecture(color_inputs, depth_inputs)
         else:
@@ -132,6 +149,10 @@ class TrainClassifyFusion(TrainColorDepth, TrainClassify):
 
 
 class EvaluateClassifyFusion(EvaluateColorDepth, EvaluateClassify):
+    """Evaluation part of `TrainClassifyFusion`.
+
+    Remember to use the same `endpoint` as training.
+    """
 
     def __init__(self, architecture, **kwargs):
         super(EvaluateClassifyFusion, self).__init__(**kwargs)
@@ -156,6 +177,8 @@ class EvaluateClassifyFusion(EvaluateColorDepth, EvaluateClassify):
 
 
 class TrainClassifyEmbedding(TrainClassifyImages):
+    """Train a perceptron on a learned common embedding
+    (see `embedding.py`)"""
 
     @property
     def default_trainable_scopes(self):
