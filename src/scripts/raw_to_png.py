@@ -1,5 +1,6 @@
-"""Used for the dataset senz3d_datasets
-Change raw depth maps (320 x 240 16 bit) to png images
+"""Used for the dataset senz3d_datasets.
+
+Change raw depth maps (320 x 240 16 bit) to png images.
 """
 
 from __future__ import absolute_import
@@ -13,15 +14,15 @@ from PIL import Image
 
 
 def find_filenames(root_dir, keywords=None):
-    """Look up recursively in root_dir to find all files contating keywords
+    """Look up recursively in `root_dir` to find all files contating keywords.
 
     Args:
-      root_dir: the root directory from where we start
-      keywords: find the names containing all of these keywords, by defaut
-        None, then we return all file paths
+        root_dir: the root directory from where we start.
+        keywords: find the names containing all of these keywords, by
+            defaut `None`, then we return all file paths.
 
     Returns:
-      A list of file paths such that the names contain keywords
+        A list of file paths such that the names contain keywords.
     """
     res_filenames = []
 
