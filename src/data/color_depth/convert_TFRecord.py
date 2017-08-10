@@ -1,4 +1,14 @@
-"""Convert some given dataset to TFrecords"""
+"""Convert some image dataset to TFrecords containing color and depth images.
+
+In the generated TFReocrds each read sample contains a color image, its
+corresponding depth map and the label of this image.
+
+This script was historically used for generating TFRecords of the Creative
+Senz3d and ASL Finger Spelling dataset. We have one directory for
+each subject and in these directories we have one directory for each class.
+Finally all of these subject directories are contained in either the
+`train` or `validation` directory of the main directory.
+"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -25,19 +35,20 @@ def to_tfexample(color_data, depth_data,
 
 
 def get_fpairs_and_classes(dataset_dir, subjects=True):
-    """Returns a list of filenames and inferred class names.
+    """Returns a list of filename pairs and inferred class names.
 
     Args:
-      dataset_dir: If subjects is False, this directory contains a set
-        of subdirectoires representing class names and each subdirectory
-        containts thus the correspondant images (JPG or PNG).
-        If subjects is True, the directories for classes are first
-        contained in some arbitrary directories (e.g. one directory for
-        each subject in the dataset)
-      subjects: This argument determines the structure of `dataset_dir`
+        dataset_dir: If `subjects` is `False`, this directory contains
+            a set of subdirectoires representing class names and each
+            subdirectory containts thus the corresponding images
+            (JPG or PNG).
+            If `subjects` is `True`, the directories for classes are
+            first contained in some arbitrary directories (e.g. one
+            directory for each subject in the dataset).
+        subjects: This argument determines the structure of `dataset_dir`
 
     Returns:
-      A list of image file path pairs and the list of class names
+        A list of image file path pairs and the list of class names
     """
     directories = []
     class_names = set()
@@ -84,17 +95,18 @@ def get_fpairs_and_classes(dataset_dir, subjects=True):
 
 
 def train_validate_filename_pairs_classes(dataset_dir, subjects=True):
-    """Returns lists of filenames for test/validation set and
+    """Returns lists of filename pairs for test/validation set and
     inferred class names.
 
     Args:
-      dataset_dir: A directory contating two subdirectories 'train'
-        and 'validation', for the structure of these subdirectories
-        please see the function filenames_and_classes
-      subjects: This argument determines the structure of `dataset_dir`
+        dataset_dir: A directory contating two subdirectories 'train'
+            and 'validation', for the structure of these subdirectories
+            please see the function `get_filenames_and_classes`.
+        subjects: This argument determines the structure of `dataset_dir`.
 
-    returns
-      A list of image file path pairs and the list of class names
+    Returns:
+        Lists of image file path pairs for training and test directory
+        and the list of class names.
     """
     train_dir = os.path.join(dataset_dir, 'train')
     validation_dir = os.path.join(dataset_dir, 'validation')
@@ -116,15 +128,15 @@ def get_tfrecord_filename(split_name, tfrecord_dir, shard_id, num_shards):
 
 def convert_dataset(split_name, filename_pairs, class_names_to_ids,
                     tfrecord_dir, num_shards=5):
-    """Converts the given filenames to a TFRecord dataset.
+    """Converts the given filenamei pairs to a TFRecord dataset.
 
     Args:
-      split_name: The name of the dataset, either 'train' or 'validation'.
-      filename_pairs: A list of path pairs to png or jpg images.
-      class_names_to_ids: A dictionary from class names (strings) to ids
-        (integers).
-      tfrecord_dir: The directory where the converted datasets are stored.
-      num_shards: The number of shards per dataset split
+        split_name: The name of the dataset, either 'train' or 'validation'.
+        filename_pairs: A list of path pairs to png or jpg images.
+        class_names_to_ids: A dictionary from class names (strings) to ids
+            (integers).
+        tfrecord_dir: The directory where the converted datasets are stored.
+        num_shards: The number of shards per dataset split
     """
     assert split_name in ['train', 'validation']
 
@@ -177,16 +189,21 @@ def convert_color_depth(dataset_dir,
     """Runs the conversion operation.
 
     Args:
-        dataset_dir: Where the data (i.e. images) is stored
-        tfrecord_dir: Where to store the generated data (i.e. TFRecords)
-        keywords: Filenames must contain these keywords
+        dataset_dir: Where the data (i.e. images) is stored.
+        tfrecord_dir: Where to store the generated data (i.e. TFRecords).
+        keywords: Filenames must contain these keywords.
         subjects: Determine directory structure, please refer to
-          get_filenames_and_classes
-        sep: The way to separate train and validation data,
-          'user, 'mixed' or 'class'
+            `get_filenames_and_classes`.
+        sep: The way to separate train and validation data.
+            'user'- uses the given separation (`train` and `validation`
+                directories).
+            'mixed'- put all the data samples toghether and
+                conducts a random split.
+            'class'- puts different classes in training and validation set
+                (used for some particular purpose).
         num_val_clss: Used only when sep=='class', the number of classes
-          in validation set
-        num_shards: The number of shards per dataset split
+            in validation set.
+        num_shards: The number of shards per dataset split.
     """
     if not tf.gfile.Exists(tfrecord_dir):
         tf.gfile.MakeDirs(tfrecord_dir)

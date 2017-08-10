@@ -1,5 +1,6 @@
-"""Used for the AVletters dataset
-Decode htk mfcc formats to ascii using HList
+"""Used for the AVletters dataset.
+
+Decode htk mfcc formats to ascii using `HList`.
 """
 
 from __future__ import absolute_import

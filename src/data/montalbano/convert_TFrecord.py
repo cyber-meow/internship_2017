@@ -1,3 +1,19 @@
+"""Convert TFrecords for the Montalbano gesture dataset.
+
+This is used to deal with the Montalbano gesture dataset.
+http://gesture.chalearn.org/2013-multi-modal-challenge/
+data-2013-challengedataset.
+
+I read the segmentation annotation data from .mat files and segment
+the color and depth videos according to this.
+I also resize and resample the videos to have smaller size for latter use.
+
+However, the dataset is too large (~20G) for this script to work.
+On one hand it's very slow (it takes several hours) and on the other hand
+python will run out of memory. Therefore to do the conversion we may
+need to do it in several times separately.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function

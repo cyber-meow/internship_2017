@@ -1,3 +1,15 @@
+"""Convert TFRecords for the AVSR transfer learning experiment.
+
+This is an ad hoc script to split the AVLetters dataset in different
+subsets for the transfer learning experiment according to what's
+described in my report.
+
+The generated TFRecords have six different parts, 'train_all', 'trainAT'
+'trainUZ', 'validation', 'validaionAT' and 'validationUZ'.
+Each single sample contains the mfcc features, lip movement image sequence
+and the label.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -35,7 +47,20 @@ def convert_dataset(split_name,
                     feature_len_audio=26,
                     num_frames_audio=24,
                     num_frames_video=12):
+    """Converts the given filenames to a TFRecord dataset.
 
+    Args:
+        split_name: The name of the dataset, either 'train' or 'validation'.
+        filepath_pairs: A list of path pairs to mfcc and .mat video files.
+        class_names_to_ids: A dictionary from class names (strings) to ids
+            (integers).
+        tfrecord_dir: The directory where the converted datasets are stored.
+        num_shards: The number of shards per dataset split.
+        feature_len_audio: The feature length of each time frame (this
+            is fixed by the dataset and shouldn't be changed here).
+        num_frames_audio: The number of frames of the stored audios.
+        num_frames_video: The number of frames of the stored videos.
+    """
     num_per_shard = int(math.ceil(len(filepath_pairs)/float(num_shards)))
 
     with tf.Graph().as_default():
@@ -82,7 +107,17 @@ def convert_mfcc_lips(dataset_dir_audio,
                       num_val_samples=100,
                       num_frames_audio=24,
                       num_frames_video=12):
+    """Runs the conversion operation.
 
+    Args:
+        dataset_dir_audio: Where the audio data (mfcc ascii) is stored.
+        dataset_dir_video: Where the video data (.mat) is stored.
+        tfrecord_dir: Where to store the generated data (i.e. TFRecords).
+        num_shards: The number of shards per dataset split.
+        num_val_samples: The number of samples in 'validation' part.
+        num_frames_audio: The number of frames of the stored audios.
+        num_frames_video: The number of frames of the stored videos.
+    """
     if not tf.gfile.Exists(tfrecord_dir):
         tf.gfile.MakeDirs(tfrecord_dir)
 

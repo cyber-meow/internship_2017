@@ -1,3 +1,17 @@
+"""Convert the video part of AVLetters to TFRecords.
+
+These files are provided in .mat formats. They're put directly under
+the two directories `train` and `validation` and the class of each file
+is determined from the filename.
+
+The image sequences are read and then resampled to some fixed length to
+be stored in TFRecords. Note that I decided to carry out the resampling
+operation before storing in TFRecords rather than doing it in an online
+manner. This is for saving time druing training but can cause a lack of
+plasticity (for example if we want to use a model that deals with videos
+of different lengths).
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -18,14 +32,15 @@ from data import dataset_utils
 
 
 def read_mat(file_path, num_frames=12, laplace=False):
-    """Read and preprocess a mat file containing images
+    """Read and preprocess a .mat file containing images.
 
     Args:
-      file_path: Where to find the file
-      num_frames: The number of frames used for the video
+        file_path: Where to find the file.
+        num_frames: The number of frames of the output video.
+        laplace: Whether to apply a laplacian operator.
 
     Returns:
-      a numpy array of size (num_frames, feature_len)
+        A numpy array of size (height, width, num_frames).
     """
     video_data = scipy.io.loadmat(file_path)['vid']
     video_data = scipy.signal.resample(video_data, num_frames, axis=1)
@@ -59,7 +74,17 @@ def convert_dataset(split_name,
                     tfrecord_dir,
                     num_shards=5,
                     num_frames=12):
+    """Converts the given filenames to a TFRecord dataset.
 
+    Args:
+        split_name: The name of the dataset, either 'train' or 'validation'.
+        file_paths: A list of paths to .mat video files.
+        class_names_to_ids: A dictionary from class names (strings) to ids
+            (integers).
+        tfrecord_dir: The directory where the converted datasets are stored.
+        num_shards: The number of shards per dataset split.
+        num_frames: The number of frames of the stored videos.
+    """
     assert split_name in ['train', 'validation']
 
     num_per_shard = int(math.ceil(len(file_paths)/float(num_shards)))
@@ -99,7 +124,21 @@ def convert_lips(dataset_dir,
                  num_shards=5,
                  num_val_samples=None,
                  num_frames=12):
+    """Runs the conversion operation.
 
+    Args:
+        dataset_dir: Where the data (i.e. .mat videos) is stored.
+        tfrecord_dir: Where to store the generated data (i.e. TFRecords).
+        sep: The way to separate train and validation data.
+            'user'- uses the given separation (`train` and `validation`
+                directories).
+            'mixed'- put all the data samples toghether and
+                conducts a random split.
+        num_shards: The number of shards per dataset split.
+        num_val_samples: Used only when sep=='mixed', the number of
+            samples in validation set.
+        num_frames: The number of frames of the stored videos.
+    """
     if not tf.gfile.Exists(tfrecord_dir):
         tf.gfile.MakeDirs(tfrecord_dir)
 

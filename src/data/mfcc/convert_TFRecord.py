@@ -1,3 +1,21 @@
+"""Convert the audio part of AVLetters to TFRecords.
+
+Only mfcc features of audio data are provided. In the downloaded dataset,
+they're offered in the htk mfcc format. By using the `HList` command
+of htk we can convert them in ascii files that one can easily read
+data from (see `scripts/mfcc_to_ascii.py`). Here we supposed that these
+conversions have already be done and then read data from ascii files.
+These files put directly under the two directories 'train' and 'validation'
+and the class of each file is determined from the filename.
+
+The audio samples are read and then resampled to some fixed length to
+be stored in TFRecords. Note that I decided to carry out the resampling
+operation before storing in TFRecords rather than doing it in an online
+manner. This is for saving time druing training but can cause a lack of
+plasticity (for example if we want to use a model that deals with audios
+of different lengths).
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -18,11 +36,14 @@ def parse_mfcc(file_path, feature_len=26, num_frames=24):
     """Parse a htk mfcc ascii file (output by HList) to a numpy array
 
     Args:
-      file_path: Where to find the file
-      feature_len: The feature length for each time frame
+        file_path: Where to find the file.
+        feature_len: The feature length of each time frame (this is
+            fixed by the dataset and shouldn't be changed when using
+            with AVLetters).
+        num_frames: The number of frames of the output aduio.
 
     Returns:
-      a numpy array of size (feature_len, num_frames)
+        A numpy array of size (feature_len, num_frames).
     """
     with open(file_path, 'r') as f:
         f.readline()
@@ -54,7 +75,20 @@ def convert_dataset(split_name,
                     num_shards=5,
                     feature_len=26,
                     num_frames=24):
+    """Converts the given filenames to a TFRecord dataset.
 
+    Args:
+        split_name: The name of the dataset, either 'train' or 'validation'.
+        file_paths: A list of paths to .mat video files.
+        class_names_to_ids: A dictionary from class names (strings) to ids
+            (integers).
+        tfrecord_dir: The directory where the converted datasets are stored.
+        num_shards: The number of shards per dataset split
+        feature_len: The feature length of each time frame (this is
+            fixed by the dataset and shouldn't be changed when using
+            with AVLetters).
+        num_frames: The number of frames of the stored audios.
+    """
     assert split_name in ['train', 'validation']
 
     num_per_shard = int(math.ceil(len(file_paths)/float(num_shards)))
@@ -95,7 +129,21 @@ def convert_mfcc(dataset_dir,
                  num_shards=5,
                  num_val_samples=None,
                  num_frames=24):
+    """Runs the conversion operation.
 
+    Args:
+        dataset_dir: Where the data (i.e. ascii mfcc features) is stored.
+        tfrecord_dir: Where to store the generated data (i.e. TFRecords).
+        sep: The way to separate train and validation data.
+            'user'- uses the given separation (`train` and `validation`
+                directories).
+            'mixed'- put all the data samples toghether and
+                conducts a random split.
+        num_shards: The number of shards per dataset split.
+        num_val_samples: Used only when sep=='mixed', the number of
+            samples in validation set.
+        num_frames: The number of frames of the stored audios.
+    """
     if not tf.gfile.Exists(tfrecord_dir):
         tf.gfile.MakeDirs(tfrecord_dir)
 

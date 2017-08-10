@@ -1,3 +1,11 @@
+"""Convert TFRecords from .wav audio files.
+
+Used for the audio part of the avicar dataset. Raw audios are provided in
+the .wav format, we compute the mfcc features but the raw data are
+equally stored in the TFRecords. The mfcc features are resampled to
+have fixed length as in the case of the AVLetters dataset.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,16 +24,16 @@ from data import dataset_utils
 
 
 def read_wav(file_path, feature_len=26, num_frames=20):
-    """Read a .wav file and compute its mfcc features
+    """Read a .wav file and compute its mfcc features.
 
     Args:
-      file_path: Where to find the file
-      feature_len: The feature length for each time frame
-      num_frames: The number of time frames in output for mfcc
+        file_path: Where to find the file.
+        feature_len: The feature length for each time frame.
+        num_frames: The number of time frames in output for mfcc.
 
     Returns:
-      Sample rate, wav data and mfcc features of size
-        (num_frames, feature_len)
+        Sample rate, wav data and mfcc features of size
+            (num_frames, feature_len).
     """
     sr, audio_data = scipy.io.wavfile.read(file_path)
     mfcc = librosa.feature.mfcc(audio_data, sr, n_mfcc=feature_len)

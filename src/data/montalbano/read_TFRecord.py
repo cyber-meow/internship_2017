@@ -1,3 +1,9 @@
+"""Read from TFRecords of the Montalbano gesture dataset.
+
+This file has never been tested since I haven't succeeded in
+converting the TFRecords for this dataset.
+"""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -24,22 +30,6 @@ def get_split_montalbano(split_name,
                          tfrecord_dir,
                          file_pattern=None,
                          reader=None):
-    """Gets a dataset tuple with instructions for reading gesture videos.
-
-    Args:
-      split_name: A split name.
-      tfrecord_dir: The base directory of the dataset sources.
-      file_pattern: The file pattern to use when matching the dataset sources.
-        It is assumed that the pattern contains a '%s' string so that the
-        split name can be inserted.
-      reader: The TensorFlow reader type.
-
-    Returns:
-      A `Dataset` namedtuple.
-
-    Raises:
-      ValueError: if `split_name` is not a valid train/validation split.
-    """
 
     if not file_pattern:
         file_pattern = _FILE_PATTERN
@@ -58,7 +48,6 @@ def get_split_montalbano(split_name,
     if reader is None:
         reader = tf.TFRecordReader
 
-    # Create the keys_to_features dictionary for the decoder
     keys_to_features = {
         'video/color/data': tf.VarLenFeature(tf.float32),
         'video/color/shape': tf.FixedLenFeature([4], tf.int64),
@@ -101,22 +90,7 @@ def load_batch_montalbano(dataset,
                           common_queue_capacity=800,
                           common_queue_min=400,
                           shuffle=True):
-    """Loads a single batch of data.
 
-    Args:
-      dataset: The dataset to load
-      batch_size: The number of images in the batch
-      common_queue_capacity, common_queue_min: Decide the shuffle degree
-      shuffle: Whether to shuffle or not
-
-    Returns:
-      color_videos: A Tensor of size
-        [batch_size, width, height, time frames, channels]
-      depth_videos: A Tensor of size
-        [batch_size, width, height, time frames, channels]
-      labels: A Tensor of size [batch_size], whose values range between
-        0 and dataset.num_classes.
-    """
     data_provider = slim.dataset_data_provider.DatasetDataProvider(
         dataset, common_queue_capacity=common_queue_capacity,
         common_queue_min=common_queue_min, shuffle=shuffle)
