@@ -76,6 +76,13 @@ The three functions `train`, `evaluate` and `visualize` are just defined
 for convenience and only work for subclasses that take exactly one network
 architecture as input during initialization.
 
+### nets\_base
+
+The file `arg_scope` defines a common argument scopes used by all the models.
+Other files are taken directly from
+tensorflow/models/[slim](https://github.com/tensorflow/models/tree/master/slim)
+and are not modified.
+
 ### Network architectures
 
 All network architectures are functions that take some inputs and produce
@@ -145,10 +152,3 @@ and visualizing a common embedding from the two modalities, but better
 loss function needs to be found to get it work.
 The codes used for the AVSR knowledge transfer experiment are in
 `mutlimodal/AVSR/transfer.py`.
-
-### nets\_base
-
-The file `arg_scope` defines a common argument scopes used by all the models.
-Other files are taken directly from
-tensorflow/models/[slim](https://github.com/tensorflow/models/tree/master/slim)
-and are not modified.
