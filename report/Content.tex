@@ -7,13 +7,99 @@ Speech Recognition\vspace{-0.5em}}
 \date{\today}
 \maketitle
 
-\section*{Abstract}
+\section{Introduction} \label{section:introduction}
 
-\section{Introduction}
+\subsection{Environment, material and software framework}
 
-\section{Related Work}
+Mon stage s'inscrit dans le cadre du laboratoire commun BEHAVIORS.AI
+qui est un projet de recherche collaboré entre la société Hoomano et LIRIS.
+Hoomano est une entreprise créée en 2014 dédiée au développement de
+logiciel de robots sociaux (ex: Nao et Pepper) et son moteur d'interaction
+vise à offrer une interaction homme-robot la plus naturelle possible.
+Le LIRIS (Laboratoire en InfoRmatique, Image et Système d'Information)
+est une unité mixte de recherche en informatique situé à Lyon qui compte
+14 équipes de recherche et 330 membres.
+
+Pendant mon stage, j'ai passé les deux premières semaines au
+laboratoire et pour le reste du temps j'étais à Hoomano car j'entrînais
+les modèles sur le serveur de l'entreprise. Tous les codes ont été
+réalisés en python et précisément à l'aide de la biblithèque open source
+TensorFlow développé par Google. Cela incluait la construction des
+différents architectures et réseaux de neurones, l'entraînement et
+l'évaluation.
+TensorBoard était un outil assez pratique pour visualiser l'apprentissage,
+et je pouvais même facilement visualiser les données et les
+représentation apprises grâce au plugin qui est offert.
+Toute la suite du rapport sera rédiger en anglais dû à la difficulté
+de traduire tous les terms techniques en français.
+
+\subsection{Scientific overview}
+
+Historically, expert systems have been widely used for the design
+of artificial intelligence. 
+Agents rely heavily on handcrafted ontologies and symbolic rules to
+make decisions and act in the world.
+Although impressive results have been obtained with this line of
+research, it requires a lot of engineering efforts and human knowledge.
+Furthermore, engineering in this way all the behaviors that are needed
+to display general human level intelligence is out of reach.
+
+On the other hand, we face also the symbol grounding problem
+\cite{S. Harnad 1990}. The symbols manipulated by the AI systems have
+no meaning to them. To solve these problems, the embodied paradigm
+\cite{A. Clark 1997} first argues an agent must be able to perceive and
+act from its own perspective (for example, it should be a robot).
+Developmental robotics \cite{J. Weng 2001} further emphasizes the
+importance of endowing the robot with the capacity of learning new
+knowledge from its own sensorimotor experience.
+
+In \cite{L. Smith 2005}, Smith and Gasser discerned six fundamental
+principles for the development of emboded intelligence: mulimodality,
+incremented development, physical interaction with the environement,
+exploration, social guidance and symbolic language aquisition.
+I was particularly insterested in the multimodal point in my internship.
+The everyday concept that a human acquires is intrinsically multimodal.
+For example, the word ``cat'' can be quickly associated with the
+appearance of a cat, its vocalization, and the tactile feeling that
+we have while petting a cat. The existence of neurons that receive
+early information from different modalities have also been proven
+\cite{S. Molholm 2002}.
+
+On the other hand, recently, deep learning has achieved a great success in
+various domains, such as image recognition \cite{A. Krizhevsky 2012},
+text generation \cite{A. Graves 2013} or
+machine translation \cite{I. Sutskever 2014}.
+It has also been more and more often applied to mutlimodal input
+\cite{J. Ngiam 2011, T. Baltrusaitis 2017}.
+Its capacity of learning a hierarchical representation of data in a
+fully unsupervised way \cite{P. Vincent 2010, A. Radford 2015}
+is particularly interesting in the domain of robotics.
+
+In my internship, I studied mainly the application of multimodal learning
+using deep networks in the fields of multimodal gesture recognition
+and audio-visual speech recognition (AVSR).
+I focused especially on the problem
+of shared representation learning and knowledge transfer. I wanted to show
+that the availablity of multiple modalities could enable the model
+to learn a better representation for each single modality and that one can
+leverage information from one modality to be used for another when there
+is an imbalance of amount of data among different sources.
+
+The report is organized as follow. In Section \ref{section:related} I
+briefly review related work on multimodal machine learning, gesture
+recognition and AVSR. In section \ref{section:networks}, I present
+several basic deep neural network architectures that played an important
+role in my work. In section \ref{section:dataset} and
+\ref{section:exp}, I describe respectivly the datasets and common
+experimental setups that were used in my internship. Experimental
+details and results are given in section \ref{section:uni} and
+section \ref{section:multi}. Finally, conclusions and perspectives are
+presented in section \ref{section:conclusion}.
+
+\section{Related Work} \label{section:related}
 
 \section{Presentation of Basic Network Architectures}
+\label{section:networks}
 
 \subsection{Convolutional Neural Networks}
 
@@ -57,7 +143,7 @@ a representation (encoding) for a set of data in a purely unsupervised
 fashion \cite{P. Vincent 2010}. Recently, auto-encoders are also
 more and more often used as a generative model \cite{Y. Bengio 2013}.
 
-\section{Datasets and Preprocessing}
+\section{Datasets and Preprocessing} \label{section:dataset}
 
 Many datasets were explored during my internship. The three main datasets
 being used are given in details  below. Two of them are for gesture
@@ -192,7 +278,7 @@ is kept).
   \label{fig:avletters_exs}
 \end{figure}
 
-\section{Experimental Setup}
+\section{Experimental Setup} \label{section:exp}
 
 To train a classifier I employed the cross entropy cost function and to
 train an auto-encoder the L2 distance between the input and output vector
@@ -232,7 +318,7 @@ and then tested on test data once the training phrase was finished.
 Unless stated otherwise, the prediction accuracies mentioned hereinafter
 were always evaluated on the test set.
 
-\section{Experiments and Results: Unimodal Cases}
+\section{Experiments and Results: Unimodal Cases} \label{section:uni}
 
 \subsection{Classification} \label{subsection:classif}
 
@@ -367,7 +453,7 @@ for ASL Finger Spelling. I compared this new classifier with a
 perceptron built on raw data input. As already mentioned earlier, the
 latter could classify perfectly the input when dealing with color images
 of Creative Senz3d. In other cases, I observed always an improvement
-of 10\% to 20\% for the prediction accuracy thanks to the use of the
+of 10-20\% for the prediction accuracy thanks to the use of the
 learned representation of the data (refer to \autoref{tab:ASL_classif}
 for results on ASL Finger Spelling). Useful high-level data representation
 can thus be learned in a totally unsupervised manner.
@@ -404,7 +490,7 @@ can thus be learned in a totally unsupervised manner.
   \label{fig:image_restoration}
 \end{figure}
 
-\section{Experments and Results: Multimodal Cases}
+\section{Experments and Results: Multimodal Cases} \label{section:multi}
 
 \subsection{Shared representation learning} \label{subsection:shared}
 
@@ -530,9 +616,9 @@ information of some modality from zero.
 \subsection{Transfer learning} \label{subsection:AVSR_transfer}
 
 In the second part of this section, we'll discuss the knowledge transfer
-problem between different modalities. This work was largely inspired
-from \cite{S. Moon 2015}, but at the same time it can also be viewed
-as a form of zero-shot learning \cite{A. Frome 2013, R. Socher 2013}.
+problem between different modalities. This work was very similar to what
+had been done in \cite{S. Moon 2015}, but at the same time it can also be
+viewed as a form of zero-shot learning \cite{A. Frome 2013, R. Socher 2013}.
 
 I studied particularly the transfer between speech and lip-reading
 video data using the AVLetters dataset. First the dataset was separated
@@ -546,6 +632,58 @@ Next, to simulate the imbalance of data quantity between different
 modalities in the real world, I further splitted $Tr$, $Te$ into
 $Tr_{A\sim T}$, $Tr_{U\sim Z}$, $Te_{A\sim T}$ and $Te_{U\sim Z}$
 according to the label of each sample.
+For instance, a lip-reading video of a speaker saying E is in either
+$Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
+During the first training stage, the video model was only accessible
+to a partial label space. The network was trained on $Tr_{A\sim T}^v$
+which contained 466 samples. On the other hand, the audio model was trained
+on the whole label space $Tr^a$.
+
+Next, I wanted to leverage speech data to fine-tune the network trained for
+video recognition. For a data sample $x^a\in Tr_{U\sim Z}^a$, I first
+computed its audio representation $h^a(x^a)$ that was taken from some
+hidden layer of audio model. A transfer funcion $\mathcal{T}$ was used
+to approximate the video representation of this data sample.
+That is, we want $\mathcal{T}(h^a(x^a))\approx h^v(x^v)$. Finally, I
+fine-tuned the subnetwork situated after the hidden video layer that
+was taken as representation via a standard backpropagation algorithm.
+
+The detailed experiement is presented in \autoref{fig:AVSR_transfer}.
+For both audio and video network I chose the second hidden layer for
+transfer. For the sake of simplicity, an instance-based approach
+(KNN-based mapping) was employed to define $\mathcal{T}$.
+I obtained mapping of a new audio
+input $x^v$ by first finding the $K$-closest audio samples of
+$Tr_{A\sim T}^a$ in the representation space, and then returning the
+average values of the corresponding video samples
+(also in the representation space).
+
+Nonetheless, if only audio inputs were presented during fine-tuning, it
+might cause a bias of the fine-tuned network towards the six new classes.
+To avoid this problem, data from $Tr_{A\sim T}^v$ were also fed as input
+from time to time to fine-tune the whole network. Concretely, with
+probability $p_a$ audio data was presented and otherwise video input
+was given. At the end, the new network was tested on different parts of
+video data for evaluataion.
+
+Many experiments with various hyperparameter values were conducted
+and some results are shown in \autoref{tab:AVSR_transfer}.
+We see that despite the fact that the overall performance isn't improved
+by knowledge transfer, the fine-tuned network is now able to classify
+samples whose labels range from U to Z with an accuracy of 10-20\%
+(\textbf{Exp1}). It shows the utility of the transfer learning approach
+although there is still a long way to go before it becomes
+useful in practice.
+During fine-tuning, the magnitude of learning rate is equally important.
+As we can see, if the learning rate is too high, it can deteriorate
+the pre-trained network and the performance may drop drastically
+(\textbf{Exp2}).
+On the other hand, as predicted before, if only audio data labeled from
+U to Z are provided for fine-tuining, the classification performance
+drops for the first twenty labels even though a higher accuracy (40-50\%)
+can be achieved for the last six labels (\textbf{Exp3}).
+We also observe that there isn't a great difference when the network is
+tested on $Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
 
 \begin{figure}[H]
   \centering
@@ -562,6 +700,17 @@ according to the label of each sample.
 
 \begin{table}[H]
   \tabcolsep = 13pt
+  \caption{\textbf{Some results of the audio-visual transfer experiment.}
+    \\[0.1em]
+  The audio model was pre-trained with $\eta=0.1$, $\alpha_0=0.005$ and
+  $\gamma=0.8$ while the video model was pre-trained with $\eta=0.0004$,
+  $\alpha_0=0.002$ and $\gamma=0.96$. The transfer learning experiment
+  was carried out under the setting $\eta=0.0004$, $\gamma=0.8$, $K=12$
+  and was trained for 160 steps.
+  For \textbf{Exp1}, \textbf{Exp2} and \textbf{Exp3}, I used respectively
+  $\alpha_0 = 0.001, 0.005, 0.001$ and $p_a = 0.85, 0.85, 1$.
+  }
+  \label{tab:AVSR_transfer}
   \begin{tabular*}{\linewidth}{>{\bf}lcccccc}
     \toprule
     & $Tr^v$ & $Tr^v_{A\sim T}$ & $Tr^v_{U\sim Z}$
@@ -578,3 +727,5 @@ according to the label of each sample.
     \bottomrule
   \end{tabular*}
 \end{table}
+
+\section{Conclusion and Future Works} \label{section:conclusion}
