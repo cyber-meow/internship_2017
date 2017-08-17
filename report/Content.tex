@@ -98,12 +98,68 @@ presented in section \ref{section:conclusion}.
 
 \section{Related Work} \label{section:related}
 
+\subsection{Multimodal learning}
+
+\cite{T. Baltrusaitis 2017} offers an overview of recent advances in
+multimodal machine learning. In \cite{J. Ngiam 2011}, the authors
+use a deep network to learn a joint representation of visual and auditory
+input. They show that better features for one modality can be learned if
+multiple modalities are present at feature learning time. 
+There has also been a surge of interest in the exploitation of multimodal
+information in the fields of image annotation \cite{J. Weston 2010},
+zero-shot learning \cite{A. Frome 2013, R. Socher 2013}, and automatic
+image caption generation \cite{A. Karpathy 2015}. They first train
+visual and language models separately and as a next step they try
+to learn either a common embedding \cite{J. Weston 2010}, a mapping
+\cite{A. Frome 2013, R. Socher 2013} or an alignment \cite{A. Karpathy 2015}
+between the two models.
+
+Applications in the field of robotics can also been found.
+\cite{A. Droniou 2014} proposes a network that is able to learn both
+a symbolic representation of data and a fine discrimination between
+two similar stimuli in an unsupervised way. The authors apply their method
+to visual, audiotory and proprioceptive data of the humanoid robot iCub.
+A multimodal embedding that is able to combine information coming from
+vision, language and motion trajectories is defined in \cite{J. Sung 2017}
+and endows the robot with the capacity of manipulating a unseen object.
+
+\subsection{Gesture recognition}
+
+Gesture recognition has been studied for a while within the fileds of
+computer visoin and pattern recognition
+\cite{T. Starner 1998, S. Mitra 2007}.
+Recently, deep learning algorithms have led to
+significant advances in this domain \cite{M. Asadi-Aghbolaghi 2017}.
+The use of Convolutional Neural Networks (CNNs) is the most common
+\cite{J. Nagi 2011}. 3d CNNs are used to deal with image sequences in
+\cite{P. Molchanov 2015}. Architectures that take in multimodal inputs
+have also grown in popularity. \cite{N. Neverova 2013} copes with color,
+depth, skeleton and audio information using CNNs and Recurrent
+Neural Networks (RNNs). Others use 3d CNNs and deep belief networks
+(DBNs) while facing similar multimodal inputs
+\cite{N. Neverova 2014, L. Pigou 2014, D. Wu 2016}.
+
+\subsection{Audio-visual speech recognition}
+
+AVSR is probably one of the earliest examples of multimodal research.
+Most early works were based on various hidden Markov model (HMM) extensions
+\cite{G. Potamianos 2004}, but the use of neural networks were also
+explored \cite{C. Bregler 1994, B. P. Yuhas 1989}. Although research
+into AVSR is not as common these days, it has drawn attention from the
+deep learning community
+\cite{J. Ngiam 2011, K. Noda 2014, A. K. Katsaggelos 2015}.
+A transfer deep learning framework applied in AVSR proposed in
+\cite{S. Moon 2015} forms the base of my study in
+\ref{subsection:AVSR_transfer}. \cite{L. Deng 2013} and
+\cite{G. Hinton 2012} give several examples of how deep architectures can
+be used to deal with audio data.
+
 \section{Presentation of Basic Network Architectures}
 \label{section:networks}
 
 \subsection{Convolutional Neural Networks}
 
-Convolutional Neural Networks (CNNs) are an early family of deep learning
+CNNs are an early family of deep learning
 architectures inspired from the human vision system \cite{Y. LeCun 1998}.
 Generally we have convolutional layers alternating with pooling
 (subsamping) layers, but fully connected layers can also be introduced.
@@ -728,4 +784,38 @@ tested on $Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
   \end{tabular*}
 \end{table}
 
-\section{Conclusion and Future Works} \label{section:conclusion}
+\section{Conclusion and Perspective} \label{section:conclusion}
+
+In this report, I have introduced two different multimodal learning
+settings and evaluated them on three different datasets.
+However, no significant results were obtained for the shared
+representation learning experiment and the knowledge transfer experiment
+aroused only moderate interest.
+Several possible reasons should be mentioned.
+First, the used datasets may be too small and monotonous and
+prevent the network from learning a good representation of the data.
+Second, since I didn't do an intense study in the domain of
+representation learning and dimension reduction, the algorithms
+applied to single modality for extracting features may not be totally
+adequate. Finally, the proposed experiments might be in essence
+inappropriate for some configurations. For example, depth maps may be
+redundant when color images are already present.
+
+In spite of this, my work still ensured the possiblity and the possible
+benefit of taking into multiple modalities into account while
+dealing with real world problems. This needs to be further studied
+with better representation learning algorithms and bigger datasets.
+Ideally, we should try to apply these techniques to real
+data coming from human-robot interactions to see if it's possible
+to make the robot's behavior more humanlike thanks to multimodal fusion.
+On the other hand, there are still many multimodal learning models
+to be explored. For instance, we can project features from different
+sources into a joint space while trying to minimizing the distance
+between modalities (this is called a ``coordinated representation''
+in \cite{T. Baltrusaitis 2017}). I have worked a little on similar
+experiments but the difficulty consists in finding the appropriate
+loss function.
+
+
+
+%14 22 46
