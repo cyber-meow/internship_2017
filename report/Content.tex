@@ -46,7 +46,7 @@ Hoomano est une entreprise créée en 2014 dédiée au développement de
 logiciel de robots sociaux (ex: Nao et Pepper) et son moteur d'interaction
 vise à offrer une interaction homme-robot la plus naturelle possible.
 Le LIRIS (Laboratoire en InfoRmatique, Image et Système d'Information)
-est une unité mixte de recherche en informatique situé à Lyon qui compte
+est une unité mixte de recherche en informatique située à Lyon qui compte
 14 équipes de recherche et 330 membres.
 
 Pendant mon stage, j'ai passé les deux premières semaines au
@@ -83,8 +83,8 @@ importance of endowing the robot with the capacity of learning new
 knowledge from its own sensorimotor experience.
 
 In \cite{L. Smith 2005}, Smith and Gasser discerned six fundamental
-principles for the development of emboded intelligence: mulimodality,
-incremented development, physical interaction with the environement,
+principles for the development of embodied intelligence: mulimodality,
+incremented development, physical interaction with the environment,
 exploration, social guidance and symbolic language aquisition.
 I was particularly insterested in the multimodal point in my internship.
 The everyday concept that a human acquires is intrinsically multimodal.
@@ -122,7 +122,7 @@ role in my work. In section \ref{section:dataset} and
 \ref{section:exp}, I describe respectivly the datasets and common
 experimental setups that were used in my internship. Experimental
 details and results are given in section \ref{section:uni} and
-section \ref{section:multi}. Finally, conclusions and perspectives are
+\ref{section:multi}. Finally, conclusions and perspectives are
 presented in section \ref{section:conclusion}.
 
 \section{Related Work} \label{section:related}
@@ -150,7 +150,7 @@ two similar stimuli in an unsupervised way. The authors apply their method
 to visual, audiotory and proprioceptive data of the humanoid robot iCub.
 A multimodal embedding that is able to combine information coming from
 vision, language and motion trajectories is defined in \cite{J. Sung 2017}
-and endows the robot with the capacity of manipulating a unseen object.
+and endows the robot with the capacity of manipulating an unseen object.
 
 \subsection{Gesture recognition}
 
@@ -211,7 +211,7 @@ zero paddings are defined, `SAME' and `VALID'. For `SAME' padding,
 $height_{out} = \lceil height_{in}/strides[1] \rceil$,
 and for `VALID' padding,
 $height_{out} = \lceil (height_{in}-height_{filter}+1)/strides[1] \rceil$.
-It's similar for the width.
+We have similar formulas for the width.
 
 The TensorFlow page: 
 \href{https://www.tensorflow.org/api_guides/python/nn#Convolution}
@@ -239,17 +239,17 @@ The bottleneck approach forces dimensionality reduction by having
 fewer neurons in hidden layers than in the input layer. For example,
 in the above case, we must have $d'<d$. Sparse auto-encoders impose sparsity
 on hidden units \cite{A. Makhzani 2014}.
-Denoising auto-encoders, which play an important role in my internship,
+Denoising auto-encoders, which played an important role in my work,
 try to recontruct the clean input from its corrupted version
 \cite{P. Vincent 2008, Y. Bengio 2012}. Binomial noise
 (switching pixels on or off) adding
-to input or hidden layers are used in my case.
+to input or hidden layers were used in my case.
 
 Intuitively, auto-encoders are useful for data reconstruction.
 Nevertheless, the true interest lies in fact in its capcity to learn
 a representation (encoding) for a set of data in a purely unsupervised
-fashion \cite{P. Vincent 2010}. Recently, auto-encoders are also
-more and more often used as a generative model \cite{Y. Bengio 2013}.
+fashion \cite{P. Vincent 2010}. Recently, auto-encoders have also
+been more and more used as a generative model \cite{Y. Bengio 2013}.
 
 \subsection{Convolution Auto-Encoder}
 
@@ -275,7 +275,7 @@ is quite useful for the understanding of the concept.
 
 Pooling and unpooling layers are also sometimes considered in a CAE
 architecture \cite{V. Turchenko 2017}. As they weren't used
-in my architecture I will not spend time explaining what an unpooling
+in my CAE architectures I will not spend time explaining what an unpooling
 layer is.
 
 \section{Datasets and Preprocessing} \label{section:dataset}
@@ -289,7 +289,7 @@ Creative Senz3D \cite{A. Memo 2015, A. Memo 2017} and ASL Finger Spelling
 
 \subsection{Creative Senz3D}
 
-The dataset contains gestures perfomed by 4 different people, each
+The dataset contains gestures coming from 4 different people, each
 performing 11 different static gestures repeated 30 times each,
 for a total of 1320 samples.
 For each sample, color, depth and confidence frames are available.
@@ -330,7 +330,7 @@ and background.
 
 Images of this dataset are of variable sizes. The data preprocessing
 includes resizing each image to $83 \times 83$ pixels,
-converting to grayscale and Z-normalization (normailzing to zero mean
+converting them to grayscale and Z-normalization (normalizing to zero mean
 and unit of variance).
 
 \begin{figure}[H]
@@ -366,7 +366,7 @@ We count therefore 780 samples in total. For video data, image sequences
 of pre-extracted lip regions are provided.
 Each single image if of size $60 \times 80$.
 For audio data, only the mel-frequency cepstrum coefficients (MFCCs)
-are given, and each audio frame is represented by 26 mfccs.
+are given, and each audio frame is represented by 26 MFCCs.
 The lack of raw audio data is a strong constraint on what we're able to do
 on this dataset.
 
@@ -438,7 +438,7 @@ values aren't necessarily optimal since I wasn't able to test all the
 possible combinations.
 
 Here are some more details of the network architectures: ReLu
-(Rectified Linear Unit) activation were added to all the hidden layers
+(Rectified Linear Unit) activations were added to all the hidden layers
 \cite{A. Krizhevsky 2012} while no activation function was used for
 the output layer.
 For classification model dropout \cite{N. Srivastava 2014}
@@ -503,7 +503,7 @@ makes the classification task much easier. By using the CNN architecture
 shown in \autoref{fig:CNN10}, I could achieve a classification accuracy
 of respectively 80\% and 70\% for intensity and depth images
 (\autoref{tab:ASL_classif})
-in an subject-independant setting (four subjects for training and one
+in an subject independant setting (four subjects for training and one
 subject for testing). We may not need that many layers in the CNN
 architecture, but further tests were not carried out since it's not
 the essential point of my internship.
@@ -513,7 +513,7 @@ the essential point of my internship.
 One can refer to \autoref{fig:AVSR_transfer} for the main CNN architectures
 that were used in this dataset. 
 Notice that 3d CNNs were employed to deal with video inputs.
-Considering the small number of available data, a speaker-dependent
+Considering the small number of available data, a speaker dependent
 setting was used.
 With some carefully chosen hyperparameter values and network architectures,
 the prediction accracy was of near 80\% for audio and about 55\% for video.
@@ -582,8 +582,8 @@ three dimensions for visualization.
 However, to quantify the learned features, they're further used for
 classification by training a perceptron on top of it.
 
-As suggested in \ref{subsection:classif}, I used a subject-dependant setting
-for Creative Senz3d while a subject-independant setting was employed
+As suggested in \ref{subsection:classif}, I used a subjetdependant setting
+for Creative Senz3d while a subject independant setting was employed
 for ASL Finger Spelling. I compared this new classifier with a
 perceptron built on raw data input. As already mentioned earlier, the
 latter could classify perfectly the input when dealing with color images
@@ -599,10 +599,10 @@ can thus be learned in a totally unsupervised manner.
   \caption{%
     \textbf{Convolutional auto-encoder architecture with 
       three convolutional layers and three tranposed convolutional
-      layer.}\\[0.1em]
+      layers.}\\[0.1em]
     Activation values of the middle layer are taken as 
       high-level features of the input image. Inputs of the network
-      can be of different sizes. We only use valid paddings here.}
+      can be of different sizes. We only use `VALID' paddings here.}
   \label{fig:CAE5}
 \end{figure}
 
@@ -663,7 +663,7 @@ to be the same.
   \label{fig:FAE5}
 \end{figure}
 
-Ideally, we expect that the network is able to capture corrlations
+Ideally, we expect that the network is able to capture correlations
 across different modalities and can thus also learn a better single
 modality representation. To verify this hypothesis, I built a perceptron
 on the top of the middle layer of the architecture and trained it
@@ -681,7 +681,7 @@ accuracy was always at about 80\% and no improvement was obtained compared
 with a CNN trained only on color inputs. To conclude, color and depth
 images are probably two modalities that are too similar. Color images
 contain already all the necessary information for the task at hand so
-that depth maps don't bring any supplementary information that benefit
+that depth maps don't bring any supplementary information that benefits
 the specifique purpose I defined.
 
 However, multimodal information may still be useful when one or several
@@ -758,13 +758,13 @@ viewed as a form of zero-shot learning \cite{A. Frome 2013, R. Socher 2013}.
 I studied particularly the transfer between speech and lip-reading
 video data using the AVLetters dataset. First the dataset was separated
 randomly into two parts, which I'll still call training and test set
-by an abus of language. They're respectively noted $Tr$ and $Te$.
+by abuse of language. They're respectively noted $Tr$ and $Te$.
 $Tr$ contained 600 data samples while $Te$ comprised the left 180 instances.
 For $X$ an arbitrary subset of data, $X^a$ and $X^v$ denote respectively
 the audio and video data in $X$.
 
 Next, to simulate the imbalance of data quantity between different
-modalities in the real world, I further splitted $Tr$, $Te$ into
+modalities in the real world, I further splitted $Tr$, $Te$ intos
 $Tr_{A\sim T}$, $Tr_{U\sim Z}$, $Te_{A\sim T}$ and $Te_{U\sim Z}$
 according to the label of each sample.
 For instance, a lip-reading video of a speaker saying E is in either
