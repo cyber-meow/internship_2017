@@ -1,11 +1,40 @@
 
 %mainfile: Multimodal_learning.tex
 
-\title{Multimodal Learning: Examples in Gesture and Audio-Visual
-Speech Recognition\vspace{-0.5em}}
-\author{Hsieh Yu-Guan}
-\date{\today}
-\maketitle
+\begin{titlepage}
+
+  \centering
+
+  \vspace*{1.5em}
+  {\LARGE \scshape École Normale Supérieure \par}
+  {\Large \scshape Département d'Informatique \par}
+
+  {\Large \scshape Rapport de Stage de L3 \par}
+
+  \vspace{14em}
+  {\huge \bfseries Multimodal Learning \par} 
+  {\Large \bfseries
+    Examples in Gesture and Audio-Visual Speech Recognition \par}
+
+  \vspace{4em}
+  {\Large \scshape Hsieh Yu-Guan \par}
+  
+  \vspace{2em}
+  {\Large Sous la direction de \par}
+
+  \vspace{0.5em}
+  {\Large \scshape Mathieu Lefort$^1$ \& Amélie Cordier$^2$ \par}
+
+  \vspace{0.5em}
+  {\large $^1$LIRIS, Équipe SMA \par}
+  {\large $^2$Hoomano, Équipe R\&D \par}
+
+  \vspace{8em}
+  {\Large 14 Juin 2017 -- 11 Août 2017}
+
+  \vfill
+
+\end{titlepage}
 
 \section{Introduction} \label{section:introduction}
 
@@ -157,7 +186,7 @@ be used to deal with audio data.
 \section{Presentation of Basic Network Architectures}
 \label{section:networks}
 
-\subsection{Convolutional Neural Networks}
+\subsection{Convolutional Neural Network}
 
 CNNs are an early family of deep learning
 architectures inspired from the human vision system \cite{Y. LeCun 1998}.
@@ -169,9 +198,32 @@ image processing tasks such as image classification
 However they can be equally applied in other fields like speech recogntion
 \cite{L. Deng 2013}.
 
-\subsection{Auto-encoder}
+For a convolutional layer with a mono-channel input $x$, the latent
+representation of the k-th feature map is given by
 
-Auto-encoders are networks that are trained to minimize the reconstruction
+\[h^k = \sigma(x\ast W^k + b^k)\]
+
+where $W^k$ is the k-th kernel, $b^k$ the bias is broadcasted to the whole
+feature map, $\ast$ denotes the 2d convolution and $\sigma$ is an
+ativation function. When there are multiple input channels, the kernel
+is extended to the full depth of input. In TensorFlow, two different
+zero paddings are defined, `SAME' and `VALID'. For `SAME' padding,
+$height_{out} = \lceil height_{in}/strides[1] \rceil$,
+and for `VALID' padding,
+$height_{out} = \lceil (height_{in}-height_{filter}+1)/strides[1] \rceil$.
+It's similar for the width.
+
+The TensorFlow page: 
+\href{https://www.tensorflow.org/api_guides/python/nn#Convolution}
+{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}.
+
+In \cite{S. Ji 2013}, 3d CNNs are proposed to be used for video inputs.
+They're like traditional CNNs except for the fact that we replace
+2d feature maps by 3d feature maps and 2d kernels by 3d kernels.
+
+\subsection{Auto-Encoder} \label{subsection:AE}
+
+Auto-Encoders are networks that are trained to minimize the reconstruction
 error by back-propagating it from the output layer to hidden layers.
 In the simplest model with one hidden layer, an auto-encoder takes an
 input $\mathbf{x} \in \mathbb{R}^d$ and maps it to the latent
@@ -198,6 +250,33 @@ Nevertheless, the true interest lies in fact in its capcity to learn
 a representation (encoding) for a set of data in a purely unsupervised
 fashion \cite{P. Vincent 2010}. Recently, auto-encoders are also
 more and more often used as a generative model \cite{Y. Bengio 2013}.
+
+\subsection{Convolution Auto-Encoder}
+
+Fully connected auto-encoders ignore the 2d image structure.
+This can cause problems when dealing with real-world size inputs,
+and introduces redundancy in the parameters.
+Convolutional Auto-Encoders \cite{J. Masci 2011, V. Turchenko 2017}
+(CAEs) are intuitively similar
+to architectures described in \ref{subsection:AE}.
+However, convoluitonal and transposed convolutional layers are used instead.
+Transposed convoluitonal layers are also called deconvolutional
+layers \cite{M. D. Zeiler 2011}.
+We perform in fact also a convolution operation but with zero paddings
+around the image and sometimes around each pixel to upsample the
+image and to inverse the previous convolution
+(imagine that if the value of one pixel comes from 9 pixels of the
+previous layer, when doing a transposed convolution this pixel
+contributes to the same 9 pixels for reconstruction).
+This github directory
+\href{https://github.com/vdumoulin/conv_arithmetic}
+{https://github.com/vdumoulin/conv\_arithmetic}
+is quite useful for the understanding of the concept.
+
+Pooling and unpooling layers are also sometimes considered in a CAE
+architecture \cite{V. Turchenko 2017}. As they weren't used
+in my architecture I will not spend time explaining what an unpooling
+layer is.
 
 \section{Datasets and Preprocessing} \label{section:dataset}
 
@@ -429,19 +508,7 @@ subject for testing). We may not need that many layers in the CNN
 architecture, but further tests were not carried out since it's not
 the essential point of my internship.
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\linewidth]{architectures/CNN10}
-  \caption{%
-    \textbf{CNN architecture used for the Finger Spelling  dataset.}
-      \\[0.1em]
-    The input of the nework is a one-channel image of size $83 \times 83$.
-      It contains ten hidden layers. S stands for `SAME' padding
-      and V stands for `VALID' padding (see text).}
-  \label{fig:CNN10}
-\end{figure}
-
-\subsubsection{AVletters}
+\subsubsection{AVLetters}
 
 One can refer to \autoref{fig:AVSR_transfer} for the main CNN architectures
 that were used in this dataset. 
@@ -459,6 +526,18 @@ MFCCs were fed as input of the network.
 Concerning video input, the use of data augmentation techniques only
 decreased the learning speed for the training part but didn't improve
 the performace for testing.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{architectures/CNN10}
+  \caption{%
+    \textbf{CNN architecture used for the Finger Spelling  dataset.}
+      \\[0.1em]
+    The input of the nework is a one-channel image of size $83 \times 83$.
+      It contains ten hidden layers. S stands for `SAME' padding
+      and V stands for `VALID' padding (see text).}
+  \label{fig:CNN10}
+\end{figure}
 
 \subsubsection{Problem of overfitting}
 
@@ -572,7 +651,7 @@ to be the same.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{architectures/FAE5}
+  \includegraphics[width=0.95\linewidth]{architectures/FAE5}
   \caption{%
     \textbf{The bimodal convolutional auto-encoder model that is
       used to learn shared multimodal representation.}\\[0.1em]
@@ -714,6 +793,19 @@ $Tr_{A\sim T}^a$ in the representation space, and then returning the
 average values of the corresponding video samples
 (also in the representation space).
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.9\linewidth]{architectures/AVSR_transfer}
+  \caption{%
+    \textbf{Illustration of the transfer learning approach applied in
+      audio and lip-reading speech recognition tasks.}\\[0.1em]
+    We first learn two separated model for audio and visual inputs
+      (in my cases two CNNs) and try to fine-tune the video network
+      with transferred audio data.
+    }
+  \label{fig:AVSR_transfer}
+\end{figure}
+
 Nonetheless, if only audio inputs were presented during fine-tuning, it
 might cause a bias of the fine-tuned network towards the six new classes.
 To avoid this problem, data from $Tr_{A\sim T}^v$ were also fed as input
@@ -740,19 +832,6 @@ drops for the first twenty labels even though a higher accuracy (40-50\%)
 can be achieved for the last six labels (\textbf{Exp3}).
 We also observe that there isn't a great difference when the network is
 tested on $Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.9\linewidth]{architectures/AVSR_transfer}\\[-1em]
-  \caption{%
-    \textbf{Illustration of the transfer learning approach applied in
-      audio and lip-reading speech recognition tasks.}\\[0.1em]
-    We first learn two separated model for audio and visual inputs
-      (in my cases two CNNs) and try to fine-tune the video network
-      with transferred audio data.
-    }
-  \label{fig:AVSR_transfer}
-\end{figure}
 
 \begin{table}[H]
   \tabcolsep = 13pt
