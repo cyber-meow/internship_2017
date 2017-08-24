@@ -125,6 +125,10 @@ details and results are given in section \ref{section:uni} and
 \ref{section:multi}. Finally, conclusions and perspectives are
 presented in section \ref{section:conclusion}.
 
+The source code of all of the work described here can be found on my
+github: \href{https://github.com/cyber-meow/internship_2017}
+{https://github.com/cyber-meow/internship\_2017}.
+
 \section{Related Work} \label{section:related}
 
 \subsection{Multimodal learning}
@@ -191,7 +195,8 @@ be used to deal with audio data.
 CNNs are an early family of deep learning
 architectures inspired from the human vision system \cite{Y. LeCun 1998}.
 Generally we have convolutional layers alternating with pooling
-(subsamping) layers, but fully connected layers can also be introduced.
+(subsamping) layers, but fully connected layers can also be introduced
+(see \autoref{fig:CNN10}).
 CNNs have been shown to achieve state-of-the-art performance in
 image processing tasks such as image classification
 \cite{A. Krizhevsky 2012} and object detection \cite{Y. LeCun 2010}.
@@ -205,17 +210,56 @@ representation of the k-th feature map is given by
 
 where $W^k$ is the k-th kernel, $b^k$ the bias is broadcasted to the whole
 feature map, $\ast$ denotes the 2d convolution and $\sigma$ is an
-ativation function. When there are multiple input channels, the kernel
-is extended to the full depth of input. In TensorFlow, two different
-zero paddings are defined, `SAME' and `VALID'. For `SAME' padding,
-$height_{out} = \lceil height_{in}/strides[1] \rceil$,
-and for `VALID' padding,
-$height_{out} = \lceil (height_{in}-height_{filter}+1)/strides[1] \rceil$.
-We have similar formulas for the width.
+ativation function.
+Currently, ReLu (Rectified Linear Units) is probably the one that is the
+most commonly used for a CNN \cite{A. Krizhevsky 2012}.
+It is defined by
 
-The TensorFlow page: 
-\href{https://www.tensorflow.org/api_guides/python/nn#Convolution}
-{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}.
+\[\sigma(x) = x^+ = max(0,x),\]
+
+when $x$ is a single scalar and otherwise the above function is applied
+to each element of the input.
+The convolution kernel is extended to the full depth of input when there
+are multiple input channels.
+On the contrary, no parameters are required for defining a pooling layer.
+It just take some $d \times d$ region (supposing that the kernel has the
+same height and width) and output a single value, which for example,
+is the maximum in that region when using max-pooling.
+
+There are yet two other important factors that are used to define these
+operations: \textit{stride} and \textit{padding}.%
+\footnote{Due to the space limit, more details of the CNN architecture,
+including the role of these two hyperparameters, can be found here:
+\href{http://cs231n.github.io/convolutional-networks/}
+{http://cs231n.github.io/convolutional-networks/}.}
+Concerning this, two different zero paddings are defined in TensorFlow,
+`SAME' and `VALID'. For `SAME' padding, $h_o = \lceil h_i/s_h \rceil$,
+and for `VALID' padding, $h_o = \lceil (h_i-h_f+1)/s_h \rceil$,
+where $h_i$, $h_o$, $h_f$ are respectivly the height of the input
+feature map, the output feature map and the filter (kernel) and
+$s_h$ is the stride of the height
+dimension. Similar formulas also exist for the width.%
+\footnote{
+\href{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}
+{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}.}
+
+Suppose all the parameters of a CNN model have been learned, the model
+is then ready to be used for a specific task. One just needs to run the
+model forward as decribed above. Therefore, the purpose of the learning
+phase is to find the appropriate parameters that can help us solve the task.
+Mathematically, this is achieved by optimizing the weights of the network
+to minimize some loss function (e.g. cross entropy
+or L2 distance, see section \ref{section:exp}).
+The optimization is usually done by a SGD-based algorithm.
+SGD is the abbreviation of stochastic gradient descent. At each
+training step, we compute the gradients of the loss with respect to all
+weights in the network and then update the weights according to these
+gradients. Using the chain rule, gradients are computed layer by
+layer (starting from the output of the network) and the error is thus
+\textit{back-propagated} to the whole network.%
+\footnote{
+\href{http://andrew.gibiansky.com/blog/machine-learning/convolutional-neural-networks/}
+{http://andrew.gibiansky.com/blog/machine-learning/convolutional-neural-networks/}.}
 
 In \cite{S. Ji 2013}, 3d CNNs are proposed to be used for video inputs.
 They're like traditional CNNs except for the fact that we replace
@@ -232,6 +276,8 @@ $\mathbf{h} = \sigma(W\mathbf{x}+\mathbf{b})$ where $W$
 is a weight matrix, $\mathbf{b}$ is a bias vector and $\sigma$ is an
 activation function. Then the network tries to reconstruct the input
 by a reverse mapping $\mathbf{x'} = \sigma(W'\mathbf{h}+\mathbf{b'})$.
+The loss function can be for instance $||x' - x||$ where $||.||$ is
+some distance.
 
 To prevent the auto-encoder from learning the identity function as
 a trivial solution, several regularization techniques have been proposed.
@@ -246,7 +292,7 @@ try to recontruct the clean input from its corrupted version
 to input or hidden layers were used in my case.
 
 Intuitively, auto-encoders are useful for data reconstruction.
-Nevertheless, the true interest lies in fact in its capcity to learn
+Nevertheless, the true interest lies in fact in its capacity to learn
 a representation (encoding) for a set of data in a purely unsupervised
 fashion \cite{P. Vincent 2010}. Recently, auto-encoders have also
 been more and more used as a generative model \cite{Y. Bengio 2013}.
@@ -255,12 +301,12 @@ been more and more used as a generative model \cite{Y. Bengio 2013}.
 
 Fully connected auto-encoders ignore the 2d image structure.
 This can cause problems when dealing with real-world size inputs,
-and introduces redundancy in the parameters.
+and introduce redundancy in the parameters.
 Convolutional Auto-Encoders \cite{J. Masci 2011, V. Turchenko 2017}
 (CAEs) are intuitively similar
 to architectures described in \ref{subsection:AE}.
-However, convoluitonal and transposed convolutional layers are used instead.
-Transposed convoluitonal layers are also called deconvolutional
+However, convolutional and transposed convolutional layers are used instead.
+Transposed convolutional layers are also called deconvolutional
 layers \cite{M. D. Zeiler 2011}.
 We perform in fact also a convolution operation but with zero paddings
 around the image and sometimes around each pixel to upsample the
@@ -274,18 +320,27 @@ This github directory
 is quite useful for the understanding of the concept.
 
 Pooling and unpooling layers are also sometimes considered in a CAE
-architecture \cite{V. Turchenko 2017}. As they weren't used
-in my CAE architectures I will not spend time explaining what an unpooling
-layer is.
+architecture \cite{V. Turchenko 2017}.
+More details on this aspect, which was not used in my work, can be found in
+in \cite{H. Noh 2015, V. Turchenko 2017}.
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.5\linewidth]{architectures/layers}
+  \caption{%
+    \textbf{Illustration of deconvolution and unpooling layers
+      \cite{H. Noh 2015}}}
+  \label{fig:layers}
+\end{figure}
 
 \section{Datasets and Preprocessing} \label{section:dataset}
 
-Many datasets were explored during my internship. The three main datasets
-being used are given in details  below. Two of them are for gesture
-recognition:
-Creative Senz3D \cite{A. Memo 2015, A. Memo 2017} and ASL Finger Spelling
-\cite{N. Pugeault 2011}, and one is for AVSR: AVLetters
-\cite{I. Matthews 2002}.
+Many datasets were explored during my internship. In this report,
+I will only detailed the three that I used the most. Two of them are for
+gesture recognition: Creative Senz3D \cite{A. Memo 2015, A. Memo 2017}
+and ASL Finger Spelling \cite{N. Pugeault 2011}, and one is for AVSR:
+AVLetters \cite{I. Matthews 2002}.
 
 \subsection{Creative Senz3D}
 
@@ -293,12 +348,14 @@ The dataset contains gestures coming from 4 different people, each
 performing 11 different static gestures repeated 30 times each,
 for a total of 1320 samples.
 For each sample, color, depth and confidence frames are available.
-I only used the color and depth frames of this dataset. The original
+I only used the color and depth frames of this dataset since my
+architectures take at most two modalities in input. The original
 size of each image is $480 \times 640$ and they're resized to
-$299 \times 299$ pixels before being fed to the network. No other
-preprocessing are done. For both color and depth images I use the three
-color channels (even though a priori only one channel is needed for
-depth maps).
+$299 \times 299$ pixels before being fed to the network since this
+is also the input size of the Inception model \cite{C. Szegedy 2017}.
+No other preprocessing are done. For both color and depth images I use
+the three color channels (even though a priori only one channel is needed
+for depth maps).
 
 \begin{figure}[H]
   \centering
@@ -453,47 +510,67 @@ and then tested on test data once the training phrase was finished.
 Unless stated otherwise, the prediction accuracies mentioned hereinafter
 were always evaluated on the test set.
 
+Moreover, we can consider two different possible settings:\\[0.35em]
+\textbf{Subject Dependent.}
+In a subject dependant setting, data samples are separated randomly into
+training set and test set. Therefore, during the
+testing phase, the classifier does not need to deal with data from an
+individual that it has never seen before.\\[0.35em]
+\textbf{Subject Independant.}
+On the contrary, the classifier faces individuals never seen before
+during testing in a subject independant setting. 
+In my case, I always separated one subject from the others to form
+the test set while the training set consisted of the rest of the data.
+
 \section{Experiments and Results: Unimodal Cases} \label{section:uni}
 
 \subsection{Classification} \label{subsection:classif}
 
-With every new dataset, I began with training a classifier on it in a
+For every dataset, I began with training a classifier on it in a
 totoally supervised manner.
 This gave me an insight into its data quality, the preprocessing
 effectiveness and ensured that further experiments could be conducted.
 CNN is then one of the most suitable architecture for this purpose.
 
+First, it worth mentioning the problem of overfitting.
+It was observed for almost all the classification experiments that I
+carried out, and it was particularly severe for CNNs with many layers.
+In fact, CNN architectures could usually classify
+perfectly the training data, but experienced a drop of performance
+when evaluating on test set.
+
+It is well known that by reducing the number of hidden layers and
+increasing the weight regularization coefficient $\lambda$ we may
+be able to cure this problem.
+For example, when $\lambda$ was augmented from $0.0004$ to $0.1$,
+the classification accuracy for the audio input of the AVLetters
+dataset increased by about 10 points
+(from 63.22\% to 77.84\%) while using the architecture detailed on
+the left side of \autoref{fig:AVSR_transfer}.
+By using fewer hidden layers in the 3d CNN architecture overfitting
+was also alleviated when dealing with the video input of this same dataset.
+However, these techniques did not always work
+and more often I got a poorer performance during training without
+an improvement of performance for test.
+
+Below I'll briefly describe the final results of this part dataset by
+dataset.
+
 \subsubsection{Creative Senz3d}
 
-No satisfying results were acquired. It may be due to to a lack of data
-quantity, variety, and the fact that the head is also contained in the
-image increases significantly the classification difficulty.
-
-\textbf{Subject Dependent.}
-In a subject dependant setting, images are separated randomly into
-training set (3/4) and test set (1/4). Therefore, during the
-testing phase, the classifier doesn't need to deal with data from an
-individual that it has never seen before.
-In this case, for RGB images, all of the classifiers were able to
-have a classification accuracy that is closed to 100\%. This held true
-even for a perceptron.
-On the other hand, for depth images, the classification accuracy was
-between 60\% and 70\% using a perceptron and near 90\% for other CNN
-architectures that were tested.
-
-\textbf{Subject Independant.}
-On the contrary, the classifier faces individuals never seen before
-during testing in a subject independant setting. 
-In my case, the training set consisted of images coming from the
-first three individuals while the test set contained images of
-the final subject.
-With the various architectures (including single-layer perceptron
-and CNNs varying from three to ten hidden layers)
-that I implemented, none of them was able to generalize the learned model
-to the new individual.
-The pre-trained InceptionV4 architecture \cite{C. Szegedy 2017}
-achieved a prediction accuracy
-of 30\% for color images and 20\% for depth images (better than chance).
+The tested architectures were perceptron (in all of this report by
+perceptron I denote a single-layer perceptron), pre-trained InceptionV4
+model \cite{C. Szegedy 2017} and several hand-coded CNNs%
+\footnote{For those who are interested, please refer to my github
+directory for the used hyperparameters.}.
+The lack of data quantity, variety, and the fact that the head is also
+contained in the image seems to increase the classification difficulty.
+In conlusion, I found that it was more interesting to use a subject
+dependent setting for this dataset. In this case, for RGB images,
+all of the classifiers were able to have a classification accuracy that is
+closed to 100\%. For depth images, the classification accuracy was
+between 60\% and 70\% using a perceptron and near 90\% for other
+architectures.
 
 \subsubsection{ASL Finger Spelling} \label{subsubsection:ASL_CNN}
 
@@ -501,12 +578,12 @@ The large number of data contained in this dataset and the relatively
 simple image content (single hand instead of the entire upper body)
 makes the classification task much easier. By using the CNN architecture
 shown in \autoref{fig:CNN10}, I could achieve a classification accuracy
-of respectively 80\% and 70\% for intensity and depth images
-(\autoref{tab:ASL_classif})
-in an subject independant setting (four subjects for training and one
-subject for testing). We may not need that many layers in the CNN
-architecture, but further tests were not carried out since it's not
-the essential point of my internship.
+of respectively 79.73\% and 64.46\% for intensity and depth images
+(see \autoref{tab:ASL_classif})
+in a subject independant setting (four subjects for training and one
+subject for testing). Fewer layers in the CNN architecture may also allow
+us to achieve the same performance. More experiments need to be carried
+out to find the most suitable hyperparameters.
 
 \subsubsection{AVLetters}
 
@@ -515,17 +592,9 @@ that were used in this dataset.
 Notice that 3d CNNs were employed to deal with video inputs.
 Considering the small number of available data, a speaker dependent
 setting was used.
-With some carefully chosen hyperparameter values and network architectures,
-the prediction accracy was of near 80\% for audio and about 55\% for video.
-
-When using CNNs, whether to add the first- and second-order frame-to-frame
-differences of MFCCs (\textit{delta} and \textit{delta-delta}) didn't seem
-to have a great impact on the final result, so in the latter transfer
-learning experiment described in \ref{subsection:AVSR_transfer}, only
-MFCCs were fed as input of the network.
-Concerning video input, the use of data augmentation techniques only
-decreased the learning speed for the training part but didn't improve
-the performace for testing.
+With some carefully chosen hyperparameter values and network architectures
+(also see \autoref{fig:AVSR_transfer}),
+the prediction accracy was of 77.84\% for audio and 54.32\% for video.
 
 \begin{figure}[H]
   \centering
@@ -538,27 +607,6 @@ the performace for testing.
       and V stands for `VALID' padding (see text).}
   \label{fig:CNN10}
 \end{figure}
-
-\subsubsection{Problem of overfitting}
-
-Overfitting was observed for almost all the classification
-experiments, and it was particularly severe for
-CNNs with many layers.
-In fact, CNN architectures could usually classify
-perfectly the training data, but experienced a drop of performance
-when evaluating on test set.
-
-It's well known that by reducing the number of hidden layers and
-increasing the weight regularization coefficient $\eta$ we may
-be able to cure this problem.
-For example, when $\eta$ was augmented from $0.0004$ to $0.1$,
-the classification accuracy for the audio input of the AVLetters
-dataset increased by about 10\%.
-By using fewer hidden layers in the 3d CNN architecture overfitting
-was also alleviated when dealing with the video input of this same dataset.
-However, these techniques didn't always work
-and more often I got a poorer performance during training without
-an improvement of performance for test.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
