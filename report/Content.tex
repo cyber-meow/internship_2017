@@ -14,7 +14,7 @@
   \vspace{14em}
   {\huge \bfseries Multimodal Learning \par} 
   {\Large \bfseries
-    Examples in Gesture and Audio-Visual Speech Recognition \par}
+    A case study for Gesture and Audio-Visual Speech Recognition \par}
 
   \vspace{4em}
   {\Large \scshape Hsieh Yu-Guan \par}
@@ -23,11 +23,11 @@
   {\Large Sous la direction de \par}
 
   \vspace{0.5em}
-  {\Large \scshape Mathieu Lefort$^1$ \& Amélie Cordier$^2$ \par}
+  {\Large \scshape Amélie Cordier$^1$ \& Mathieu Lefort$^2$ \par}
 
   \vspace{0.5em}
-  {\large $^1$LIRIS, Équipe SMA \par}
-  {\large $^2$Hoomano, Équipe R\&D \par}
+  {\large $^1$Hoomano, Équipe R\&D \par}
+  {\large $^2$LIRIS, Équipe SMA \par}
 
   \vspace{8em}
   {\Large 14 Juin 2017 -- 11 Août 2017}
@@ -38,29 +38,36 @@
 
 \section{Introduction} \label{section:introduction}
 
-\subsection{Environment, material and software framework}
+\subsection{Cadre de travail, outils et environnement logiciel}
 
-Mon stage s'inscrit dans le cadre du laboratoire commun BEHAVIORS.AI
+Mon stage s'inscrit dans le cadre du laboratoire commun BEHAVIORS.AI%
+\footnote{\href{http://behaviors.ai/}{http://behaviors.ai/}}
 qui est un projet de recherche collaboré entre la société Hoomano et LIRIS.
-Hoomano est une entreprise créée en 2014 dédiée au développement de
-logiciel de robots sociaux (ex: Nao et Pepper) et son moteur d'interaction
-vise à offrer une interaction homme-robot la plus naturelle possible.
+Hoomano est une entreprise créée en 2014 spécialisée dans le développement
+de logiciel pour les robots sociaux (ex: Nao et Pepper).
+Ils commercialisent un moteur d'interaction qui
+vise à offrir une interaction homme-robot la plus naturelle possible.
 Le LIRIS (Laboratoire en InfoRmatique, Image et Système d'Information)
 est une unité mixte de recherche en informatique située à Lyon qui compte
-14 équipes de recherche et 330 membres.
+14 équipes de recherche et 330 membres. Le laboratoire commun est
+particulièrement lié à l'équipe SMA (Systèmes Multi-Agents) qui
+met l'accent sur l'intelligence artificielle, les sysmèmes multi-agents,
+et les systèmes cognitifs.
 
 Pendant mon stage, j'ai passé les deux premières semaines au
-laboratoire et pour le reste du temps j'étais à Hoomano car j'entrînais
+laboratoire et pour le reste du temps j'étais à Hoomano car j'entraînais
 les modèles sur le serveur de l'entreprise. Tous les codes ont été
 réalisés en python et précisément à l'aide de la biblithèque open source
-TensorFlow développé par Google. Cela incluait la construction des
+TensorFlow%
+\footnote{\href{https://www.tensorflow.org/}{https://www.tensorflow.org/}}
+développée par Google. Cela incluait la construction des
 différents architectures et réseaux de neurones, l'entraînement et
 l'évaluation.
 TensorBoard était un outil assez pratique pour visualiser l'apprentissage,
 et je pouvais même facilement visualiser les données et les
-représentation apprises grâce au plugin qui est offert.
-Toute la suite du rapport sera rédiger en anglais dû à la difficulté
-de traduire tous les terms techniques en français.
+représentations apprises grâce au plugin qui est proposé.
+Toute la suite du rapport sera rédigée en anglais à cause de la difficulté
+de traduire tous les termes techniques en français.
 
 \subsection{Scientific overview}
 
@@ -73,34 +80,36 @@ research, it requires a lot of engineering efforts and human knowledge.
 Furthermore, engineering in this way all the behaviors that are needed
 to display general human level intelligence is out of reach.
 
-On the other hand, we face also the symbol grounding problem
+In addition, we face also the symbol grounding problem
 \cite{S. Harnad 1990}. The symbols manipulated by the AI systems have
 no meaning to them. To solve these problems, the embodied paradigm
 \cite{A. Clark 1997} first argues an agent must be able to perceive and
-act from its own perspective (for example, it should be a robot).
-Developmental robotics \cite{J. Weng 2001} further emphasizes the
+act from its own perspective, so it should have a body, e.g. a robot.
+Developmental robotics \cite{J. Weng 2001}, which draws inspiration
+from developmental psychology \cite{J. Piaget 1952}, tries to implement
+child development  in robots. It puts emphasis on the
 importance of endowing the robot with the capacity of learning new
 knowledge from its own sensorimotor experience.
 
 In \cite{L. Smith 2005}, Smith and Gasser discerned six fundamental
-principles for the development of embodied intelligence: mulimodality,
-incremented development, physical interaction with the environment,
-exploration, social guidance and symbolic language aquisition.
+principles for the development of embodied intelligence: multimodality,
+incremental development, physical interaction with the environment,
+exploration, social guidance and symbolic language acquisition.
 I was particularly insterested in the multimodal point in my internship.
-The everyday concept that a human acquires is intrinsically multimodal.
-For example, the word ``cat'' can be quickly associated with the
+The everyday concepts that a human acquires is intrinsically multimodal.
+For example, the word ``cat'' can be quickly associated with the visual
 appearance of a cat, its vocalization, and the tactile feeling that
 we have while petting a cat. The existence of neurons that receive
 early information from different modalities have also been proven
 \cite{S. Molholm 2002}.
 
-On the other hand, recently, deep learning has achieved a great success in
+In machine learning, recently, deep learning has achieved a great success in
 various domains, such as image recognition \cite{A. Krizhevsky 2012},
 text generation \cite{A. Graves 2013} or
 machine translation \cite{I. Sutskever 2014}.
-It has also been more and more often applied to mutlimodal input
+It has also been more and more often applied to multimodal inputs
 \cite{J. Ngiam 2011, T. Baltrusaitis 2017}.
-Its capacity of learning a hierarchical representation of data in a
+Its capacity of learning hierarchical representations of data in a
 fully unsupervised way \cite{P. Vincent 2010, A. Radford 2015}
 is particularly interesting in the domain of robotics.
 
@@ -114,14 +123,15 @@ to learn a better representation for each single modality and that one can
 leverage information from one modality to be used for another when there
 is an imbalance of amount of data among different sources.
 
-The report is organized as follow. In Section \ref{section:related} I
-briefly review related work on multimodal machine learning, gesture
-recognition and AVSR. In section \ref{section:networks}, I present
+The report is organized as follow. In section \ref{section:related} I
+briefly review related work on gesture recognition and AVSR, and other
+fields of multimodal learning.
+In section \ref{section:networks}, I present
 several basic deep neural network architectures that played an important
-role in my work. In section \ref{section:dataset} and
-\ref{section:exp}, I describe respectivly the datasets and common
+role in my work. In sections \ref{section:dataset} and
+\ref{section:exp}, I describe respectively the datasets and common
 experimental setups that were used in my internship. Experimental
-details and results are given in section \ref{section:uni} and
+details and results are given in sections \ref{section:uni} and
 \ref{section:multi}. Finally, conclusions and perspectives are
 presented in section \ref{section:conclusion}.
 
@@ -131,14 +141,48 @@ github: \href{https://github.com/cyber-meow/internship_2017}
 
 \section{Related Work} \label{section:related}
 
-\subsection{Multimodal learning}
+\subsection{Gesture recognition}
 
-\cite{T. Baltrusaitis 2017} offers an overview of recent advances in
-multimodal machine learning. In \cite{J. Ngiam 2011}, the authors
-use a deep network to learn a joint representation of visual and auditory
-input. They show that better features for one modality can be learned if
-multiple modalities are present at feature learning time. 
-There has also been a surge of interest in the exploitation of multimodal
+Gesture recognition has been studied for a while within the fields of
+computer vision and pattern recognition
+\cite{T. Starner 1998, S. Mitra 2007}.
+Recently, deep learning algorithms have led to
+significant advances in this domain \cite{M. Asadi-Aghbolaghi 2017}.
+The use of Convolutional Neural Networks (CNNs, see \ref{subsection:CNN})
+is the most common
+\cite{J. Nagi 2011}. 3d CNNs are used to deal with image sequences in
+\cite{P. Molchanov 2015}. Architectures that take multimodal inputs
+have also grown in popularity. In \cite{N. Neverova 2013}
+Neverova \textit{et al.} copes with color,
+depth, skeleton and audio information using CNNs and Recurrent
+Neural Networks (RNNs). Some other works use 3d CNNs and deep belief
+networks (DBNs) while facing similar multimodal inputs
+\cite{N. Neverova 2014, L. Pigou 2014, D. Wu 2016}.
+
+\subsection{Audio-visual speech recognition (AVSR)}
+
+AVSR is probably one of the earliest examples of multimodal research.
+Most early works were based on various hidden Markov model (HMM) extensions
+\cite{G. Potamianos 2004}, but the use of neural networks were also
+explored \cite{C. Bregler 1994, B. P. Yuhas 1989}. 
+In the past few years, AVSR has drawn attention from the
+deep learning community
+\cite{J. Ngiam 2011, K. Noda 2014, A. K. Katsaggelos 2015}.
+In \cite{J. Ngiam 2011} the authors use a deep network to learn a
+joint representation of visual and auditory input.
+They show that better features for one modality can be learned if
+multiple modalities are present at feature learning time.
+A transfer deep learning framework applied in AVSR is proposed in
+\cite{S. Moon 2015} and this forms the base of my study in
+\ref{subsection:AVSR_transfer}. In \cite{L. Deng 2013} and
+\cite{G. Hinton 2012} several examples of how deep architectures can
+be used to deal with audio data are given.
+
+\subsection{Multimodal learning in other fields}
+
+Multimodal learning also finds its application in many other domains.
+For example, there has been a surge of interest in the exploitation of
+multimodal
 information in the fields of image annotation \cite{J. Weston 2010},
 zero-shot learning \cite{A. Frome 2013, R. Socher 2013}, and automatic
 image caption generation \cite{A. Karpathy 2015}. They first train
@@ -147,50 +191,31 @@ to learn either a common embedding \cite{J. Weston 2010}, a mapping
 \cite{A. Frome 2013, R. Socher 2013} or an alignment \cite{A. Karpathy 2015}
 between the two models.
 
-Applications in the field of robotics can also been found.
-\cite{A. Droniou 2014} proposes a network that is able to learn both
+More generally, in \cite{T. Baltrusaitis 2017} Baltrusairis \textit{et al.}
+offer an overview of recent advances in multimodal machine learning.
+They identify five core technical challenges surrounding this research
+field: shared representation learning, translation from one modality to
+another, multimodal alignment that aims to
+find correspondences between sub-components of instances from two
+or more modalities, multimodal fusion that integrates information
+from multiple modalities with the goal of predicting an outcome measure
+and co-learning which aids the modeling of a modality by exploiting
+knowledge from another modality.
+
+Concerning the use of multimodal learning in robotics, in 
+\cite{A. Droniou 2014} Droniou \textit{et al.} propose a network that is
+able to learn both
 a symbolic representation of data and a fine discrimination between
 two similar stimuli in an unsupervised way. The authors apply their method
-to visual, audiotory and proprioceptive data of the humanoid robot iCub.
+to visual, auditory and proprioceptive data of the humanoid robot iCub.
 A multimodal embedding that is able to combine information coming from
 vision, language and motion trajectories is defined in \cite{J. Sung 2017}
 and endows the robot with the capacity of manipulating an unseen object.
 
-\subsection{Gesture recognition}
-
-Gesture recognition has been studied for a while within the fileds of
-computer visoin and pattern recognition
-\cite{T. Starner 1998, S. Mitra 2007}.
-Recently, deep learning algorithms have led to
-significant advances in this domain \cite{M. Asadi-Aghbolaghi 2017}.
-The use of Convolutional Neural Networks (CNNs) is the most common
-\cite{J. Nagi 2011}. 3d CNNs are used to deal with image sequences in
-\cite{P. Molchanov 2015}. Architectures that take in multimodal inputs
-have also grown in popularity. \cite{N. Neverova 2013} copes with color,
-depth, skeleton and audio information using CNNs and Recurrent
-Neural Networks (RNNs). Others use 3d CNNs and deep belief networks
-(DBNs) while facing similar multimodal inputs
-\cite{N. Neverova 2014, L. Pigou 2014, D. Wu 2016}.
-
-\subsection{Audio-visual speech recognition}
-
-AVSR is probably one of the earliest examples of multimodal research.
-Most early works were based on various hidden Markov model (HMM) extensions
-\cite{G. Potamianos 2004}, but the use of neural networks were also
-explored \cite{C. Bregler 1994, B. P. Yuhas 1989}. Although research
-into AVSR is not as common these days, it has drawn attention from the
-deep learning community
-\cite{J. Ngiam 2011, K. Noda 2014, A. K. Katsaggelos 2015}.
-A transfer deep learning framework applied in AVSR proposed in
-\cite{S. Moon 2015} forms the base of my study in
-\ref{subsection:AVSR_transfer}. \cite{L. Deng 2013} and
-\cite{G. Hinton 2012} give several examples of how deep architectures can
-be used to deal with audio data.
-
 \section{Presentation of Basic Network Architectures}
 \label{section:networks}
 
-\subsection{Convolutional Neural Network}
+\subsection{Convolutional Neural Network} \label{subsection:CNN}
 
 CNNs are an early family of deep learning
 architectures inspired from the human vision system \cite{Y. LeCun 1998}.
@@ -610,11 +635,11 @@ the prediction accracy was of 77.84\% for audio and 54.32\% for video.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
-Several distinct CAE architectures were tested in my internship.
+Several distinct CAE hyperparameters were tested during my internship.
 Here I present the one with five hidden layers; therefore it contains
 three convolutional layers and three transposed convolutional layers
-as illustrated in \autoref{fig:CAE5}. The end-to-end training instead of
-a greedy layer-wise approach was employed.
+as illustrated in \autoref{fig:CAE5}. I used end-to-end training for
+learning my architectures.
 
 The proposed architecture was then trained on the two gesture recognition
 datasets. First of all, I was interested in the denoising capcity of
@@ -623,23 +648,36 @@ The auto-encoder is effectively able to reconstruct the clean image in
 a way, even though the result is blurred and sometimes distorted.
 
 What's more important, can meaningful high-level features be
-learned in this way? The output of the middle layer was taken as a
-new representation of the input data.
-By doing principal component analysis, it could be projected into
-three dimensions for visualization.
-However, to quantify the learned features, they're further used for
-classification by training a perceptron on top of it.
+learned in this way? 
+In fact, when autonomous robots interact with the environment, it needs
+to extract high-level knowledge from raw perception on its own.
+This should be done in an unsupervised way since no labeled data
+is provided.
+That is why I am particularly interested in the problem of representation
+learning here. The output of the middle layer was taken as a new
+representation of the input data.
+I wanted to show that it could better represent the data than the raw input.
 
-As suggested in \ref{subsection:classif}, I used a subjetdependant setting
+By doing principal component analysis, activation values of different
+layers could be projected into three dimensions for visualization.
+However, to quantify the learned features, I further trained two perceptrons
+respectively on top of the raw input and the high-level representation
+and compared their performance.
+
+As suggested in \ref{subsection:classif}, I used a subject dependant setting
 for Creative Senz3d while a subject independant setting was employed
-for ASL Finger Spelling. I compared this new classifier with a
-perceptron built on raw data input. As already mentioned earlier, the
-latter could classify perfectly the input when dealing with color images
-of Creative Senz3d. In other cases, I observed always an improvement
-of 10-20\% for the prediction accuracy thanks to the use of the
-learned representation of the data (refer to \autoref{tab:ASL_classif}
+for ASL Finger Spelling. As already mentioned earlier, a perceptron built
+on raw data could classify perfectly the input while dealing with color
+images of Creative Senz3d. In other cases, the use of the learned
+data representation led always to an improvement of 10-20 points for
+the prediction accuracy (refer to \autoref{tab:ASL_classif}
 for results on ASL Finger Spelling). Useful high-level data representation
 can thus be learned in a totally unsupervised manner.
+However, if this same architecture used for classification (three layers
+of convolution and one layer of classification) was trained in a
+totally supervised manner, this was as if I trained another CNN and
+better performance could be achieved (see the column CAE architecture
+of \autoref{tab:ASL_classif}).
 
 \begin{figure}[H]
   \centering
@@ -650,7 +688,12 @@ can thus be learned in a totally unsupervised manner.
       layers.}\\[0.1em]
     Activation values of the middle layer are taken as 
       high-level features of the input image. Inputs of the network
-      can be of different sizes. We only use `VALID' paddings here.}
+      can be of different sizes. We only use `VALID' paddings here.
+      For the results that are presented in this work, the training
+      hyperparameters are $\alpha_0 = 0.01$, $\gamma = 0.8$ and
+      $\lambda = 0.0004$ (see the first paragraph of section
+      \ref{section:exp}).
+      }
   \label{fig:CAE5}
 \end{figure}
 
