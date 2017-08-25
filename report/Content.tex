@@ -123,11 +123,11 @@ to learn a better representation for each single modality and that one can
 leverage information from one modality to be used for another when there
 is an imbalance of amount of data among different sources.
 
-The report is organized as follow. In section \ref{section:related} I
-briefly review related work on gesture recognition and AVSR, and other
+The report is organized as follows. In section \ref{section:related} I
+briefly review related work on gesture recognition, AVSR and other
 fields of multimodal learning.
 In section \ref{section:networks}, I present
-several basic deep neural network architectures that played an important
+several basic deep neural network architectures playing an important
 role in my work. In sections \ref{section:dataset} and
 \ref{section:exp}, I describe respectively the datasets and common
 experimental setups that were used in my internship. Experimental
@@ -212,10 +212,10 @@ A multimodal embedding that is able to combine information coming from
 vision, language and motion trajectories is defined in \cite{J. Sung 2017}
 and endows the robot with the capacity of manipulating an unseen object.
 
-\section{Presentation of Basic Network Architectures}
+\section{Presentation of Some Deep Network Architectures}
 \label{section:networks}
 
-\subsection{Convolutional Neural Network} \label{subsection:CNN}
+\subsection{Convolutional Neural Networks} \label{subsection:CNN}
 
 CNNs are an early family of deep learning
 architectures inspired from the human vision system \cite{Y. LeCun 1998}.
@@ -385,17 +385,42 @@ for depth maps).
 \begin{figure}[H]
   \centering
   \hfill
-  \includegraphics[width=0.23\linewidth]{dataset/senz3d/examples/1-color}
+  %
+  \begin{subfigure}{0.23\linewidth}
+    \centering
+    \includegraphics[width=\textwidth]{dataset/senz3d/examples/1-color}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.23\linewidth]{dataset/senz3d/examples/12-color}
+  %
+  \begin{subfigure}{0.23\linewidth}
+    \centering
+    \includegraphics[width=\textwidth]{dataset/senz3d/examples/12-color}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.23\linewidth]{dataset/senz3d/examples/1-depth}
+  %
+  \begin{subfigure}{0.23\linewidth}
+    \centering
+    \includegraphics[width=\textwidth]{dataset/senz3d/examples/1-depth}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.23\linewidth]{dataset/senz3d/examples/12-depth}
+  %
+  \begin{subfigure}{0.23\linewidth}
+    \centering
+    \includegraphics[width=\textwidth]{dataset/senz3d/examples/12-depth}
+    \caption{}
+  \end{subfigure}
+  %
   \caption{%
     \textbf{Example images in the Creative Senz3D dataset.}\\[0.1em]
-    Left Two) Color images.\\[0.1em]
-    Right Two) Corresponding depth images.\\[0.1em]
+    a, b) Color images.\\[0.1em]
+    c, d) Corresponding depth images. (c) and (d) are respectively the
+      depth images of (a) and (b).\\[0.1em]
     All of the images are of size $480 \times 640$ and contain the
       the entire upper body of the subject.}
   \label{fig:senz3d_exs}
@@ -418,25 +443,50 @@ and unit of variance).
 \begin{figure}[H]
   \centering
   \hfill
-  \includegraphics[width=0.23\linewidth]{%
-    dataset/fingerspelling5/exs/st/g1}
+  %
+  \begin{subfigure}{0.21\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/exs/st/g1}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.23\linewidth]{%
-    dataset/fingerspelling5/exs/st/g2}
+  %
+  \begin{subfigure}{0.21\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/exs/st/g2}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.23\linewidth]{%
-    dataset/fingerspelling5/exs/st/d1}
+  %
+  \begin{subfigure}{0.21\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/exs/st/d1}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.23\linewidth]{%
-    dataset/fingerspelling5/exs/st/d2}
+  %
+  \begin{subfigure}{0.21\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/exs/st/d2}
+    \caption{}
+  \end{subfigure}
+  %
   \caption{%
     \textbf{Example images in the ASL Finger Spelling dataset
       (after preprocessing).}\\[0.1em]
-    Left Two) Grayscale intensity images.\\[0.1em]
-    Right Two) The corresponding depth maps.\\[0.1em]
+    a, b) Grayscale intensity images.\\[0.1em]
+    c, d) The corresponding depth maps. (c) and (d) are respectively the
+      depth images of (a) and (b).\\[0.1em]
     Images of this dataset have variable sizes, and they're all resized to
       $83 \times 83$ before being fed to the network. Generally only the
-      hand region is contained in image.}
+      hand region is contained in the image.}
   \label{fig:fingerspelling_exs}
 \end{figure}
 
@@ -446,19 +496,23 @@ The dataset comprises video and audio recordings of 10 speakers
 uttering the letters A to Z, three times each.
 We count therefore 780 samples in total. For video data, image sequences
 of pre-extracted lip regions are provided.
-Each single image if of size $60 \times 80$.
-For audio data, only the mel-frequency cepstrum coefficients (MFCCs)
+Each single image is of size $60 \times 80$.
+For audio data, only the mel-frequency cepstrum coefficients (MFCCs%
+\footnote{MFCCs are a feature widely used in automatic speech and
+speaker recognition. Their job is to extract spectral envelope
+in order to discriminate the phoneme being pronounced.})
 are given, and each audio frame is represented by 26 MFCCs.
 The lack of raw audio data is a strong constraint on what we're able to do
 on this dataset.
 
-Since all utterances don't have the same time duration, I used
-fourier resamping to force every video input to be of length 12 and
-every audio input to be of length 24. Video frames are Z-normalized.
-Several data augmentation techniques
-are also considered, including random brightness adjusting, random contrast
-adjusting and random cropping (but at least 80\% of the original image
-is kept).
+Since all utterances do not have the same time duration, I used
+fourier resampling to force every video input to be of length 12 and
+every audio input to be of length 24. These numbers were chosen according
+to \cite{S. Moon 2015}. Video frames are Z-normalized.
+Several data augmentation techniques are also considered, including
+random brightness adjusting, random contrast adjusting and random
+cropping (but at least 80\% of the original image is kept).
+The data is augmented on the fly.
 
 \begin{figure}[H]
   \centering
@@ -487,46 +541,62 @@ is kept).
   \includegraphics[width=0.15\linewidth]{%
     dataset/avletters/lips_no_data_aug/12}
   \caption{%
-    \textbf{Example visual input for the AVletters dataset
-      (left to right, top to bottom).}\\[0.1em]
+    \textbf{Example visual input for the AVletters dataset.}\\[0.1em]
     Pre-extracted lip regions of $60 \times 80$ pixels are provided.
       Each image sequence is resampled to be of length twelve in order to
-      give an input of fixed size to the network.}
+      give an input of fixed size to the network. In the above figure,
+      time goes from left to right then top to bottom.}
   \label{fig:avletters_exs}
 \end{figure}
 
 \section{Experimental Setup} \label{section:exp}
 
-To train a classifier I employed the cross entropy cost function and to
-train an auto-encoder the L2 distance between the input and output vector
-was used as the loss. For the sake of preventing overfitting, L2
+Each classifier used in my work was trained with the cross entropy cost
+function and each auto-encoder was trained with the L2 distance between
+the input and output vector was used as the loss.
+The cross entropy measures the similarity between two probability
+distributions $p$ and $q$ over the same underlying set of events.
+When $p$ and $q$ are disrcret, which is always true in my case, it's
+defined by
+
+\[H(p,q) = -\sum_xp(x)\log q(x).\]
+
+For the sake of preventing overfitting, L2
 regularization \cite{Y. Bengio 2012} was applied to all the weights of
-network with a regularization coefficient $\eta$.
-The Adam algorithm \cite{D. Kingma 2014}
-was then introduced for minimizing the loss function.
+network with a regularization coefficient $\lambda$.
+The Adam algorithm \cite{D. Kingma 2014}, which is a variant of the
+standard SGD, was then introduced for minimizing the loss function.
 An exponential decay was further used for the stepsize $\alpha$ of this
 algorithm with an initial stepsize $\alpha_0$ varying from 0.01 to 0.0001
 depending on experiment. The decaying rate $\gamma$
-was generally close to 0.8 and
-the decay takes place every 100 training steps.
+was generally close to 0.8 and the decay takes place every 100
+training steps. That is, the stepsize is multiplied by $\gamma$ every
+100 steps.
 
 Inputs of the network were normally fed as mini-batches of size 24
-(smaller and bigger batch sizes were also experimented).
+since rather satisfying results could be obtained with this
+number and when larger batches were used training became slower
+without a significant improvement of the performance.
 Batch normalization \cite{S. Ioffe 2015} were introduced after every
-convolutional and transposed convoluitonal layer. Therefore, the real
+convolutional and transposed convolutional layer. Therefore, the real
 operations used to compute neural activations are more complicated
-then what are described above. The used settings and hyperparameter
-values aren't necessarily optimal since I wasn't able to test all the
-possible combinations.
+than what are described above. The presented settings and hyperparameter
+values were found with a manual heuristic search as I focused on
+principles and not on better performance achievement.
 
-Here are some more details of the network architectures: ReLu
-(Rectified Linear Unit) activations were added to all the hidden layers
+Here are some more details of the network architectures: ReLu activations 
+were added to all the hidden layers of all the architectures
 \cite{A. Krizhevsky 2012} while no activation function was used for
-the output layer.
+the output layers.
 For classification model dropout \cite{N. Srivastava 2014}
 was always applied to the second to last layer during training.
 The output of the classification layer was mapped to the probabilities
 that one data example belongs to each class by the softmax function.
+Therefore, if the output vector is $\mathbf{z} = (z_1, ..., z_n)$,
+for $j \in \{1,...,n\}$, the probability that the input has the $j^{th}$
+label is
+
+\[softmax(\mathbf{z})_j = \frac{\exp(z_j)}{\sum_{i=1}^n\exp(z_i)}.\]
 
 For classification experiments, except for the one described in
 \ref{subsection:AVSR_transfer}, the dataset was always separated into
@@ -557,7 +627,7 @@ This gave me an insight into its data quality, the preprocessing
 effectiveness and ensured that further experiments could be conducted.
 CNN is then one of the most suitable architecture for this purpose.
 
-First, it worth mentioning the problem of overfitting.
+First, it's worth mentioning the problem of overfitting.
 It was observed for almost all the classification experiments that I
 carried out, and it was particularly severe for CNNs with many layers.
 In fact, CNN architectures could usually classify
@@ -610,6 +680,19 @@ subject for testing). Fewer layers in the CNN architecture may also allow
 us to achieve the same performance. More experiments need to be carried
 out to find the most suitable hyperparameters.
 
+\vspace{-1em}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{architectures/CNN10}
+  \caption{%
+    \textbf{CNN architecture used for the Finger Spelling  dataset.}
+      \\[0.1em]
+    The input of the nework is a one-channel image of size $83 \times 83$.
+      It contains ten hidden layers. S stands for `SAME' padding
+      and V stands for `VALID' padding (see \ref{subsection:CNN}).}
+  \label{fig:CNN10}
+\end{figure}
+
 \subsubsection{AVLetters}
 
 One can refer to \autoref{fig:AVSR_transfer} for the main CNN architectures
@@ -620,18 +703,6 @@ setting was used.
 With some carefully chosen hyperparameter values and network architectures
 (also see \autoref{fig:AVSR_transfer}),
 the prediction accracy was of 77.84\% for audio and 54.32\% for video.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=\linewidth]{architectures/CNN10}
-  \caption{%
-    \textbf{CNN architecture used for the Finger Spelling  dataset.}
-      \\[0.1em]
-    The input of the nework is a one-channel image of size $83 \times 83$.
-      It contains ten hidden layers. S stands for `SAME' padding
-      and V stands for `VALID' padding (see text).}
-  \label{fig:CNN10}
-\end{figure}
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
@@ -679,6 +750,7 @@ totally supervised manner, this was as if I trained another CNN and
 better performance could be achieved (see the column CAE architecture
 of \autoref{tab:ASL_classif}).
 
+\vspace{-1em}
 \begin{figure}[H]
   \centering
   \includegraphics[width=\linewidth]{architectures/CAE5}
@@ -716,30 +788,25 @@ of \autoref{tab:ASL_classif}).
   \label{fig:image_restoration}
 \end{figure}
 
-\section{Experments and Results: Multimodal Cases} \label{section:multi}
+\section{Experiments and Results: Multimodal Cases} \label{section:multi}
 
 \subsection{Shared representation learning} \label{subsection:shared}
 
-A first fundamental chanllenge in multimodal learning is the problem
+A first fundamental challenge in multimodal learning is the problem
 of representing and summarizing data from several modalities.
 How can we relate information from multiple sources?
 Mainly inspired from \cite{J. Ngiam 2011, A. Droniou 2014},
 I generalized the CAE architecture introuduced in \ref{subsection:CAE}
 to a multimodal setup. As presented in \autoref{fig:FAE5}, two CAEs
-of different modalities share a common middle layer by doing a sum
+of different modalities share a common middle layer by doing a weighted sum
 of corresponding values. I first pre-train the first two layers
 of each modality using an unimodal CAE. In a second stage, I train the
 rest of the network to reconstruct the two modalities of the input.
+This is basically the same model as the one proposed in
+\cite{J. Ngiam 2011} except for a different method that is applied for
+unimodal representation learning.
 
-To prevent the network from finding representations such that different
-hidden units are tuned for different modalities separately, random
-dropouts are added to inputs in such a way that only by combining the
-two modalities we have 100\% of the input information. In particular,
-sometimes one modality can be totally absent whereas the whole clean
-image is given for the other modality. In addition, proper scaling were
-also considered to keep the expected sum of the activations at each layer
-to be the same.
-
+\vspace{-0.5em}
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.95\linewidth]{architectures/FAE5}
@@ -750,36 +817,53 @@ to be the same.
       \autoref{fig:CAE5} for each modaliy but force them to have a
       shared middle layer by adding the corresponding activation values.
       We then try to reconstruct the two images separately through
-      two disjoint paths.}
+      two disjoint paths. During training, I used $\alpha_0=0.01$,
+      $\gamma = 0.8$ and $\lambda = 0.0004$ (see the first paragraph
+      of section \ref{section:exp}) for the presented results.}
   \label{fig:FAE5}
 \end{figure}
 
+To prevent the network from finding representations such that different
+hidden units are tuned for different modalities separately, random
+dropouts are added to inputs. I first draw a random number $p$ between
+0 and 1. Each pixel of the color modality is then kept with probability $p$
+while for the depth modality they're kept with probability $1-p$.
+In particular, sometimes one modality can be totally absent whereas
+the whole clean image is given for the other modality.
+In this way I gaurauntee also that I always have enough information
+in input for the reconstruction if the two modalities are
+used jointly by the network.
+In addition, proper scaling were considered to keep the expected
+sum of the activations at each layer to be the same.
+
 Ideally, we expect that the network is able to capture correlations
-across different modalities and can thus also learn a better single
-modality representation. To verify this hypothesis, I built a perceptron
+across different modalities and learn a better single modality
+representation thanks to the presence of the other modality
+during feature learning. To verify this hypothesis, I built a perceptron
 on the top of the middle layer of the architecture and trained it
 in a supervised way while only one modality was given in input. For example,
 if I wanted to train a classifier for color images, zeros were fed as
-depth inputs. The results are shown in \autoref{tab:ASL_classif}.
-Unfortunately, the presence of the two modalities during feature
-learning doesn't bring a significant improvement and seems to be useless.
+depth inputs.
+
+The results are shown in \autoref{tab:ASL_classif}.
+We can observe an improvement of the classification accuracy for a
+classifier that is based on the learned shared representation 
+compared to the one that is built on the features that are learned by
+an unimodal CAE. This reveals the uitiliy of using multiple modalities
+for representation learning. However, more tests and statistics
+are necessary for validating this preliminary result.
 
 How about exploiting the information from the two modalities in a
 totally supervised way? I took the CNN architecture of \autoref{fig:CNN10}
 for color and depth images separately until the seventh layer where
 a fusion was carried out. After training the network, the prediction
 accuracy was always at about 80\% and no improvement was obtained compared
-with a CNN trained only on color inputs. To conclude, color and depth
-images are probably two modalities that are too similar. Color images
-contain already all the necessary information for the task at hand so
-that depth maps don't bring any supplementary information that benefits
-the specifique purpose I defined.
-
-However, multimodal information may still be useful when one or several
-modalities are noisy whereas clean information are available for the others.
-For example, I trained a network to construct clean color images from
-noisy depth maps. When I did the classification based on the learned
-representation, the performance was as if I trained directly a depth CAE.
+with a CNN trained only on color inputs. The little or no improvement
+may be due to the similarity between the two modalities. Supposing that
+color images contain already all the necessary information for the task
+at hand, then depth maps would not bring any supplementary information
+that benefits the specific purpose I defined. Again, still more tests,
+and perhaps with different data, are needed to verify this hypothesis.
 
 \begin{table}[H]
   \tabcolsep = 9pt
@@ -787,15 +871,18 @@ representation, the performance was as if I trained directly a depth CAE.
     dataset}\\[0.1em]
     Raw) Perceptron that reads raw input data.\\[0.1em]
     CAE features) Perceptron stacked on the middle layer of the CAE.
-      (\ref{subsection:CAE}).\\[0.1em]
+      (\autoref{fig:CAE5} and \ref{subsection:CAE}).\\[0.1em]
     Shared) Perceptron that exploits the shared representation learned
-      by a bimodal CAE (\ref{subsection:shared}).\\[0.1em]
+      by a bimodal CAE (\autoref{fig:FAE5} and
+      \ref{subsection:shared}).\\[0.1em]
     CAE architecture) Perceptron stacked on the middle layer of the CAE
-      but train the whole network in a supervised way as a CNN.\\[0.1em]
+      but train the whole network in a supervised way as a CNN.
+      (\autoref{fig:CAE5} and \ref{subsection:CAE}).\\[0.1em]
     CNN) The CNN architecture in \autoref{fig:CNN10}
-      (\ref{subsubsection:ASL_CNN}). \\[0.1em]
+      (\autoref{fig:CNN10} and \ref{subsubsection:ASL_CNN}). \\[0.1em]
     The used hyperparameters are $\alpha_0=0.005$, $\gamma=0.8$ and
-    $\eta=0.0004$. We notice that we have exactly the same network
+    $\lambda=0.0004$ (see the first paragraph of section \ref{section:exp}).
+    We notice that we have exactly the same network
     architecture for the middle three exerimental setups and only the
     training process differs one from another.
     }
@@ -814,6 +901,18 @@ representation, the performance was as if I trained directly a depth CAE.
     \bottomrule
   \end{tabular*}
 \end{table}
+\vspace{-10pt}
+
+There is yet another interesting result that's worth mentioning.
+In an experiment, I trained a CAE (the setting presented in
+\autoref{fig:CAE5}) for noisy depth inputs but instead of comparing
+the outputs with clean depth images they're compared with clean
+color images. In other words, I tried to construct the color modality from
+noisy depth maps. When I did the classification based on the learned
+representation, the performance was comparable with the perceptron
+that was built on the CAE features that were learned by a normal
+depth CAE. This is particularly useful when one or several
+modalities are noisy whereas clean information are available for the others.
 
 We may also want to ask if this architecture, when a partial input with
 only one modality is given, is able to infer the values of the missing
@@ -821,21 +920,20 @@ modality.
 Several examples can be seen in \autoref{fig:color_depth_restoration}.
 Visually speaking, the reconstruction result seems better when
 both modalities are available in input even though they're both very noisy.
-Knowing that the two modalities are already quite similar, it reveals
-the difficulty of this task and the problem of multimodal retrieval
-might be something that is more insteresting than trying to construct
-information of some modality from zero.
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=\linewidth]{dataset/senz3d/reconstructions}\\[-1em]
+  \includegraphics[width=\linewidth]{dataset/senz3d/reconstructions}
   \caption{%
     \textbf{Restore color and depth images from incomplete input
       information.}\\[0.1em]
     Top) Only the color image is given.\\[0.1em]
     Middle) Only the depth image is given.\\[0.1em]
     Botttom) Both modalities are given but with little information
-      (10\% of pixels).}
+      (10\% of pixels).\\[0.1em]
+    From left to right: original images $\rightarrow$ images with
+      dropout $\rightarrow$ reconstructed images.
+    }
   \label{fig:color_depth_restoration}
 \end{figure}
 

@@ -43,8 +43,15 @@
 \setlength{\droptitle}{-1.5cm} % white space before the title
 \setlength{\bibsep}{1.2ex} % bibliography vertical spacing
 \parindent=0pt % indent spacing
-\parskip=0.8em  % spacing between two paragraphs
+\parskip=0.7em  % spacing between two paragraphs
 
+%%%%%%%%% Title spacing %%%%%%%%%
+\titlespacing\section{0pt}{%
+  8pt plus 4pt minus 2pt}{6pt plus 2pt minus 2pt}
+\titlespacing\subsection{0pt}{%
+  6pt plus 4pt minus 2pt}{4pt plus 2pt minus 2pt}
+\titlespacing\subsubsection{0pt}{%
+  4pt plus 4pt minus 2pt}{2pt plus 2pt minus 2pt}
 
 %%%%%%%%%% Math display spacing (gather, equation, ...) %%%%%%%%%%
 \makeatletter
@@ -63,7 +70,7 @@
 	justification = justified, % caption as normal paragraph
     labelsep = colon, % Figure: ...
 	skip = 1.1em} % space between caption and image
-\captionsetup[sub]{font = small, belowskip = 2pt}
+\captionsetup[sub]{font = small, belowskip = -3pt}
 \setlength{\belowcaptionskip}{-15pt}
 \setlength{\intextsep}{20pt}
 
@@ -80,7 +87,7 @@
   font = small,
   name = \textbf{Table},
   justification = justified,
-  belowskip=7pt,
+  belowskip=-7pt,
   skip = \medskipamount,
   singlelinecheck = false
 }
