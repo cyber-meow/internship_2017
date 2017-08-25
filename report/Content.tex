@@ -349,7 +349,7 @@ architecture \cite{V. Turchenko 2017}.
 More details on this aspect, which was not used in my work, can be found in
 in \cite{H. Noh 2015, V. Turchenko 2017}.
 
-
+\vspace{-1em}
 \begin{figure}[H]
   \centering
   \includegraphics[width=0.5\linewidth]{architectures/layers}
@@ -605,12 +605,12 @@ and then tested on test data once the training phrase was finished.
 Unless stated otherwise, the prediction accuracies mentioned hereinafter
 were always evaluated on the test set.
 
-Moreover, we can consider two different possible settings:\\[0.35em]
+Moreover, we can consider two different possible settings:\\[0.25em]
 \textbf{Subject Dependent.}
 In a subject dependant setting, data samples are separated randomly into
 training set and test set. Therefore, during the
 testing phase, the classifier does not need to deal with data from an
-individual that it has never seen before.\\[0.35em]
+individual that it has never seen before.\\[0.25em]
 \textbf{Subject Independant.}
 On the contrary, the classifier faces individuals never seen before
 during testing in a subject independant setting. 
@@ -641,7 +641,8 @@ For example, when $\lambda$ was augmented from $0.0004$ to $0.1$,
 the classification accuracy for the audio input of the AVLetters
 dataset increased by about 10 points
 (from 63.22\% to 77.84\%) while using the architecture detailed on
-the left side of \autoref{fig:AVSR_transfer}.
+the left side of \autoref{fig:AVSR_transfer} with the hyperparameters
+given in \autoref{tab:AVSR_transfer}.
 By using fewer hidden layers in the 3d CNN architecture overfitting
 was also alleviated when dealing with the video input of this same dataset.
 However, these techniques did not always work
@@ -701,7 +702,7 @@ Notice that 3d CNNs were employed to deal with video inputs.
 Considering the small number of available data, a speaker dependent
 setting was used.
 With some carefully chosen hyperparameter values and network architectures
-(also see \autoref{fig:AVSR_transfer}),
+(see \autoref{fig:AVSR_transfer} and \autoref{tab:AVSR_transfer}),
 the prediction accracy was of 77.84\% for audio and 54.32\% for video.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
@@ -772,19 +773,37 @@ of \autoref{tab:ASL_classif}).
 \begin{figure}[H]
   \centering
   \hfill
-  \includegraphics[width=0.28\linewidth]{%
-    dataset/fingerspelling5/gray/gray5}
+  %
+  \begin{subfigure}{0.28\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/gray/gray5}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.28\linewidth]{%
-    dataset/fingerspelling5/gray/gray_dropout5}
+  %
+  \begin{subfigure}{0.28\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/gray/gray_dropout5}
+    \caption{}
+  \end{subfigure}
+  %
   \hfill
-  \includegraphics[width=0.28\linewidth]{%
-    dataset/fingerspelling5/gray/gray_reconstruction5}
+  %
+  \begin{subfigure}{0.28\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{%
+      dataset/fingerspelling5/gray/gray_reconstruction5}
+    \caption{}
+  \end{subfigure}
+  %
   \caption{%
     \textbf{Image restoration using convolutional auto-encoder.}\\[0.1em]
-      Left) Clean Image.\\[0.1em]
-      Middle) Noisy image [input].\\[0.1em]
-      Right) Restored image [output].}
+      a) Clean Image.\\[0.1em]
+      b) Noisy image [input].\\[0.1em]
+      c) Restored image [output].}
   \label{fig:image_restoration}
 \end{figure}
 
@@ -794,7 +813,9 @@ of \autoref{tab:ASL_classif}).
 
 A first fundamental challenge in multimodal learning is the problem
 of representing and summarizing data from several modalities.
-How can we relate information from multiple sources?
+This is also a key problem in developmental robotics as robots
+normally possess multiple perceptual channels.
+So how can we relate information from multiple sources?
 Mainly inspired from \cite{J. Ngiam 2011, A. Droniou 2014},
 I generalized the CAE architecture introuduced in \ref{subsection:CAE}
 to a multimodal setup. As presented in \autoref{fig:FAE5}, two CAEs
@@ -865,6 +886,17 @@ at hand, then depth maps would not bring any supplementary information
 that benefits the specific purpose I defined. Again, still more tests,
 and perhaps with different data, are needed to verify this hypothesis.
 
+There is yet another interesting result that's worth mentioning.
+In an experiment, I trained a CAE (the setting presented in
+\autoref{fig:CAE5}) for noisy depth inputs but instead of comparing
+the outputs with clean depth images they're compared with clean
+color images. In other words, I tried to construct the color modality from
+noisy depth maps. When I did the classification based on the learned
+representation, the performance was comparable with the perceptron
+that was built on the CAE features that were learned by a normal
+depth CAE. This is particularly useful when one or several
+modalities are noisy whereas clean information are available for the others.
+
 \begin{table}[H]
   \tabcolsep = 9pt
   \caption{\textbf{Classification performance on the ASL Finger Spelling
@@ -903,17 +935,6 @@ and perhaps with different data, are needed to verify this hypothesis.
 \end{table}
 \vspace{-10pt}
 
-There is yet another interesting result that's worth mentioning.
-In an experiment, I trained a CAE (the setting presented in
-\autoref{fig:CAE5}) for noisy depth inputs but instead of comparing
-the outputs with clean depth images they're compared with clean
-color images. In other words, I tried to construct the color modality from
-noisy depth maps. When I did the classification based on the learned
-representation, the performance was comparable with the perceptron
-that was built on the CAE features that were learned by a normal
-depth CAE. This is particularly useful when one or several
-modalities are noisy whereas clean information are available for the others.
-
 We may also want to ask if this architecture, when a partial input with
 only one modality is given, is able to infer the values of the missing
 modality.
@@ -939,41 +960,70 @@ both modalities are available in input even though they're both very noisy.
 
 \subsection{Transfer learning} \label{subsection:AVSR_transfer}
 
-In the second part of this section, we'll discuss the knowledge transfer
-problem between different modalities. This work was very similar to what
-had been done in \cite{S. Moon 2015}, but at the same time it can also be
-viewed as a form of zero-shot learning \cite{A. Frome 2013, R. Socher 2013}.
+In real world, we face frequently an imbalance in the amount of data
+among different modalities, and acquiring a parallel multimodal
+dataset is extremely resource consuming.
+The same defect equally exists for an autonomous robot because
+multimodal information received by its different sensors are not always
+related.
+Consequently, I'll discuss the knowledge transfer problem between
+different modalities in the second part of this section.
+The goal is exploit information from one modality to improve the
+learning of another modality.
+This work is very similar to what is done in \cite{S. Moon 2015},
+but at the same time it can also be viewed as a form of zero-shot
+learning \cite{A. Frome 2013, R. Socher 2013} since as we will see,
+not every label used for testing is directly presented during training.
 
 I studied particularly the transfer between speech and lip-reading
 video data using the AVLetters dataset. First the dataset was separated
-randomly into two parts, which I'll still call training and test set
-by abuse of language. They're respectively noted $Tr$ and $Te$.
+randomly into two training and test set.
+They are respectively noted $Tr$ and $Te$.
 $Tr$ contained 600 data samples while $Te$ comprised the left 180 instances.
 For $X$ an arbitrary subset of data, $X^a$ and $X^v$ denote respectively
 the audio and video data in $X$.
 
+\begin{figure}[!b]
+  \centering
+  \includegraphics[width=0.9\linewidth]{architectures/AVSR_transfer}
+  \caption{%
+    \textbf{Illustration of the transfer learning approach applied in
+      audio and lip-reading speech recognition tasks.}\\[0.1em]
+    We first learn two separated models for audio and visual inputs
+      (in my case two CNNs) and try to fine-tune the video network
+      with transferred audio data.
+    }
+  \label{fig:AVSR_transfer}
+\end{figure}
+
 Next, to simulate the imbalance of data quantity between different
-modalities in the real world, I further splitted $Tr$, $Te$ intos
+modalities in the real world, I further splitted $Tr$, $Te$ into
 $Tr_{A\sim T}$, $Tr_{U\sim Z}$, $Te_{A\sim T}$ and $Te_{U\sim Z}$
 according to the label of each sample.
 For instance, a lip-reading video of a speaker saying E is in either
 $Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
 During the first training stage, the video model was only accessible
-to a partial label space. The network was trained on $Tr_{A\sim T}^v$
-which contained 466 samples. On the other hand, the audio model was trained
-on the whole label space $Tr^a$.
+to a partial label space. The network (see \autoref{fig:AVSR_transfer}
+and \autoref{tab:AVSR_transfer} for archticture and hyperparameters)
+was trained on $Tr_{A\sim T}^v$ which contained 466 samples.
+On the other hand, the audio model was trained on the whole
+label space $Tr^a$.
 
-Next, I wanted to leverage speech data to fine-tune the network trained for
-video recognition. For a data sample $x^a\in Tr_{U\sim Z}^a$, I first
-computed its audio representation $h^a(x^a)$ that was taken from some
-hidden layer of audio model. A transfer funcion $\mathcal{T}$ was used
+After that, I wanted to leverage speech data to fine-tune the network
+trained for video recognition. For a data sample $x^a\in Tr_{U\sim Z}^a$,
+I first computed its audio representation $h^a(x^a)$ that was taken from
+some hidden layer of audio model. A transfer function $\mathcal{T}$ was used
 to approximate the video representation of this data sample.
 That is, we want $\mathcal{T}(h^a(x^a))\approx h^v(x^v)$. Finally, I
 fine-tuned the subnetwork situated after the hidden video layer that
 was taken as representation via a standard backpropagation algorithm.
+I chose audio as the source modality for two principal reasons.
+First, generally the quantity of audio data surpasses that of visual
+data. Second, the lip-reading task generally appears to be more
+difficult than that of audio speech recognition.
 
-The detailed experiement is presented in \autoref{fig:AVSR_transfer}.
-For both audio and video network I chose the second hidden layer for
+The detailed experiment is presented in \autoref{fig:AVSR_transfer}.
+For both audio and video network I choose the second hidden layer for
 transfer. For the sake of simplicity, an instance-based approach
 (KNN-based mapping) was employed to define $\mathcal{T}$.
 I obtained mapping of a new audio
@@ -982,57 +1032,50 @@ $Tr_{A\sim T}^a$ in the representation space, and then returning the
 average values of the corresponding video samples
 (also in the representation space).
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.9\linewidth]{architectures/AVSR_transfer}
-  \caption{%
-    \textbf{Illustration of the transfer learning approach applied in
-      audio and lip-reading speech recognition tasks.}\\[0.1em]
-    We first learn two separated model for audio and visual inputs
-      (in my cases two CNNs) and try to fine-tune the video network
-      with transferred audio data.
-    }
-  \label{fig:AVSR_transfer}
-\end{figure}
-
 Nonetheless, if only audio inputs were presented during fine-tuning, it
 might cause a bias of the fine-tuned network towards the six new classes.
 To avoid this problem, data from $Tr_{A\sim T}^v$ were also fed as input
 from time to time to fine-tune the whole network. Concretely, with
 probability $p_a$ audio data was presented and otherwise video input
 was given. At the end, the new network was tested on different parts of
-video data for evaluataion.
+video data (e.g. $Tr_{A\sim T}^v$ and $Te_{U\sim Z}^v$) for evaluataion.
 
 Many experiments with various hyperparameter values were conducted
 and some results are shown in \autoref{tab:AVSR_transfer}.
-We see that despite the fact that the overall performance isn't improved
-by knowledge transfer, the fine-tuned network is now able to classify
+We see that despite the fact that the overall performance is not certainly
+improved by knowledge transfer,
+the fine-tuned network is now able to classify
 samples whose labels range from U to Z with an accuracy of 10-20\%
-(\textbf{Exp1}). It shows the utility of the transfer learning approach
-although there is still a long way to go before it becomes
-useful in practice.
+(\textbf{Exp1}, 21.64\% for $Tr_{U\sim Z}^v$ and 15.22\% for
+$Te_{U\sim Z}^v$). It shows the utility of the transfer learning approach
+which enables us to classify labels that are not at all available
+for the target modality.
 During fine-tuning, the magnitude of learning rate is equally important.
 As we can see, if the learning rate is too high, it can deteriorate
 the pre-trained network and the performance may drop drastically
 (\textbf{Exp2}).
 On the other hand, as predicted before, if only audio data labeled from
 U to Z are provided for fine-tuining, the classification performance
-drops for the first twenty labels even though a higher accuracy (40-50\%)
-can be achieved for the last six labels (\textbf{Exp3}).
-We also observe that there isn't a great difference when the network is
-tested on $Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
+drops for the first twenty labels even though a higher accuracy
+can be achieved for the last six labels (\textbf{Exp3}, 45.52\% for
+$Tr_{U\sim Z}^v$ and 41.34\% for $Te_{U\sim Z}^v$).
 
 \begin{table}[H]
   \tabcolsep = 13pt
   \caption{\textbf{Some results of the audio-visual transfer experiment.}
     \\[0.1em]
-  The audio model was pre-trained with $\eta=0.1$, $\alpha_0=0.005$ and
-  $\gamma=0.8$ while the video model was pre-trained with $\eta=0.0004$,
+  The audio model was pre-trained with $\lambda=0.1$, $\alpha_0=0.005$ and
+  $\gamma=0.8$ while the video model was pre-trained with $\lambda=0.0004$,
   $\alpha_0=0.002$ and $\gamma=0.96$. The transfer learning experiment
-  was carried out under the setting $\eta=0.0004$, $\gamma=0.8$, $K=12$
+  was carried out under the setting $\lambda=0.0004$, $\gamma=0.8$, $K=12$
   and was trained for 160 steps.
   For \textbf{Exp1}, \textbf{Exp2} and \textbf{Exp3}, I used respectively
-  $\alpha_0 = 0.001, 0.005, 0.001$ and $p_a = 0.85, 0.85, 1$.
+  $\alpha_0 = 0.001, 0.005, 0.001$ and $p_a = 0.85, 0.85, 1$.\\[0.1em]
+  For the meaning of different variables see the first paragraph of
+  section \ref{section:exp} and also the text of
+  \ref{subsection:AVSR_transfer}.
+  Notice that since $p_a = 1$ for \textbf{Exp3} no visual input is given
+  in input during fine-tuning.
   }
   \label{tab:AVSR_transfer}
   \begin{tabular*}{\linewidth}{>{\bf}lcccccc}
@@ -1051,39 +1094,26 @@ tested on $Tr_{A\sim T}^v$ or $Te_{A\sim T}^v$.
     \bottomrule
   \end{tabular*}
 \end{table}
+\vspace{-1em}
 
-\section{Conclusion and Perspective} \label{section:conclusion}
+\section{Conclusion and Perspectives} \label{section:conclusion}
 
-In this report, I have introduced two different multimodal learning
-settings and evaluated them on three different datasets.
-However, no significant results were obtained for the shared
-representation learning experiment and the knowledge transfer experiment
-aroused only moderate interest.
-Several possible reasons should be mentioned.
-First, the used datasets may be too small and monotonous and
-prevent the network from learning a good representation of the data.
-Second, since I didn't do an intense study in the domain of
-representation learning and dimension reduction, the algorithms
-applied to single modality for extracting features may not be totally
-adequate. Finally, the proposed experiments might be in essence
-inappropriate for some configurations. For example, depth maps may be
-redundant when color images are already present.
+In this report, I studied two different multimodal learning
+architectures and evaluated them on three different datasets.
+Several preliminary results were obtained and my work ensured the
+possiblity and the possible benefit of taking into multiple modalities
+into account while dealing with real world problems.
+To go further in this direction, my work can be improved in several ways.
+First, datasets with bigger size and higher variety should give more
+reliable results.
+Second, a more exhaustive search of hyperparameters may lead to better
+outcomes. Finally, we should also pay attention on the modalities
+that we deal with and if the adopted method is really appropriate.
 
-In spite of this, my work still ensured the possiblity and the possible
-benefit of taking into multiple modalities into account while
-dealing with real world problems. This needs to be further studied
-with better representation learning algorithms and bigger datasets.
-Ideally, we should try to apply these techniques to real
-data coming from human-robot interactions to see if it's possible
-to make the robot's behavior more humanlike thanks to multimodal fusion.
-On the other hand, there are still many multimodal learning models
-to be explored. For instance, we can project features from different
-sources into a joint space while trying to minimizing the distance
-between modalities (this is called a ``coordinated representation''
-in \cite{T. Baltrusaitis 2017}). I have worked a little on similar
-experiments but the difficulty consists in finding the appropriate
-loss function.
-
-
-
-%14 22 46
+Ideally, we want to apply these techniques to real
+data coming from human-robot interactions. In this way, we may be able to
+improve the perception of the robot thanks to the presence of
+multiple sensors. Learning the shared representation in a totally
+unsupervised way can be useful for the development of an autonomous
+robot and absence of constant relation between different modalities
+can be compensate by the knowledge transfer approach.
