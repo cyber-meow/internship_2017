@@ -57,7 +57,7 @@ et les systèmes cognitifs.
 Pendant mon stage, j'ai passé les deux premières semaines au
 laboratoire et pour le reste du temps j'étais à Hoomano car j'entraînais
 les modèles sur le serveur de l'entreprise. Tous les codes ont été
-réalisés en python et précisément à l'aide de la biblithèque open source
+réalisés en python et précisément à l'aide de la bibliothèque open source
 TensorFlow%
 \footnote{\href{https://www.tensorflow.org/}{https://www.tensorflow.org/}}
 développée par Google. Cela incluait la construction des
@@ -95,12 +95,12 @@ In \cite{L. Smith 2005}, Smith and Gasser discerned six fundamental
 principles for the development of embodied intelligence: multimodality,
 incremental development, physical interaction with the environment,
 exploration, social guidance and symbolic language acquisition.
-I was particularly insterested in the multimodal point in my internship.
+I was particularly interested in the multimodal point in my internship.
 The everyday concepts that a human acquires is intrinsically multimodal.
 For example, the word ``cat'' can be quickly associated with the visual
 appearance of a cat, its vocalization, and the tactile feeling that
 we have while petting a cat. The existence of neurons that receive
-early information from different modalities have also been proven
+early information from different modalities has also been proven
 \cite{S. Molholm 2002}.
 
 In machine learning, recently, deep learning has achieved a great success in
@@ -118,7 +118,7 @@ using deep networks in the fields of multimodal gesture recognition
 and audio-visual speech recognition (AVSR).
 I focused especially on the problem
 of shared representation learning and knowledge transfer. I wanted to show
-that the availablity of multiple modalities could enable the model
+that the availability of multiple modalities could enable the model
 to learn a better representation for each single modality and that one can
 leverage information from one modality to be used for another when there
 is an imbalance of amount of data among different sources.
@@ -225,7 +225,7 @@ Generally we have convolutional layers alternating with pooling
 CNNs have been shown to achieve state-of-the-art performance in
 image processing tasks such as image classification
 \cite{A. Krizhevsky 2012} and object detection \cite{Y. LeCun 2010}.
-However they can be equally applied in other fields like speech recogntion
+However, they can be equally applied in other fields like speech recogntion
 \cite{L. Deng 2013}.
 
 For a convolutional layer with a mono-channel input $x$, the latent
@@ -235,9 +235,9 @@ representation of the k-th feature map is given by
 
 where $W^k$ is the k-th kernel, $b^k$ the bias is broadcasted to the whole
 feature map, $\ast$ denotes the 2d convolution and $\sigma$ is an
-ativation function.
-Currently, ReLu (Rectified Linear Units) is probably the one that is the
-most commonly used for a CNN \cite{A. Krizhevsky 2012}.
+activation function.
+Currently, ReLu (Rectified Linear Units) is probably the activation
+function that is the most commonly used for a CNN \cite{A. Krizhevsky 2012}.
 It is defined by
 
 \[\sigma(x) = x^+ = max(0,x),\]
@@ -260,17 +260,18 @@ including the role of these two hyperparameters, can be found here:
 Concerning this, two different zero paddings are defined in TensorFlow,
 `SAME' and `VALID'. For `SAME' padding, $h_o = \lceil h_i/s_h \rceil$,
 and for `VALID' padding, $h_o = \lceil (h_i-h_f+1)/s_h \rceil$,
-where $h_i$, $h_o$, $h_f$ are respectivly the height of the input
+where $h_i$, $h_o$, $h_f$ are respectively the height of the input
 feature map, the output feature map and the filter (kernel) and
 $s_h$ is the stride of the height
 dimension. Similar formulas also exist for the width.%
 \footnote{
 \href{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}
-{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}.}
+{https://www.tensorflow.org/api\_guides/python/nn\#Convolution}}
 
 Suppose all the parameters of a CNN model have been learned, the model
 is then ready to be used for a specific task. One just needs to run the
-model forward as decribed above. Therefore, the purpose of the learning
+model forward with the operations described above. Therefore,
+the purpose of the learning
 phase is to find the appropriate parameters that can help us solve the task.
 Mathematically, this is achieved by optimizing the weights of the network
 to minimize some loss function (e.g. cross entropy
@@ -284,7 +285,7 @@ layer (starting from the output of the network) and the error is thus
 \textit{back-propagated} to the whole network.%
 \footnote{
 \href{http://andrew.gibiansky.com/blog/machine-learning/convolutional-neural-networks/}
-{http://andrew.gibiansky.com/blog/machine-learning/convolutional-neural-networks/}.}
+{http://andrew.gibiansky.com/blog/machine-learning/convolutional-neural-networks/}}
 
 In \cite{S. Ji 2013}, 3d CNNs are proposed to be used for video inputs.
 They're like traditional CNNs except for the fact that we replace
@@ -311,7 +312,7 @@ fewer neurons in hidden layers than in the input layer. For example,
 in the above case, we must have $d'<d$. Sparse auto-encoders impose sparsity
 on hidden units \cite{A. Makhzani 2014}.
 Denoising auto-encoders, which played an important role in my work,
-try to recontruct the clean input from its corrupted version
+try to reconstruct the clean input from its corrupted version
 \cite{P. Vincent 2008, Y. Bengio 2012}. Binomial noise
 (switching pixels on or off) adding
 to input or hidden layers were used in my case.
@@ -362,7 +363,7 @@ in \cite{H. Noh 2015, V. Turchenko 2017}.
 \section{Datasets and Preprocessing} \label{section:dataset}
 
 Many datasets were explored during my internship. In this report,
-I will only detailed the three that I used the most. Two of them are for
+I will only detail the three that I used the most. Two of them are for
 gesture recognition: Creative Senz3D \cite{A. Memo 2015, A. Memo 2017}
 and ASL Finger Spelling \cite{N. Pugeault 2011}, and one is for AVSR:
 AVLetters \cite{I. Matthews 2002}.
@@ -374,12 +375,12 @@ performing 11 different static gestures repeated 30 times each,
 for a total of 1320 samples.
 For each sample, color, depth and confidence frames are available.
 I only used the color and depth frames of this dataset since my
-architectures take at most two modalities in input. The original
-size of each image is $480 \times 640$ and they're resized to
+architectures took at most two modalities in input. The original
+size of each image is $480 \times 640$ and they were resized to
 $299 \times 299$ pixels before being fed to the network since this
 is also the input size of the Inception model \cite{C. Szegedy 2017}.
-No other preprocessing are done. For both color and depth images I use
-the three color channels (even though a priori only one channel is needed
+No other preprocessing were done. For both color and depth images I used
+the three color channels (even though a priori only one channel was needed
 for depth maps).
 
 \begin{figure}[H]
@@ -420,7 +421,7 @@ for depth maps).
     \textbf{Example images in the Creative Senz3D dataset.}\\[0.1em]
     a, b) Color images.\\[0.1em]
     c, d) Corresponding depth images. (c) and (d) are respectively the
-      depth images of (a) and (b).\\[0.1em]
+      depth maps of (a) and (b).\\[0.1em]
     All of the images are of size $480 \times 640$ and contain the
       the entire upper body of the subject.}
   \label{fig:senz3d_exs}
@@ -436,7 +437,7 @@ motion) a certain number of times, captured with similar lighting
 and background.
 
 Images of this dataset are of variable sizes. The data preprocessing
-includes resizing each image to $83 \times 83$ pixels,
+included resizing each image to $83 \times 83$ pixels,
 converting them to grayscale and Z-normalization (normalizing to zero mean
 and unit of variance).
 
@@ -506,13 +507,13 @@ The lack of raw audio data is a strong constraint on what we're able to do
 on this dataset.
 
 Since all utterances do not have the same time duration, I used
-fourier resampling to force every video input to be of length 12 and
+Fourier resampling to force every video input to be of length 12 and
 every audio input to be of length 24. These numbers were chosen according
-to \cite{S. Moon 2015}. Video frames are Z-normalized.
-Several data augmentation techniques are also considered, including
+to \cite{S. Moon 2015}. Video frames were Z-normalized.
+Several data augmentation techniques were also considered, including
 random brightness adjusting, random contrast adjusting and random
-cropping (but at least 80\% of the original image is kept).
-The data is augmented on the fly.
+cropping (but at least 80\% of the original image was kept).
+The data was augmented on the fly.
 
 \begin{figure}[H]
   \centering
@@ -553,10 +554,10 @@ The data is augmented on the fly.
 
 Each classifier used in my work was trained with the cross entropy cost
 function and each auto-encoder was trained with the L2 distance between
-the input and output vector was used as the loss.
+the input and output vector as the loss.
 The cross entropy measures the similarity between two probability
 distributions $p$ and $q$ over the same underlying set of events.
-When $p$ and $q$ are disrcret, which is always true in my case, it's
+When $p$ and $q$ are disrcrete, which is always true in my case, it's
 defined by
 
 \[H(p,q) = -\sum_xp(x)\log q(x).\]
@@ -569,8 +570,8 @@ standard SGD, was then introduced for minimizing the loss function.
 An exponential decay was further used for the stepsize $\alpha$ of this
 algorithm with an initial stepsize $\alpha_0$ varying from 0.01 to 0.0001
 depending on experiment. The decaying rate $\gamma$
-was generally close to 0.8 and the decay takes place every 100
-training steps. That is, the stepsize is multiplied by $\gamma$ every
+was generally close to 0.8 and the decay took place every 100
+training steps. That is, the stepsize was multiplied by $\gamma$ every
 100 steps.
 
 Inputs of the network were normally fed as mini-batches of size 24
@@ -579,7 +580,7 @@ number and when larger batches were used training became slower
 without a significant improvement of the performance.
 Batch normalization \cite{S. Ioffe 2015} were introduced after every
 convolutional and transposed convolutional layer. Therefore, the real
-operations used to compute neural activations are more complicated
+operations used to compute neural activations were more complicated
 than what are described above. The presented settings and hyperparameter
 values were found with a manual heuristic search as I focused on
 principles and not on better performance achievement.
@@ -600,20 +601,20 @@ label is
 
 For classification experiments, except for the one described in
 \ref{subsection:AVSR_transfer}, the dataset was always separated into
-training and test set. The classifier was first trained on the training data
+training and test set. The classifier was first trained on training data
 and then tested on test data once the training phrase was finished.
 Unless stated otherwise, the prediction accuracies mentioned hereinafter
-were always evaluated on the test set.
+are always evaluated on the test set.
 
 Moreover, we can consider two different possible settings:\\[0.25em]
 \textbf{Subject Dependent.}
-In a subject dependant setting, data samples are separated randomly into
+In a subject dependent setting, data samples are separated randomly into
 training set and test set. Therefore, during the
 testing phase, the classifier does not need to deal with data from an
 individual that it has never seen before.\\[0.25em]
-\textbf{Subject Independant.}
+\textbf{Subject Independent.}
 On the contrary, the classifier faces individuals never seen before
-during testing in a subject independant setting. 
+during testing in a subject independent setting. 
 In my case, I always separated one subject from the others to form
 the test set while the training set consisted of the rest of the data.
 
@@ -625,7 +626,7 @@ For every dataset, I began with training a classifier on it in a
 totoally supervised manner.
 This gave me an insight into its data quality, the preprocessing
 effectiveness and ensured that further experiments could be conducted.
-CNN is then one of the most suitable architecture for this purpose.
+CNN was then one of the most suitable architecture for this purpose.
 
 First, it's worth mentioning the problem of overfitting.
 It was observed for almost all the classification experiments that I
@@ -634,7 +635,7 @@ In fact, CNN architectures could usually classify
 perfectly the training data, but experienced a drop of performance
 when evaluating on test set.
 
-It is well known that by reducing the number of hidden layers and
+It is well-known that by reducing the number of hidden layers and
 increasing the weight regularization coefficient $\lambda$ we may
 be able to cure this problem.
 For example, when $\lambda$ was augmented from $0.0004$ to $0.1$,
@@ -658,12 +659,12 @@ The tested architectures were perceptron (in all of this report by
 perceptron I denote a single-layer perceptron), pre-trained InceptionV4
 model \cite{C. Szegedy 2017} and several hand-coded CNNs%
 \footnote{For those who are interested, please refer to my github
-directory for the used hyperparameters.}.
+directory for more details.}.
 The lack of data quantity, variety, and the fact that the head is also
 contained in the image seems to increase the classification difficulty.
-In conlusion, I found that it was more interesting to use a subject
+In conclusion, I found that it was more interesting to use a subject
 dependent setting for this dataset. In this case, for RGB images,
-all of the classifiers were able to have a classification accuracy that is
+all of the classifiers were able to have a classification accuracy that was
 closed to 100\%. For depth images, the classification accuracy was
 between 60\% and 70\% using a perceptron and near 90\% for other
 architectures.
@@ -676,7 +677,7 @@ makes the classification task much easier. By using the CNN architecture
 shown in \autoref{fig:CNN10}, I could achieve a classification accuracy
 of respectively 79.73\% and 64.46\% for intensity and depth images
 (see \autoref{tab:ASL_classif})
-in a subject independant setting (four subjects for training and one
+in a subject independent setting (four subjects for training and one
 subject for testing). Fewer layers in the CNN architecture may also allow
 us to achieve the same performance. More experiments need to be carried
 out to find the most suitable hyperparameters.
@@ -703,7 +704,7 @@ Considering the small number of available data, a speaker dependent
 setting was used.
 With some carefully chosen hyperparameter values and network architectures
 (see \autoref{fig:AVSR_transfer} and \autoref{tab:AVSR_transfer}),
-the prediction accracy was of 77.84\% for audio and 54.32\% for video.
+the prediction accuracy was of 77.84\% for audio and 54.32\% for video.
 
 \subsection{Convolutional auto-encoder} \label{subsection:CAE}
 
@@ -714,14 +715,14 @@ as illustrated in \autoref{fig:CAE5}. I used end-to-end training for
 learning my architectures.
 
 The proposed architecture was then trained on the two gesture recognition
-datasets. First of all, I was interested in the denoising capcity of
+datasets. First of all, I was interested in the denoising capacity of
 the auto-encoder. An example is given in \autoref{fig:image_restoration}.
 The auto-encoder is effectively able to reconstruct the clean image in
 a way, even though the result is blurred and sometimes distorted.
 
 What's more important, can meaningful high-level features be
 learned in this way? 
-In fact, when autonomous robots interact with the environment, it needs
+In fact, when autonomous robots interact with the environment, they need
 to extract high-level knowledge from raw perception on its own.
 This should be done in an unsupervised way since no labeled data
 is provided.
@@ -736,20 +737,19 @@ However, to quantify the learned features, I further trained two perceptrons
 respectively on top of the raw input and the high-level representation
 and compared their performance.
 
-As suggested in \ref{subsection:classif}, I used a subject dependant setting
-for Creative Senz3d while a subject independant setting was employed
+As suggested in \ref{subsection:classif}, I used a subject dependent setting
+for Creative Senz3d while a subject independent setting was employed
 for ASL Finger Spelling. As already mentioned earlier, a perceptron built
 on raw data could classify perfectly the input while dealing with color
 images of Creative Senz3d. In other cases, the use of the learned
-data representation led always to an improvement of 10-20 points for
+data representation always led to an improvement of 10-20 points for
 the prediction accuracy (refer to \autoref{tab:ASL_classif}
 for results on ASL Finger Spelling). Useful high-level data representation
-can thus be learned in a totally unsupervised manner.
-However, if this same architecture used for classification (three layers
-of convolution and one layer of classification) was trained in a
-totally supervised manner, this was as if I trained another CNN and
-better performance could be achieved (see the column CAE architecture
-of \autoref{tab:ASL_classif}).
+can thus be learned in a fully unsupervised manner.
+However, if the whole architecture used for classification here (three
+layers of convolution and one layer of classification) was trained in a
+totally supervised manner, better performance could be achieved
+(see the column CAE architecture of \autoref{tab:ASL_classif}).
 
 \vspace{-1em}
 \begin{figure}[H]
@@ -817,11 +817,11 @@ This is also a key problem in developmental robotics as robots
 normally possess multiple perceptual channels.
 So how can we relate information from multiple sources?
 Mainly inspired from \cite{J. Ngiam 2011, A. Droniou 2014},
-I generalized the CAE architecture introuduced in \ref{subsection:CAE}
+I generalized the CAE architecture introduced in \ref{subsection:CAE}
 to a multimodal setup. As presented in \autoref{fig:FAE5}, two CAEs
-of different modalities share a common middle layer by doing a weighted sum
-of corresponding values. I first pre-train the first two layers
-of each modality using an unimodal CAE. In a second stage, I train the
+of different modalities shared a common middle layer by doing a weighted sum
+of corresponding values. I first pre-trained the first two layers
+of each modality using an unimodal CAE. In a second stage, I trained the
 rest of the network to reconstruct the two modalities of the input.
 This is basically the same model as the one proposed in
 \cite{J. Ngiam 2011} except for a different method that is applied for
@@ -846,13 +846,13 @@ unimodal representation learning.
 
 To prevent the network from finding representations such that different
 hidden units are tuned for different modalities separately, random
-dropouts are added to inputs. I first draw a random number $p$ between
-0 and 1. Each pixel of the color modality is then kept with probability $p$
-while for the depth modality they're kept with probability $1-p$.
-In particular, sometimes one modality can be totally absent whereas
-the whole clean image is given for the other modality.
-In this way I gaurauntee also that I always have enough information
-in input for the reconstruction if the two modalities are
+dropouts were added to inputs. I first drew a random number $p$ between
+0 and 1. Each pixel of the color modality was then kept with probability $p$
+while for the depth modality they were kept with probability $1-p$.
+In particular, sometimes one modality could be totally absent whereas
+the whole clean image was given for the other modality.
+In this way I gauraunteed also that I always had enough information
+in input for the reconstruction if the two modalities were
 used jointly by the network.
 In addition, proper scaling were considered to keep the expected
 sum of the activations at each layer to be the same.
@@ -870,7 +870,7 @@ The results are shown in \autoref{tab:ASL_classif}.
 We can observe an improvement of the classification accuracy for a
 classifier that is based on the learned shared representation 
 compared to the one that is built on the features that are learned by
-an unimodal CAE. This reveals the uitiliy of using multiple modalities
+an unimodal CAE. This reveals the uitility of using multiple modalities
 for representation learning. However, more tests and statistics
 are necessary for validating this preliminary result.
 
@@ -887,15 +887,15 @@ that benefits the specific purpose I defined. Again, still more tests,
 and perhaps with different data, are needed to verify this hypothesis.
 
 There is yet another interesting result that's worth mentioning.
-In an experiment, I trained a CAE (the setting presented in
+In an experiment, I trained a CAE (the one presented in
 \autoref{fig:CAE5}) for noisy depth inputs but instead of comparing
-the outputs with clean depth images they're compared with clean
+the outputs with clean depth images they were compared with clean
 color images. In other words, I tried to construct the color modality from
 noisy depth maps. When I did the classification based on the learned
 representation, the performance was comparable with the perceptron
 that was built on the CAE features that were learned by a normal
-depth CAE. This is particularly useful when one or several
-modalities are noisy whereas clean information are available for the others.
+depth CAE. This result is particularly useful when one or several
+modalities are noisy whereas clean information is available for the others.
 
 \begin{table}[H]
   \tabcolsep = 9pt
@@ -915,7 +915,7 @@ modalities are noisy whereas clean information are available for the others.
     The used hyperparameters are $\alpha_0=0.005$, $\gamma=0.8$ and
     $\lambda=0.0004$ (see the first paragraph of section \ref{section:exp}).
     We notice that we have exactly the same network
-    architecture for the middle three exerimental setups and only the
+    architecture for the middle three experimental setups and only the
     training process differs one from another.
     }
   \label{tab:ASL_classif}
@@ -968,7 +968,7 @@ multimodal information received by its different sensors are not always
 related.
 Consequently, I'll discuss the knowledge transfer problem between
 different modalities in the second part of this section.
-The goal is exploit information from one modality to improve the
+The goal is to exploit information from one modality to improve the
 learning of another modality.
 This work is very similar to what is done in \cite{S. Moon 2015},
 but at the same time it can also be viewed as a form of zero-shot
@@ -977,7 +977,7 @@ not every label used for testing is directly presented during training.
 
 I studied particularly the transfer between speech and lip-reading
 video data using the AVLetters dataset. First the dataset was separated
-randomly into two training and test set.
+randomly into training and test set.
 They are respectively noted $Tr$ and $Te$.
 $Tr$ contained 600 data samples while $Te$ comprised the left 180 instances.
 For $X$ an arbitrary subset of data, $X^a$ and $X^v$ denote respectively
@@ -1018,16 +1018,16 @@ That is, we want $\mathcal{T}(h^a(x^a))\approx h^v(x^v)$. Finally, I
 fine-tuned the subnetwork situated after the hidden video layer that
 was taken as representation via a standard backpropagation algorithm.
 I chose audio as the source modality for two principal reasons.
-First, generally the quantity of audio data surpasses that of visual
-data. Second, the lip-reading task generally appears to be more
-difficult than that of audio speech recognition.
+First, generally the quantity of audio data surpasses that of video
+data in the field of AVSR. Second, the lip-reading task
+appears to be more difficult than that of audio speech recognition.
 
 The detailed experiment is presented in \autoref{fig:AVSR_transfer}.
 For both audio and video network I choose the second hidden layer for
 transfer. For the sake of simplicity, an instance-based approach
 (KNN-based mapping) was employed to define $\mathcal{T}$.
 I obtained mapping of a new audio
-input $x^v$ by first finding the $K$-closest audio samples of
+input $x^a$ by first finding the $K$-closest audio samples in
 $Tr_{A\sim T}^a$ in the representation space, and then returning the
 average values of the corresponding video samples
 (also in the representation space).
@@ -1038,7 +1038,7 @@ To avoid this problem, data from $Tr_{A\sim T}^v$ were also fed as input
 from time to time to fine-tune the whole network. Concretely, with
 probability $p_a$ audio data was presented and otherwise video input
 was given. At the end, the new network was tested on different parts of
-video data (e.g. $Tr_{A\sim T}^v$ and $Te_{U\sim Z}^v$) for evaluataion.
+video data (e.g. $Tr_{A\sim T}^v$, $Te_{U\sim Z}^v$) for evaluataion.
 
 Many experiments with various hyperparameter values were conducted
 and some results are shown in \autoref{tab:AVSR_transfer}.
@@ -1074,7 +1074,7 @@ $Tr_{U\sim Z}^v$ and 41.34\% for $Te_{U\sim Z}^v$).
   For the meaning of different variables see the first paragraph of
   section \ref{section:exp} and also the text of
   \ref{subsection:AVSR_transfer}.
-  Notice that since $p_a = 1$ for \textbf{Exp3} no visual input is given
+  Notice that since $p_a = 1$ for \textbf{Exp3} no video data is given
   in input during fine-tuning.
   }
   \label{tab:AVSR_transfer}
