@@ -1,0 +1,37 @@
+\documentclass[xcolor={dvipsnames}]{beamer}
+
+\usepackage{fontspec}
+\usepackage{mathrsfs}   % math font \mathscr
+\usepackage{amsmath,amsthm,amssymb} % 引入 AMS 數學環境
+\usepackage{array}
+\usepackage{subcaption}
+\usepackage{animate}
+\usepackage{color}
+\usepackage{hyperref}   % advanced reference
+\usepackage{booktabs} % toprule, bottomrule ...
+\usepackage{tabu}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage[absolute,overlay]{textpos}
+
+\usetheme{Boadilla}
+
+%\setbeamercovered{transparent=3,dynamic}
+%\setbeamercovered{again covered={\opaqueness<1->{15}},dynamic}
+
+%%%%%%%%%% Reference settings %%%%%%%%%%
+\hypersetup{%
+unicode=true, 
+bookmarksdepth=-1, 
+pdfborder={0 0 0}, 
+colorlinks=true, 
+citecolor=blue
+}
+
+\graphicspath{
+{../figures/}
+}
+
+\begin{document}
+\input{Content}
+\end{document}

@@ -1,0 +1,15 @@
+\beamer@endinputifotherversion {3.24pt}
+\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@sectionintoc {2}{Deep Network Architectures}{8}{0}{2}
+\beamer@subsectionintoc {2}{1}{CNN}{8}{0}{2}
+\beamer@subsectionintoc {2}{2}{Autoencoder}{11}{0}{2}
+\beamer@subsectionintoc {2}{3}{CAE}{12}{0}{2}
+\beamer@subsectionintoc {2}{4}{Training a Machine Learning Model}{13}{0}{2}
+\beamer@sectionintoc {3}{Datasets}{14}{0}{3}
+\beamer@subsectionintoc {3}{1}{ASL Finger Spelling}{14}{0}{3}
+\beamer@subsectionintoc {3}{2}{AVLetters}{15}{0}{3}
+\beamer@sectionintoc {4}{Results}{16}{0}{4}
+\beamer@subsectionintoc {4}{1}{Unsupervised Learning with CAE}{16}{0}{4}
+\beamer@subsectionintoc {4}{2}{Shared Representation Learning}{19}{0}{4}
+\beamer@subsectionintoc {4}{3}{AVSR Knowledge Transfer}{21}{0}{4}
+\beamer@sectionintoc {5}{Conclusion}{24}{0}{5}
