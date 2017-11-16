@@ -80,7 +80,7 @@ architecture as input during initialization.
 
 The file `arg_scope` defines a common argument scopes used by all the models.
 Other files are taken directly from
-tensorflow/models/[slim](https://github.com/tensorflow/models/tree/master/slim)
+tensorflow/models/[slim](https://github.com/tensorflow/models/tree/master/research/slim)
 and are not modified.
 
 ### Network architectures
